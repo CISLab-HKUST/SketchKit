@@ -1,5 +1,26 @@
 # SketchKit
 
+## File Structure
+
+```
+sketchkit/
+    data/                  /* For data format class and datasets. */
+        dataformat/
+        datasets/
+    docs/                  /* For documents. */
+    models/                /* For different models and tasks. */
+    scripts/               /* For testing scripts. */
+    ui/                    /* For user interfaces. */
+    utils/                 /* For common utils. */
+        general_utils/
+        ...
+```
+
+## Documents for Different Modules.
+
+- [Data format and dataset conversion](./sketchkit/docs/data/data.md)
+
+
 ## Documentation
 
 A [Python Docstring](https://peps.python.org/pep-0257/) (short for documentation string) is a special kind of string in Python used to describe what your code does. It’s written as a string literal — usually triple quotes """ ... """ or ''' ... ''' — placed immediately after a function, class, or module definition.

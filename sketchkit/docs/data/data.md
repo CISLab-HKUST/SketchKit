@@ -19,7 +19,7 @@ SketchVG
 
 ## Dataset Conversion
 
-We should write a class (use `torch.utils.data.Dataset` as a base class) for each dataset. An example is [TUBerlin](./sketchkit/data/datasets/tu_berlin.py) in folder `data/datasets`. The main procedure is as follows:
+We should write a class (use `torch.utils.data.Dataset` as a base class) for each dataset. An example is [TUBerlin](../../data/datasets/tu_berlin.py#L142) in folder `data/datasets`. The main procedure is as follows:
 
 1. Automatically download and extract the dataset if it is not existed.
 2. Load the dataset to obtain data like class names and all the file names.

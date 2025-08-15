@@ -16,7 +16,9 @@ sketchkit/
         ...
 ```
 
-## Documents for Different Modules.
+## Documents for Different Modules
+
+Please refer to documents in `docs` folder:
 
 - [Data format and dataset conversion](./sketchkit/docs/data/data.md)
 

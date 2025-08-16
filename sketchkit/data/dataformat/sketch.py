@@ -4,6 +4,29 @@ class Vertex():
 
 
 class BaseStroke:
+    """ A base class representing a stroke in a sketch.
+    A stroke is a fundamental drawing element that connects two points with specific
+    visual properties like thickness, pressure, color, opacity, and texture.
+
+    Args:
+        p_start (Vertex): The starting point of the stroke.
+        p_end (Vertex): The ending point of the stroke.
+        thickness: The thickness/width of the stroke.
+        pressure: The pressure applied when drawing the stroke.
+        color: The color of the stroke.
+        opacity: The opacity/transparency level of the stroke.
+        texture: The texture pattern applied to the stroke.
+
+    Attributes:
+        p_start (Vertex): The starting vertex of the stroke.
+        p_end (Vertex): The ending vertex of the stroke.
+        thickness: The stroke thickness.
+        pressure: The applied pressure value.
+        color: The stroke color.
+        opacity: The stroke opacity level.
+        texture: The stroke texture.
+    """
+
     def __init__(self, p_start: Vertex, p_end: Vertex, thickness, pressure, color, opacity, texture):
         self.p_start = p_start
         self.p_end = p_end
@@ -41,6 +64,7 @@ class Path():
                  color_list=None, opacity_list=None, texture_list=None):
         """
         The class for a path or stroke chain.
+
         :param stroke_type:
             "line", "qbc", or "cbc".
         :param stroke_list:
@@ -97,8 +121,8 @@ class SketchVG():
     def __init__(self, stroke_type: str, stroke_chain_list: list,
                  stroke_thickness_list=None, stroke_pressure_list=None,
                  stroke_color_list=None, stroke_opacity_list=None, stroke_texture_list=None):
-        """
-        The universal sketch class.
+        """The universal sketch class.
+
         :param stroke_type:
             "line", "qbc", or "cbc". For Line, QuadraticBezierCurve, and CubicBezierCurve, respectively.
         :param stroke_chain_list:

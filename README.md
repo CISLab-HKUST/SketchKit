@@ -1,30 +1,18 @@
 # SketchKit
 
-## File Structure
 
-```
-sketchkit/
-    data/                  /* For data format class and datasets. */
-        dataformat/
-        datasets/
-    docs/                  /* For documents. */
-    models/                /* For different models and tasks. */
-    scripts/               /* For testing scripts. */
-    ui/                    /* For user interfaces. */
-    utils/                 /* For common utils. */
-        general_utils/
-        ...
-```
-
-## Documents for Different Modules
-
-Please refer to documents in `docs` folder:
-
-- [Data format and dataset conversion](./sketchkit/docs/data/data.md)
 
 
 ## Documentation
 
+The docs can found on [https://cislab.hkust-gz.edu.cn/projects/sketchkit-docs/](https://cislab.hkust-gz.edu.cn/projects/sketchkit-docs/). The api docs will be auto generated after each commit.
+
+If you want to contribute to manual docs, please refer to documents in `docs/source` folder, just like:
+
+- [Data format and dataset conversion](docs/source/data.md)
+
+
+### Docstring
 A [Python Docstring](https://peps.python.org/pep-0257/) (short for documentation string) is a special kind of string in Python used to describe what your code does. It’s written as a string literal — usually triple quotes """ ... """ or ''' ... ''' — placed immediately after a function, class, or module definition.
 
 We can auto-generate documentation with these docstrings using some tools.
@@ -105,3 +93,19 @@ If you don’t have write access to the original repository, fork it to your acc
 - Create separate branches for unrelated changes.
 - Link issues with keywords so they close automatically upon merge.
 - Use status checks to catch errors before merging.
+
+## File Structure
+
+```
+sketchkit/
+    data/                  /* For data format class and datasets. */
+        dataformat/
+        datasets/
+    docs/                  /* For documents. */
+    models/                /* For different models and tasks. */
+    scripts/               /* For testing scripts. */
+    ui/                    /* For user interfaces. */
+    utils/                 /* For common utils. */
+        general_utils/
+        ...
+```

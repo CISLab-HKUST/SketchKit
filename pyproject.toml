@@ -1,0 +1,26 @@
+[project]
+name = "sketchkit"
+version = "0.1.0"
+description = "An universal toolkit for sketching"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pyunpack>=0.3",
+    "svg-path>=7.0",
+    "torch>=2.8.0",
+    "torchvision>=0.23.0",
+    "wget>=3.2",
+]
+
+[dependency-groups]
+dev = [
+  {include-group = "doc"},
+  {include-group = "test"}
+]
+test = [
+]
+doc = [
+    "myst-parser>=4.0.1",
+    "sphinx>=8.2.3",
+    "sphinxcontrib-napoleon>=0.7",
+]

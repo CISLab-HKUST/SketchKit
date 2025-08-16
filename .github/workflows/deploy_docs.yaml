@@ -1,0 +1,85 @@
+name: Build and Deploy Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'sketchkit/**'
+      - '.github/workflows/deploy_docs.yaml'
+      - 'pyproject.toml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'sketchkit/**'
+      - '.github/workflows/deploy_docs.yaml'
+      - 'pyproject.toml'
+  workflow_dispatch:
+
+jobs:
+  build-docs:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Install UV
+        run: |
+          if ! command -v uv &> /dev/null; then
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+          else
+            echo "uv is already installed"
+          fi
+          
+      - name: Install dependencies
+        run: |
+          uv sync --group doc
+          
+      - name: Clean previous builds
+        run: |
+          rm -rf docs/build/
+          
+      - name: Build documentation
+        run: |
+          cd docs
+          uv run make clean && uv run make html
+          
+      - name: Check documentation build
+        run: |
+          if [ ! -f "docs/build/html/index.html" ]; then
+            echo "Documentation build failed - index.html not found"
+            exit 1
+          fi
+          echo "Documentation built successfully"
+          
+      - name: Upload documentation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-${{ github.sha }}
+          path: docs/build/html/
+          retention-days: 30
+          
+  deploy-docs:
+    needs: build-docs
+    runs-on: self-hosted
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    
+    steps:
+      - name: Download documentation artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation-${{ github.sha }}
+          path: ./docs-build
+          
+      - name: Deploy to local directory
+        env:
+          DOCS_DEST_DIR: /home/www/projects/sketchkit-docs
+        run: |
+          mkdir -p $DOCS_DEST_DIR
+          cp -r ./docs-build/* $DOCS_DEST_DIR/

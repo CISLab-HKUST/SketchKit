@@ -20,3 +20,6 @@ htmlcov/
 
 # OS
 .DS_Store
+
+# Docs
+docs/source/api/

@@ -7,9 +7,9 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   sketchkit.data
+   sketchkit.core
+   sketchkit.datasets
    sketchkit.models
-   sketchkit.ui
    sketchkit.utils
 
 Module contents

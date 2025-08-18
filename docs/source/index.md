@@ -6,12 +6,12 @@
 SketchKit Documentation
 =======================
 
-## Docs
+## Manual
 ```{toctree}
 :glob:
-:maxdepth: 2
+:maxdepth: 1
 
-data
+manual/*
 ```
 
 ## API Reference

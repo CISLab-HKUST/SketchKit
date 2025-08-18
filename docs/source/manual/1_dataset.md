@@ -1,23 +1,6 @@
-# Data
+# Sketch Datasets
 
-## Data Format
-
-We use **SketchVG** class in folder `data/dataformat/sketch` as our sketch data format. The class has a nested structure as follows:
-
-```
-SketchVG
-  - Path
-    - BaseStroke (Line/QuadraticBezierCurve/CubicBezierCurve)
-      - Vertex
-      - Vertex
-      - Attributes: thickness, pressure, color, opacity, texture
-    - BaseStroke
-    ...
-  - Path
-  ...
-```
-
-## Dataset Conversion
+## Conversion
 
 <!-- We should write a class (use `torch.utils.data.Dataset` as a base class) for each dataset. An example is [TUBerlin](../../data/datasets/tu_berlin.py#L142) in folder `data/datasets`. The main procedure is as follows: -->
 
@@ -27,7 +10,6 @@ SketchVG
 
    - Parse the original data into the desired input format of SketchVG.
    - Define the SketchVG format and return.
-
 
 
 ## Examples

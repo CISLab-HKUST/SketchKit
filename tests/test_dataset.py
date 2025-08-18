@@ -1,4 +1,4 @@
-from sketchkit.data.datasets.tu_berlin import TUBerlin
+from sketchkit.datasets import TUBerlin
 
 if __name__ == '__main__':
     my_data = TUBerlin()

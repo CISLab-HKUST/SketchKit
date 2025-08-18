@@ -1,15 +1,12 @@
 # SketchKit
 
-
-
-
 ## Documentation
 
 The docs can found on [https://cislab.hkust-gz.edu.cn/projects/sketchkit-docs/](https://cislab.hkust-gz.edu.cn/projects/sketchkit-docs/). The api docs will be auto generated after each commit.
 
-If you want to contribute to manual docs, please refer to documents in `docs/source` folder, just like:
+If you want to contribute to manual docs, please refer to documents in `docs/source/manual` folder, just like:
 
-- [Data format and dataset conversion](docs/source/data.md)
+- [docs/source/manual/0_SketchVG.md](docs/source/manual/0_SketchVG.md)
 
 
 ### Docstring
@@ -33,7 +30,6 @@ def add_numbers(a: int, b: int) -> int:
         int: Sum of the two numbers.
     """
     return a + b
-
 ```
 
 **Tip:** you can just let chatGPT do this for you! 😆
@@ -55,6 +51,10 @@ If you don’t have write access to the original repository, fork it to your acc
 - Use a short, descriptive name (e.g., `fix-typo`, `add-feature-x`).
 - Keeps changes isolated from the default branch.
 - [How to create a branch](https://docs.github.com/en/repositories/creating-and-managing-branches)
+
+```
+git checkout -b {new_branch_name}
+```
 
 ### 3. Make Changes
 
@@ -87,6 +87,10 @@ If you don’t have write access to the original repository, fork it to your acc
 
 - Removes clutter and signals work completion.
 - You can restore or revert changes later if needed.
+
+```
+git branch -d your_local_branch
+```
 
 ### Tips
 

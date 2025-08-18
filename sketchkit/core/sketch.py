@@ -1,6 +1,25 @@
+import numpy as np
+
 class Vertex():
-    def __init__(self, pos):
-        self.pos = pos
+    """
+    Represents a 2D vertex/point with x and y coordinates.
+    A Vertex is a fundamental geometric primitive that defines a point in 2D space.
+    It serves as a building block for more complex geometric shapes and sketching operations.
+    Attributes:
+        x (np.float32): The x-coordinate of the vertex.
+        y (np.float32): The y-coordinate of the vertex.
+    Args:
+        x : The x-coordinate position.
+        y : The y-coordinate position.
+    Example:
+        >>> vertex = Vertex(10.0, 20.0)
+        >>> print(vertex.x, vertex.y)
+        10.0 20.0
+    """
+
+    def __init__(self, x: float|np.float32, y: float|np.float32):
+        self.x = np.float32(x)
+        self.y = np.float32(y)
 
 
 class BaseStroke:

@@ -8,7 +8,7 @@ from svg.path import parse_path, path
 from sketchkit.utils.general_utils.md5sum import *
 from sketchkit.utils.general_utils.md5sum_table import *
 from sketchkit.utils.general_utils.extract_files import *
-from sketchkit.data.dataformat.sketch import SketchVG
+from sketchkit.core.sketch import SketchVG
 
 
 def download_tu_berlin(output_folder, remove_sourcefile=True):
@@ -179,6 +179,3 @@ class TUBerlin(data.Dataset):
 
         sketch = SketchVG(stroke_type="cbc", stroke_chain_list=stroke_chain_list)
         return sketch, image_sizes, total_segment_num
-
-
-

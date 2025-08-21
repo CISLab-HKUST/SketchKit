@@ -1,6 +1,5 @@
 import os
 import wget
-import torch.utils.data as data
 
 import xml.etree.ElementTree as ET
 from svg.path import parse_path, path
@@ -110,7 +109,7 @@ def parse_svg(svg_file):
     sketch_width = int(view_width) - int(view_x)
     sketch_height = int(view_height) - int(view_y)
 
-    stroke_chain_list = []  # list of (N_strokes, 4, 2)
+    path_list = []  # list of (N_strokes, 4, 2)
     total_segment_num = 0
 
     for elem in root.iter():
@@ -132,14 +131,28 @@ def parse_svg(svg_file):
                 for i in range(segment_num):
                     stroke = control_points_list[i * 3: i * 3 + 4]  # (4, 2)
                     stroke_list.append(stroke)
-                stroke_chain_list.append(stroke_list)
+                path_list.append(stroke_list)
                 total_segment_num += segment_num
 
-    assert len(stroke_chain_list) > 0
-    return (sketch_width, sketch_height), stroke_chain_list, total_segment_num
+    assert len(path_list) > 0
+    return (sketch_width, sketch_height), path_list, total_segment_num
 
 
-class TUBerlin(data.Dataset):
+class TUBerlin:
+    """ The TU-Berlin dataset (http://cybertron.cg.tu-berlin.de/eitz/projects/classifysketch/),
+    which contains vector sketches represented with cubic Bézier curves.
+
+    Args:
+        data_base: The directory of storing the dataset, which is automatically downloaded if not existed.
+
+    Example:
+        >>> my_data = TUBerlin()
+        >>> print(len(my_data))
+        20000
+        >>> print(my_data[0])
+        (<sketchkit.core.sketch.SketchVG object at 0x72a9fd79ae00>, (800, 800), 126)
+    """
+
     def __init__(self, data_base=".cache/sketchkit/datasets"):
         data_root = os.path.join(os.environ.get('HOME'), data_base)
         os.makedirs(data_root, exist_ok=True)
@@ -173,9 +186,9 @@ class TUBerlin(data.Dataset):
         svg_path = os.path.join(self.svg_base, class_name, file_name)
 
         # Parse the original data into the desired input format of SketchVG
-        image_sizes, stroke_chain_list, total_segment_num = parse_svg(svg_path)
+        image_sizes, path_list, total_segment_num = parse_svg(svg_path)
         # image_sizes: [width, height]
-        # stroke_chain_list: list of (N_strokes, 4, 2)
+        # path_list: list of (N_strokes, 4, 2)
 
-        sketch = SketchVG(stroke_type="cbc", stroke_chain_list=stroke_chain_list)
+        sketch = SketchVG(stroke_type="cbc", path_list=path_list)
         return sketch, image_sizes, total_segment_num

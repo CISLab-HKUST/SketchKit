@@ -150,7 +150,7 @@ class TUBerlin:
         >>> print(len(my_data))
         20000
         >>> print(my_data[0])
-        (<sketchkit.core.sketch.SketchVG object at 0x72a9fd79ae00>, (800, 800), 126)
+        (<sketchkit.core.sketch.SketchVG object at 0x72a9fd79ae00>, 126)
     """
 
     def __init__(self, data_base=".cache/sketchkit/datasets"):
@@ -190,5 +190,5 @@ class TUBerlin:
         # image_sizes: [width, height]
         # path_list: list of (N_strokes, 4, 2)
 
-        sketch = SketchVG(stroke_type="cbc", path_list=path_list)
-        return sketch, image_sizes, total_segment_num
+        sketch = SketchVG(path_list=path_list)
+        return sketch, total_segment_num

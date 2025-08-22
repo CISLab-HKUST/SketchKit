@@ -1,3 +1,3 @@
-from .sketch import Vertex, SketchVG
+from .sketch import Sketch, Path, Stroke, Vertex, Point
 
-__all__ = ["SketchVG", "Vertex"]
+__all__ = ["Sketch", "Path", "Stroke", "Vertex", "Point"]

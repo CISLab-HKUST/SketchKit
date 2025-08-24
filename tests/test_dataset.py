@@ -14,5 +14,6 @@ if __name__ == "__main__":
     data = SketchyDatabase()
     print(f"Total sketches: {len(data)}")
     sketch = data[0]
+    print(sketch)
     print(sketch.stroke_num, sketch.path_num)
     print("Loaded first sketch successfully.")

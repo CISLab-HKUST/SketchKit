@@ -8,30 +8,10 @@ import xml.etree.ElementTree as ET
 from svg.path import parse_path, path
 
 from sketchkit.core.sketch import Sketch, Path, Stroke, Vertex, Point
-from sketchkit.utils.general_utils.md5sum import calculate_md5  # optional
-from sketchkit.core import Sketch as SketchCore  # keep style consistent
-
-# Optional dependency for 7z archives
-try:
-    import py7zr
-    _HAS_PY7ZR = True
-except Exception:
-    _HAS_PY7ZR = False
-
-# Optional helper for Google Drive downloads, auto-install if missing
-try:
-    import gdown
-    _HAS_GDOWN = True
-except Exception:
-    try:
-        import subprocess
-        print("gdown not found. Attempting to install gdown...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "gdown"])
-        import gdown
-        _HAS_GDOWN = True
-        print("gdown installed successfully.")
-    except Exception:
-        _HAS_GDOWN = False
+from sketchkit.utils.general_utils.md5sum import calculate_md5  
+from sketchkit.core import Sketch as SketchCore 
+import py7zr
+import gdown
 
 
 def _get_confirm_token(response) -> str | None:
@@ -108,13 +88,9 @@ def download_sketchy_database(
     archive_path = os.path.join(output_folder, filename)
 
     try:
-        if _HAS_GDOWN:
-            print("Using gdown for Google Drive download...")
-            # Prefer gdown when available, it handles confirm tokens and cookies internally.
-            gdown.download(id=gdrive_id, output=archive_path, quiet=False)
-        else:
-            print("Using built-in Google Drive downloader (requests)...")
-            _download_from_gdrive(gdrive_id, archive_path)
+        print("Using gdown for Google Drive download...")
+        # Prefer gdown when available, it handles confirm tokens and cookies internally.
+        gdown.download(id=gdrive_id, output=archive_path, quiet=False)
         print("\nDownload finished!")
     except Exception as e:
         traceback.print_exc()
@@ -131,19 +107,9 @@ def download_sketchy_database(
     print("Extracting archive...")
     extract_target = os.path.join(output_folder, "sketches")
 
-    # The archive is .7z; prefer py7zr, else fall back to `7z` CLI.
     try:
-        if _HAS_PY7ZR:
-            with py7zr.SevenZipFile(archive_path, mode="r") as zf:
-                zf.extractall(path=output_folder)
-        else:
-            # Fallback to system 7z if available
-            ret = os.system(f'7z x "{archive_path}" -o"{output_folder}" -y > /dev/null')
-            if ret != 0:
-                raise RuntimeError(
-                    "7z extraction failed and py7zr is not installed. "
-                    "Install py7zr (`pip install py7zr`) or ensure `7z` CLI is available."
-                )
+        with py7zr.SevenZipFile(archive_path, mode="r") as zf:
+            zf.extractall(path=output_folder)
     except Exception:
         traceback.print_exc()
         print("Extraction failed.")
@@ -178,20 +144,8 @@ def download_sketchy_database(
 def prune_invalid_svgs(sketches_dir: str) -> tuple[int, dict]:
     """Delete SVGs listed in each class folder's ``invalid.txt``.
 
-    Each immediate subdirectory under ``sketches_dir`` is treated as a class
-    folder. If an ``invalid.txt`` exists inside it, the file is expected to
-    contain *basename-only* entries (without extension), one per line,
-    possibly grouped by headings such as "Invalid/error" or "Context".
-
-    This function deletes matching ``.svg`` (case-insensitive) files and
-    returns a tuple of ``(total_deleted, per_class_counts)``.
-
-    Args:
-        sketches_dir: Path to the extracted ``sketches/`` directory.
-
-    Returns:
-        A tuple ``(total_deleted, per_class_counts)`` where ``per_class_counts``
-        maps class-name -> number of deleted files.
+    Assumes every class folder contains ``invalid.txt`` with one basename per line
+    (without extension), and corresponding files always exist as ``.svg``.
     """
     total_deleted = 0
     per_class_counts: dict[str, int] = {}
@@ -205,56 +159,28 @@ def prune_invalid_svgs(sketches_dir: str) -> tuple[int, dict]:
             continue
 
         invalid_path = os.path.join(class_dir, "invalid.txt")
-        if not os.path.isfile(invalid_path):
-            continue
-
         deleted_here = 0
+
         try:
             with open(invalid_path, "r", encoding="utf-8", errors="ignore") as f:
-                lines = [ln.strip() for ln in f.readlines()]
+                lines = [ln.strip() for ln in f if ln.strip()]
         except Exception:
             traceback.print_exc()
             continue
 
         for base in lines:
-            # Skip headers / sections / empty lines
-            if (not base) or ("/" in base) or ("\\" in base) or (":" in base):
-                continue
-            # Common headings appearing in provided examples
+            # Skip headings or section markers
             if base.lower() in {"invalid/error", "unidentifiable/ambiguous", "context", "perspective"}:
                 continue
 
-            # Compose candidate filenames (case-insensitive .svg)
-            candidates = [f"{base}.svg", f"{base}.SVG"]
-
-            removed = False
-            for cand in candidates:
-                p = os.path.join(class_dir, cand)
-                if os.path.exists(p):
-                    try:
-                        os.remove(p)
-                        deleted_here += 1
-                        total_deleted += 1
-                        removed = True
-                        break
-                    except Exception:
-                        traceback.print_exc()
-                        # Try next candidate or fallback search
-
-            if not removed:
-                # Fallback: case-insensitive scan of the directory for exact stem match
-                stem = base.lower()
-                for fname in os.listdir(class_dir):
-                    if fname.lower().endswith('.svg') and os.path.splitext(fname)[0].lower() == stem:
-                        try:
-                            os.remove(os.path.join(class_dir, fname))
-                            deleted_here += 1
-                            total_deleted += 1
-                            removed = True
-                            break
-                        except Exception:
-                            traceback.print_exc()
-                # If still not removed, silently ignore (file may already be absent)
+            target = os.path.join(class_dir, f"{base}.svg")
+            try:
+                if os.path.exists(target):
+                    os.remove(target)
+                    deleted_here += 1
+                    total_deleted += 1
+            except Exception:
+                traceback.print_exc()
 
         if deleted_here > 0:
             per_class_counts[class_name] = deleted_here
@@ -459,6 +385,7 @@ class SketchyDatabase:
         archive_name: str = "sketches-06-04.7z",
         md5: str | None = None,
         remove_sourcefile: bool = True,
+        prune: bool = True
     ):
         data_root = os.path.join(os.environ.get("HOME"), data_base)
         os.makedirs(data_root, exist_ok=True)
@@ -471,7 +398,7 @@ class SketchyDatabase:
                 expected_md5=md5,
                 gdrive_id=file_id,
                 filename=archive_name,
-                prune_invalid=True,
+                prune_invalid=prune,
             )
 
         # Build index of classes and svg files.

@@ -12,13 +12,19 @@ from sketchkit.utils.general_utils.extract_files import *
 
 
 def download_gmu_sketch_cleanup(output_folder, remove_sourcefile=True):
+    """Download the GMU-Sketch-Cleanup dataset.
+
+    Args:
+        output_folder: The directory to save the downloaded dataset.
+        remove_sourcefile: Whether to remove the source zip file after extraction.
+    """
     print("The download of GMU-Sketch-Cleanup has started......")
     os.makedirs(output_folder, exist_ok=True)
 
     url = "https://cragl.cs.gmu.edu/sketchbench/Benchmark_Dataset.zip"
     zip_path = os.path.join(output_folder, "gmu_sketch_cleanup.zip")
 
-    # ---------- 优先正常下载（带证书验证） ----------
+    # Attempt normal download with SSL verification.
     try:
         wget.download(url, out=output_folder)
         print("Normal SSL download succeeded.")
@@ -26,18 +32,18 @@ def download_gmu_sketch_cleanup(output_folder, remove_sourcefile=True):
         msg = str(e)
         print("Normal download failed:", msg)
 
-        # ---------- 若为证书问题，退化为“不验证证书”并显示进度条 ----------
+        # If SSL verification fails, retry with SSL verification disabled.
         if "SSL" in msg or "CERTIFICATE_VERIFY_FAILED" in msg:
             print("Retrying with SSL verification disabled (insecure) + progress bar...")
 
-            # 构建仅本次生效的不验证证书 opener（不污染全局）
+            # Create a temporary opener with SSL verification disabled.
             ctx = ssl._create_unverified_context()
             opener = urllib.request.build_opener(
                 urllib.request.HTTPSHandler(context=ctx)
             )
             urllib.request.install_opener(opener)
 
-            # 进度条：block_num * block_size = 已下载字节；total_size 可能为 -1（未知）
+            # Progress bar for download.
             def _progress(block_num, block_size, total_size):
                 downloaded = block_num * block_size
                 if total_size > 0:
@@ -66,7 +72,7 @@ def download_gmu_sketch_cleanup(output_folder, remove_sourcefile=True):
 
     print("GMU-Sketch-Cleanup is downloaded!")
 
-    # ---------- 解压 ----------
+    # Extract the downloaded zip file.
     try:
         extract_files(
             file_name=zip_path,
@@ -80,20 +86,28 @@ def download_gmu_sketch_cleanup(output_folder, remove_sourcefile=True):
     print("GMU-Sketch-Cleanup is extracted!")
 
 
-# ---------- SVG 解析 ----------
-
 INVALID_SVG_SHAPES = {"rect", "circle", "ellipse", "line", "polyline", "polygon"}
 
 
 def parse_gmu_svg(svg_file):
-    """
-    简化版：解析 SVG -> (width, height), path_list, total_segment_num
-    只处理 <path>，不支持 transform 和 Arc。
+    """Parse an SVG file into width, height, path list, and total segment number.
+
+    Args:
+        svg_file: The path to the SVG file.
+
+    Returns:
+        A tuple containing:
+        - (width, height): The dimensions of the SVG canvas.
+        - path_list: A list of paths, where each path contains strokes.
+        - total_segment_num: The total number of segments in the SVG file.
+
+    Raises:
+        Exception: If unsupported elements like transforms or arcs are encountered.
     """
     tree = ET.parse(svg_file)
     root = tree.getroot()
 
-    # 尺寸
+    # Parse dimensions.
     view_box = root.get("viewBox")
     if view_box:
         view_x, view_y, view_w, view_h = [float(x) for x in view_box.split()]
@@ -121,7 +135,7 @@ def parse_gmu_svg(svg_file):
             for seg in ps:
                 if isinstance(seg, path.Move):
                     if len(cps) > 1:
-                        # 开启新的 path
+                        # Start a new path.
                         seg_num = (len(cps) - 1) // 3
                         strokes = [cps[i * 3:i * 3 + 4] for i in range(seg_num)]
                         path_list.append(strokes)
@@ -153,26 +167,30 @@ def parse_gmu_svg(svg_file):
     return (width, height), path_list, total_segment_num
 
 
-# ---------- Dataset 类 ----------
-
 class GMUSketchCleanup:
-    """
-    GMU Rough Sketch Cleanup 数据集读取器。
+    """A dataset reader for the GMU Rough Sketch Cleanup dataset.
 
-    目录期望:
+    The dataset directory structure is expected to be:
     Benchmark_Dataset/
       ├── GT/
       ├── Rough/JPG/
       ├── Rough/PNG/
       └── Rough/SVG/
       └── sketch_tags.csv
+
+    Args:
+        data_root: The root directory for storing the dataset.
+        split: The dataset split, either "Rough" or "GT".
+        modality: The data modality, currently only "SVG" is supported.
+
+    Attributes:
+        items: A list of file paths for the selected split and modality.
     """
 
     def __init__(self,
                  data_root=".cache/sketchkit/datasets",
                  split="Rough",
                  modality="SVG"):
-
         self.data_root = data_root
         self.split = split
         self.modality = modality
@@ -187,19 +205,27 @@ class GMUSketchCleanup:
         elif self.split == "Rough":
             if self.modality == "SVG":
                 self.items = sorted(glob.glob(os.path.join(bench_root, "Rough", "SVG", "**", "*.svg"), recursive=True))
-            # elif self.modality == "png":
-            #     self.items = sorted(glob.glob(os.path.join(bench_root, "Rough", "PNG", "**", "*.png"), recursive=True))
-            # elif self.modality == "jpg":
-            #     self.items = sorted(glob.glob(os.path.join(bench_root, "Rough", "JPG", "**", "*.jpg"), recursive=True))
             else:
                 raise ValueError("modality must be SVG for now")
         else:
             raise ValueError("split must be one of {Rough,GT}")
 
     def __len__(self):
+        """Return the number of items in the dataset."""
         return len(self.items)
 
     def __getitem__(self, idx) -> Sketch:
+        """Get a Sketch object for the given index.
+
+        Args:
+            idx: The index of the item.
+
+        Returns:
+            A Sketch object constructed from the SVG file.
+
+        Raises:
+            TypeError: If the current item is not an SVG file.
+        """
         svg_path = self.items[idx]
         if not svg_path.lower().endswith(".svg"):
             raise TypeError("Current item is not SVG; cannot construct Sketch")

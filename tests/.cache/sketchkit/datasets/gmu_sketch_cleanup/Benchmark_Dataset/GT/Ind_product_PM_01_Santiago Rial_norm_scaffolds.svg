@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xml:space="preserve"
+   y="0px"
+   x="0px"
+   width="1000.0"
+   viewBox="0 0 1000.000000 2260.000000"
+   version="1.1"
+   style="background-color:white"
+   id="svg27"
+   height="2260.0"><metadata
+   id="metadata33"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
+   id="defs31" />
+<style
+   type="text/css"
+   id="style2">.st0 {
+    opacity: 0.3
+    stroke-width:2.260000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+.st1 {
+    fill: none;
+    stroke:#000000;
+    stroke-miterlimit: 10
+    stroke-width:2.260000;stroke-linecap:round;stroke-linejoin:round;}</style>
+<g
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="2.260000"
+   stroke="#000000"
+   id="scaffold_line">
+	<ellipse
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="2.260000"
+   stroke="#000000"
+   ry="120.551629"
+   rx="91.274791"
+   id="ellipse18"
+   cy="287.686708"
+   cx="609.723790"
+   class="st1" />
+	<ellipse
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="2.260000"
+   stroke="#000000"
+   ry="50.803924"
+   rx="118.307584"
+   id="ellipse20"
+   cy="746.643828"
+   cx="361.897933"
+   class="st1" />
+	<path
+   fill="none"
+   stroke-width="2.260000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path22"
+   d="M 617.645020 1575.126708 c -74.729301 0.000000 -135.304437 -24.780004 -135.304437 -55.351864 c 0.000000 -30.568320 60.575136 -55.354549 135.304437 -55.354549 c 74.729179 0.000000 135.304346 24.786230 135.304346 55.354549 C 752.949365 1550.346705 692.374198 1575.126708 617.645020 1575.126708 z"
+   class="st1" />
+	<path
+   fill="none"
+   stroke-width="2.260000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path24"
+   d="M 547.944438 1196.498909 c -43.911739 58.187244 -105.798759 85.519664 -138.230609 61.046428 c -32.428706 -24.477264 -23.124913 -91.493530 20.788627 -149.675525 c 43.913479 -58.188953 105.800530 -85.514537 138.228869 -61.042888 C 601.163205 1071.302357 591.859626 1138.308613 547.944438 1196.498909 z"
+   class="st1" />
+</g>
+</svg>

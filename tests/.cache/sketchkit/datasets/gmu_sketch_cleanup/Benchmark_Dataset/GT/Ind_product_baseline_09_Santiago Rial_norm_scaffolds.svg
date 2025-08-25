@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xml:space="preserve"
+   y="0px"
+   x="0px"
+   width="1500.0"
+   viewBox="0 0 1500.000000 2096.000000"
+   version="1.1"
+   style="background-color:white"
+   id="svg30"
+   height="2096.0"><metadata
+   id="metadata36"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
+   id="defs34" />
+<style
+   type="text/css"
+   id="style2">.st0 {
+    opacity: 0.4
+    stroke-width:2.096000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+.st1 {
+    clip-path: url(#SVGID_2_)
+    stroke-width:2.096000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+.st2 {
+    fill: none;
+    stroke:#000000;
+    stroke-miterlimit: 10
+    stroke-width:2.096000;stroke-linecap:round;stroke-linejoin:round;}</style>
+<g
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="2.096000"
+   stroke="#000000"
+   id="scaffolding">
+	<path
+   fill="none"
+   stroke-width="2.096000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path15"
+   d="M 12.140500 584.406738 c 0.000000 0.000000 68.657875 39.272995 68.667002 42.299118 c 0.000000 0.000000 66.692495 -5.142098 101.692495 -42.299118"
+   class="st2" />
+	<path
+   fill="none"
+   stroke-width="2.096000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path17"
+   d="M 267.642250 89.160128 c 0.000000 0.000000 335.764732 67.674618 394.061241 137.882128"
+   class="st2" />
+	<path
+   fill="none"
+   stroke-width="2.096000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path19"
+   d="M 1285.007324 247.249756 c 0.000000 0.000000 -334.100342 56.613751 -623.303833 358.306885 c 0.000000 0.000000 -114.203491 676.693115 25.095902 1251.358643"
+   class="st2" />
+	<path
+   fill="none"
+   stroke-width="2.096000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path21"
+   d="M 1265.891113 1906.179199 c 0.000000 0.000000 -114.409256 -786.661301 183.599853 -1264.045486"
+   class="st2" />
+	<path
+   fill="none"
+   stroke-width="2.096000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path23"
+   d="M 1085.585938 1574.812012 c 0.000000 0.000000 169.189453 -75.404053 266.801758 -160.233154"
+   class="st2" />
+	<path
+   fill="none"
+   stroke-width="2.096000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path25"
+   d="M 201.413002 734.770508 c 0.000000 0.000000 602.769127 354.979248 1034.428101 257.479248"
+   class="st2" />
+	<path
+   fill="none"
+   stroke-width="2.096000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path27"
+   d="M 718.626709 184.599628 c 0.000000 0.000000 363.570480 54.609375 761.221924 424.879761"
+   class="st2" />
+</g>
+</svg>

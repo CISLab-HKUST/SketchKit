@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:ns2="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" height="1500.0" id="svg40" style="enable-background:new 0 0 1526.000000 1500.000000" version="1.1" viewBox="0 0 1526.000000 1500.000000" width="1526.0" x="0px" y="0px" xml:space="preserve"><metadata id="metadata46"><rdf:RDF><ns2:Work rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></ns2:Work></rdf:RDF></metadata><defs id="defs44" />
+<style id="style2" type="text/css">.st0 {
+    display: none
+    }
+.st1 {
+    display: inline;
+    opacity: 0.7
+    }
+.st2 {
+    opacity: 0.7
+    }
+.st3 {
+    fill: none;
+    stroke: #000;
+    stroke-miterlimit: 10
+    }</style>
+<g id="cleaned">
+	<path class="st3" d="M 340.000054 530.000085 c 1.285362 42.674529 14.974368 191.577179 -10.000002 228.125036 c -26.875004 45.625007 -54.583139 129.793798 -54.583139 189.376251 c 0.000000 59.582529 4.166241 133.750021 4.166241 133.750021 s -1.250000 29.166264 25.416893 30.416265 s 1072.086353 0.108643 1072.086353 0.108643" id="path4" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" />
+	<path class="st3" d="M 1189.165153 295.505457 c 0.000000 0.000000 -14.998705 -93.006054 -161.664989 -125.506059 C 975.000156 165.832527 261.250042 159.062525 261.250042 159.062525 s -50.625008 47.812508 -52.500008 162.812526 c -2.187500 72.812512 31.250005 158.125025 56.250009 171.250027 s 74.375012 -1.250000 75.000012 36.875006" id="path6" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" />
+	<line class="st3" id="line8" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" x1="945.000151" x2="945.000151" y1="530.000085" y2="562.916998" />
+	<line class="st3" id="line10" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" x1="1090.416434" x2="1090.416434" y1="530.000085" y2="562.916998" />
+	<path class="st3" d="M 895.000143 562.916998 h 248.333780 c 0.000000 0.000000 96.665055 2.500000 102.082536 27.500004 c 1.667481 8.750001 -0.415039 22.916225 -236.248817 17.916224 c -71.667492 0.000000 -221.251256 6.041261 -221.667516 -22.187504 C 786.667606 568.750091 851.250136 562.916998 895.000143 562.916998 z" id="path12" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" />
+	<path class="st3" d="M 788.776982 590.325984 c 0.000000 0.000000 35.390631 317.590421 233.306922 326.340422 c 67.500011 0.000000 206.514849 -69.869396 223.389852 -322.994398" id="path14" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" />
+	<path class="st3" d="M 1115.727641 883.326557 V 930.937649 c 0.000000 0.000000 -12.914965 37.812506 -92.602478 36.875006 c -46.250007 0.000000 -95.000015 -26.875004 -101.562516 -39.062506 c 0.000000 -31.562505 0.000000 -49.201592 0.000000 -49.201592" id="path16" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" />
+	<polyline class="st3" id="polyline18" points="1149.375184 406.666325 1297.265833 408.151310 1299.194544 299.583197 1189.165153 295.505457" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" />
+	<path class="st3" d="M 1149.375184 406.666325 L 1146.250183 530.000085 H 890.625142 v -32.500005 h -227.500036 c 0.000000 0.000000 -108.750017 -7.500001 -116.875019 60.000010 c -5.625001 80.000013 -10.625002 286.875046 165.000026 368.125059 c 186.250030 -0.625000 210.312534 3.125000 210.312534 3.125000" id="path20" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" />
+	<path class="st3" d="M 1115.727641 929.322658 c 0.000000 0.000000 255.938838 -33.906255 265.522580 182.345000 c -1.385498 0.035400 -2.773438 0.072022 -4.163819 0.108643" id="path22" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" />
+</g>
+<g id="scaffold_line">
+	<line class="st3" id="line25" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" x1="1016.562663" x2="1016.562663" y1="60.000010" y2="1187.500190" />
+	<line class="st3" id="line27" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" x1="450.000072" x2="435.833200" y1="72.500012" y2="1196.667672" />
+	<line class="st3" id="line29" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" x1="137.500022" x2="1396.250223" y1="313.750050" y2="334.375053" />
+	<line class="st3" id="line31" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" x1="226.250036" x2="1346.250215" y1="750.000120" y2="750.000120" />
+	<line class="st3" id="line33" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" x1="1199.375192" x2="1320.000211" y1="929.034572" y2="928.614651" />
+	<line class="st3" id="line35" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" x1="920.775218" x2="1116.405208" y1="928.653789" y2="929.322658" />
+	<line class="st3" id="line37" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.525000" x1="191.250031" x2="711.250114" y1="926.969142" y2="928.750149" />
+</g>
+</svg>

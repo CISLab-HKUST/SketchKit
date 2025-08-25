@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   height="4160.0"
+   width="3120.0"
+   style="background-color:white"
+   version="1.1"
+   viewBox="0 0 3120 4160"
+   x="0px"
+   y="0px"
+   xml:space="preserve"
+   id="svg52"><metadata
+   id="metadata58"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
+   id="defs56" />
+<style
+   type="text/css"
+   id="style2">.st0{display:none;stroke-width:4.160000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+	.st1{fill:none;stroke:#000000;stroke-miterlimit:10;stroke-width:4.160000;stroke-linecap:round;stroke-linejoin:round;}</style>
+<g
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="4.160000"
+   stroke="#000000"
+   id="cleared">
+	<path
+   fill="none"
+   class="st1"
+   d="M574.3763428,2340.2988281l-14.6308594,948.0102539   c26.579834,65.0976563,88.5162354,108.4885254,150.8256836,141.0727539   c240.6236572,125.8320313,543.1169434,187.6850586,810.864502,142.4672852   c267.7475586-45.2180176,560.6241455-119.5895996,761.5970459-302.9321289c0,0,38.3996582-42.6665039,44.7998047-104.532959   c6.3999023-61.8664551,6.3999023-2532.2565918,6.3999023-2532.2565918s-34.1333008-106.6662598-520.53125-132.2661438   s-588.7976074-36.26651-974.9294434,17.0666199c0,0-181.3326416,19.1998901-241.0657349,85.3329468   c0,0,59.7330933,842.6633301,63.9997559,857.5965576c4.2666626,14.9333496,168.5326538,123.7329102,364.7985229,104.532959   s558.9311523-123.7327881,718.930542-85.3330078c159.9992676,38.3999023,345.5986328,110.9328613,390.3984375,441.5982666   s-366.9318848,601.3309326-563.1977539,658.9307861c0,0-373.3319092,121.8659668-706.1305542,42.9331055   c-332.798645-78.9331055-292.2655029-287.9990234-290.1322021-302.9321289   c2.1333618-14.9333496,31.9998779-95.9997559,85.3330078-164.2661133s194.1325684-275.1988525,217.5991211-356.2651367   c23.4666138-81.0664063,39.4557495-125.0111084,28.4248047-237.5262451"
+   stroke="#000000"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   stroke-width="4.160000"
+   id="path49" />
+</g>
+</svg>

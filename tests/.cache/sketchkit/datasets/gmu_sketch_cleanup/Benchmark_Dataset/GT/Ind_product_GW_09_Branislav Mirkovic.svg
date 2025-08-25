@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:ns2="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" height="1500.0" id="svg198" style="enable-background:new 0 0 1504.000000 1500.000000" version="1.1" viewBox="0 0 1504.000000 1500.000000" width="1504.0" x="0px" y="0px" xml:space="preserve"><metadata id="metadata204"><rdf:RDF><ns2:Work rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></ns2:Work></rdf:RDF></metadata><defs id="defs202" />
+<style id="style2" type="text/css">.st0 {
+    fill: none;
+    stroke: #000;
+    stroke-miterlimit: 10
+    }</style>
+<g id="cleaned">
+	<path class="st0" d="M 463.576782 883.722041 c -33.157186 1.132386 -83.115022 -4.101385 -108.082592 -23.615471 c -6.750004 -5.275656 -12.985683 -11.458759 -16.967550 -19.044310 c -3.252247 -6.195513 -4.887324 -13.097681 -6.259016 -19.959244 c -2.919289 -14.603257 -4.786995 -29.416548 -5.583860 -44.287439 l -22.919440 -415.538250 c -2.362168 -22.391524 3.709309 -45.572393 16.744600 -63.931060 s 33.481780 -33.718017 54.837504 -33.718017 l 719.620457 55.229748 c 22.981999 -0.213372 45.996912 4.956222 66.680009 14.977628 c 8.523687 4.129881 16.795928 9.188388 23.002233 16.343182 c 5.888625 6.788551 9.657625 15.171137 12.407079 23.726963 c 4.981987 15.503690 6.852323 32.000384 5.467478 48.225937 l -9.252666 435.277208 c 0.016322 2.820950 -3.891216 28.325305 -6.057650 39.355229 c -0.563057 2.866477 -2.659074 7.898173 -4.056329 10.463562 c -2.023039 3.713963 -5.560287 6.340122 -9.132744 8.603748 c -19.137321 12.126293 -42.650609 17.175054 -65.079196 13.973764 L 463.576782 883.722041 z" id="path4" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" />
+	<path class="st0" d="M 471.490974 875.889966 c -32.250886 1.101428 -80.843167 -3.989286 -105.128297 -22.969993 c -6.565500 -5.131452 -12.630737 -11.145598 -16.503776 -18.523746 c -3.163350 -6.026219 -4.753743 -12.739666 -6.087900 -19.413656 c -2.839498 -14.204099 -4.656145 -28.612567 -5.431259 -43.076881 l -22.292982 -404.180089 c -2.297586 -21.779466 3.607934 -44.326728 16.286931 -62.183547 c 12.678996 -17.856853 32.566577 -32.796423 53.338605 -32.796423 l 699.950430 53.720142 c 22.353854 -0.207538 44.739679 4.820752 64.857426 14.568218 c 8.290721 4.017007 16.336741 8.937245 22.373482 15.896474 c 5.727693 6.603001 9.393633 14.756432 12.067950 23.078416 c 4.845877 15.079913 6.665087 31.125717 5.318013 46.907731 l -8.999736 423.379497 c 0.015918 2.743789 -3.784918 27.551001 -5.892132 38.279432 c -0.547544 2.788170 -2.586230 7.682340 -3.945445 10.177582 c -1.967731 3.612453 -5.408259 6.166780 -8.883051 8.368557 c -18.614329 11.794853 -41.484836 16.705615 -63.300319 13.591873 L 471.490974 875.889966 z" id="path6" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" />
+	<polygon class="st0" id="polygon8" points="382.906686 304.999265 398.377663 837.642910 1111.700220 861.954445 1131.959878 374.618663" />
+	<line class="st0" id="line10" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="315.887582" x2="1055.894195" y1="350.795418" y2="790.677443" />
+	<line class="st0" id="line12" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="316.394488" x2="1230.658044" y1="374.029537" y2="917.495129" />
+	<line class="st0" id="line14" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="318.974378" x2="1058.980958" y1="419.183516" y2="859.065575" />
+	<circle class="st0" cx="1059.761940" cy="1236.204706" id="circle16" r="59.397502" />
+	<path class="st0" d="M 1066.023957 1333.819251 c 135.864636 5.245844 143.231858 -185.562965 7.367222 -190.808674 L 382.906686 1095.860909 C 293.948567 1080.205731 246.430566 1244.308597 368.356578 1272.672010 L 1066.023957 1333.819251 z" id="path18" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" />
+	<path class="st0" d="M 1075.841501 1353.586672 c 139.187197 6.114036 146.734640 -216.270874 7.547376 -222.384776 l -707.370261 -54.952267 c -91.133557 -18.245860 -139.813621 173.013705 -14.905931 206.070967 L 1075.841501 1353.586672 z" id="path20" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" />
+	<path class="st0" d="M 845.009187 910.958598 c -15.246645 103.039530 -3.965274 182.420018 68.558709 207.181028" id="path22" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" />
+	<path class="st0" d="M 634.723928 895.942963 c 12.830519 98.082094 4.817144 180.022170 -91.826552 193.324084" id="path24" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" />
+	<line class="st0" id="line26" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="839.912538" x2="639.266693" y1="957.823028" y2="948.150429" />
+	<circle class="st0" cx="303.986296" cy="1169.716385" id="circle28" r="2.716630" />
+	<circle class="st0" cx="309.419544" cy="1182.672222" id="circle30" r="2.716630" />
+	<circle class="st0" cx="314.083750" cy="1205.666362" id="circle32" r="2.716630" />
+	<circle class="st0" cx="329.000506" cy="1204.785219" id="circle34" r="2.716630" />
+	<circle class="st0" cx="319.516998" cy="1219.558918" id="circle36" r="2.716630" />
+	<circle class="st0" cx="347.673211" cy="1218.781106" id="circle38" r="2.716630" />
+	<circle class="st0" cx="376.583359" cy="1225.825926" id="circle40" r="2.716630" />
+	<circle class="st0" cx="359.232771" cy="1239.837731" id="circle42" r="2.716630" />
+	<circle class="st0" cx="340.463548" cy="1236.536551" id="circle44" r="2.716630" />
+	<circle class="st0" cx="327.484508" cy="1243.449982" id="circle46" r="2.716630" />
+	<circle class="st0" cx="348.295015" cy="1252.803821" id="circle48" r="2.716630" />
+	<circle class="st0" cx="363.157071" cy="1260.053413" id="circle50" r="2.716630" />
+	<circle class="st0" cx="371.150110" cy="1250.598672" id="circle52" r="2.716630" />
+	<circle class="st0" cx="383.625852" cy="1264.578507" id="circle54" r="2.716630" />
+	<circle class="st0" cx="404.785133" cy="1265.486628" id="circle56" r="2.716630" />
+	<circle class="st0" cx="418.366585" cy="1263.221046" id="circle58" r="2.716630" />
+	<circle class="st0" cx="413.547755" cy="1245.709089" id="circle60" r="2.716630" />
+	<circle class="st0" cx="392.754076" cy="1242.992414" id="circle62" r="2.716630" />
+	<circle class="st0" cx="444.916049" cy="1257.336738" id="circle64" r="2.716630" />
+	<circle class="st0" cx="450.891378" cy="1269.419932" id="circle66" r="2.716630" />
+	<circle class="st0" cx="478.856679" cy="1274.853147" id="circle68" r="2.716630" />
+	<circle class="st0" cx="1060.298894" cy="1322.894546" id="circle70" r="2.716630" />
+	<circle class="st0" cx="1097.695228" cy="1319.075094" id="circle72" r="2.716630" />
+	<circle class="st0" cx="1112.840633" cy="1300.844005" id="circle74" r="2.716630" />
+	<circle class="st0" cx="1130.309086" cy="1300.544131" id="circle76" r="2.716630" />
+	<circle class="st0" cx="1120.915993" cy="1285.694756" id="circle78" r="2.716630" />
+	<circle class="st0" cx="1145.711064" cy="1278.649936" id="circle80" r="2.716630" />
+	<circle class="st0" cx="1140.277714" cy="1269.394976" id="circle82" r="2.716630" />
+	<circle class="st0" cx="1160.254225" cy="1243.065393" id="circle84" r="2.716630" />
+	<circle class="st0" cx="1145.711064" cy="1238.576047" id="circle86" r="2.716630" />
+	<circle class="st0" cx="1160.790572" cy="1272.917386" id="circle88" r="2.716630" />
+	<circle class="st0" cx="508.199742" cy="1274.853147" id="circle90" r="2.716630" />
+	<circle class="st0" cx="431.195687" cy="1273.889448" id="circle92" r="2.716630" />
+	<path class="st0" d="M 1107.648275 1221.470532 L 1100.411835 1226.627480 c 63.744128 -16.642821 122.049510 -30.476562 168.024164 -37.940775" id="path94" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" />
+	<path class="st0" d="M 330.968406 1129.105070 h 10.636297 c -45.896077 -14.789009 -94.688949 -28.718460 -94.483468 -57.187362" id="path96" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" />
+	<path class="st0" d="M 190.624541 1277.569822 c 349.940142 21.050015 712.237317 54.816561 1084.994412 99.347151" id="path98" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" />
+</g>
+<g id="shadows">
+	<line class="st0" id="line101" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="648.323220" x2="635.046802" y1="896.914014" y2="909.288246" />
+	<line class="st0" id="line103" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="666.230490" x2="638.872054" y1="898.192762" y2="923.691992" />
+	<line class="st0" id="line105" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="682.070341" x2="638.872054" y1="898.736799" y2="938.999475" />
+	<line class="st0" id="line107" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="696.740237" x2="645.477517" y1="900.371336" y2="948.150429" />
+	<line class="st0" id="line109" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="711.995043" x2="660.787968" y1="901.460623" y2="949.187916" />
+	<line class="st0" id="line111" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="730.723225" x2="680.268735" y1="903.101164" y2="950.126996" />
+	<line class="st0" id="line113" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="747.749488" x2="698.036590" y1="904.648963" y2="950.983520" />
+	<line class="st0" id="line115" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="760.476271" x2="711.995043" y1="906.306567" y2="951.493158" />
+	<line class="st0" id="line117" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="780.628754" x2="732.854045" y1="907.761491" y2="952.289652" />
+	<line class="st0" id="line119" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="797.256129" x2="749.008676" y1="908.744142" y2="953.712875" />
+	<line class="st0" id="line121" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="812.539129" x2="763.725786" y1="908.744142" y2="954.240319" />
+	<line class="st0" id="line123" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="829.579151" x2="781.408994" y1="910.106054" y2="955.002752" />
+	<line class="st0" id="line125" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="844.341249" x2="797.333155" y1="911.894576" y2="955.708192" />
+	<line class="st0" id="line127" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="842.086526" x2="810.507457" y1="927.228768" y2="956.661909" />
+	<line class="st0" id="line129" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.502895" x1="842.086526" x2="823.555968" y1="940.438683" y2="957.709917" />
+	<circle cx="1060.298894" cy="1322.894546" id="circle131" r="1.983964" />
+	<circle cx="508.199742" cy="1274.853147" id="circle133" r="1.983964" />
+	<circle cx="478.856679" cy="1274.853147" id="circle135" r="1.983964" />
+	<circle cx="450.891378" cy="1269.419932" id="circle137" r="1.983964" />
+	<circle cx="444.916049" cy="1257.336738" id="circle139" r="1.983964" />
+	<circle cx="431.195687" cy="1273.889448" id="circle141" r="1.983964" />
+	<circle cx="418.366585" cy="1263.221046" id="circle143" r="1.983964" />
+	<circle cx="404.785133" cy="1265.486628" id="circle145" r="1.983964" />
+	<circle cx="413.547755" cy="1245.709089" id="circle147" r="1.983964" />
+	<circle cx="392.754076" cy="1242.992414" id="circle149" r="1.983964" />
+	<circle cx="376.583359" cy="1225.825926" id="circle151" r="1.983964" />
+	<circle cx="347.673211" cy="1218.781106" id="circle153" r="1.983964" />
+	<circle cx="319.516998" cy="1219.558918" id="circle155" r="1.983964" />
+	<circle cx="329.000506" cy="1204.785219" id="circle157" r="1.983964" />
+	<circle cx="314.083750" cy="1205.666362" id="circle159" r="1.983964" />
+	<circle cx="309.419544" cy="1182.672222" id="circle161" r="1.983964" />
+	<circle cx="303.986296" cy="1169.716385" id="circle163" r="1.983964" />
+	<circle cx="383.625852" cy="1264.578507" id="circle165" r="1.983964" />
+	<circle cx="371.150110" cy="1250.598672" id="circle167" r="1.983964" />
+	<circle cx="363.157071" cy="1260.053413" id="circle169" r="1.983964" />
+	<circle cx="348.295015" cy="1252.803821" id="circle171" r="1.983964" />
+	<circle cx="359.232771" cy="1239.837731" id="circle173" r="1.983964" />
+	<circle cx="340.463548" cy="1236.536551" id="circle175" r="1.983964" />
+	<circle cx="327.484508" cy="1243.449982" id="circle177" r="1.983964" />
+	<circle cx="1097.695228" cy="1319.075094" id="circle179" r="2.403007" />
+	<circle cx="1112.840633" cy="1300.844005" id="circle181" r="2.403007" />
+	<circle cx="1130.309086" cy="1300.544131" id="circle183" r="2.403007" />
+	<circle cx="1120.915993" cy="1285.694756" id="circle185" r="2.403007" />
+	<circle cx="1145.711064" cy="1278.649936" id="circle187" r="2.403007" />
+	<circle cx="1140.277714" cy="1269.394976" id="circle189" r="2.403007" />
+	<circle cx="1160.790572" cy="1272.917386" id="circle191" r="2.403007" />
+	<circle cx="1160.254225" cy="1243.065393" id="circle193" r="2.403007" />
+	<circle cx="1145.711064" cy="1238.576047" id="circle195" r="2.403007" />
+</g>
+</svg>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xml:space="preserve"
+   y="0px"
+   x="0px"
+   width="325.0"
+   viewBox="0 0 325.000000 432.900018"
+   version="1.1"
+   style="background-color:white"
+   id="svg210"
+   height="432.900018"><metadata
+   id="metadata216"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
+   id="defs214" />
+<style
+   type="text/css"
+   id="style2">.st0 {
+    fill: none;
+    stroke:#000000;
+    stroke-miterlimit: 10
+    stroke-width:0.432900;stroke-linecap:round;stroke-linejoin:round;}</style>
+<g
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="0.432900"
+   stroke="#000000"
+   id="Shadows">
+	<polygon
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="0.432900"
+   stroke="#000000"
+   points="119.896413 167.427657 119.235929 170.474532 117.285884 175.627898 114.991278 181.796903 110.348328 178.015846 103.480861 171.377310 112.282945 168.211362 118.376695 167.201963"
+   id="polygon207" />
+</g>
+</svg>

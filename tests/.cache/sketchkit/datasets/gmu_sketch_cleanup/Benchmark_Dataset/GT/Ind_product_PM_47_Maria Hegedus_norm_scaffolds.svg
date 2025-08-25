@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xml:space="preserve"
+   y="0px"
+   x="0px"
+   width="2275.0"
+   viewBox="0 0 2275.000000 1500.000000"
+   version="1.1"
+   style="background-color:white"
+   id="svg152"
+   height="1500.0"><metadata
+   id="metadata158"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
+   id="defs156" />
+<style
+   type="text/css"
+   id="style2">.st0 {
+    display: none
+    stroke-width:2.275000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+.st1 {
+    fill: #4C4C4C
+    stroke-width:2.275000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+.st2 {
+    fill: none;
+    stroke:#000000;
+    stroke-miterlimit: 10
+    stroke-width:2.275000;stroke-linecap:round;stroke-linejoin:round;}</style>
+<g
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="2.275000"
+   stroke="#000000"
+   id="scaffold_lines">
+	<path
+   fill="none"
+   stroke-width="2.275000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path58"
+   d="M 1534.254511 442.258844 c 14.490423 110.809954 28.946429 223.727909 9.217834 333.726053 c -8.412509 46.904497 -48.351199 331.123243 -186.383975 560.309390"
+   class="st2" />
+	<path
+   fill="none"
+   stroke-width="2.275000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path60"
+   d="M 1122.380067 755.282282 c 87.514828 -3.780789 139.059947 -4.963684 207.234346 -0.593143 c 106.491844 6.827121 188.892181 11.713493 305.559348 46.713677 c 52.500233 25.277878 48.107228 35.221352 40.160791 47.192210 s -24.265372 10.601043 -38.217669 14.033507"
+   class="st2" />
+	<path
+   fill="none"
+   stroke-width="2.275000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path62"
+   d="M 1971.256364 542.802262 c 0.188361 114.342405 -30.134241 226.648229 -68.506872 334.359759 s -65.509367 200.044320 -114.389877 307.242137"
+   class="st2" />
+</g>
+</svg>

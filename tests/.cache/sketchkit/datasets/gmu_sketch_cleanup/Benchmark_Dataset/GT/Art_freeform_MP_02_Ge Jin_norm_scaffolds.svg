@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   height="1986.0"
+   width="1567.0"
+   style="background-color:white"
+   version="1.1"
+   viewBox="0 0 1567 1986"
+   x="0px"
+   y="0px"
+   xml:space="preserve"
+   id="svg404"><metadata
+   id="metadata410"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
+   id="defs408" />
+<style
+   type="text/css"
+   id="style2">.st0{display:none;stroke-width:1.986000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+	.st1{display:inline;stroke-width:1.986000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+	.st2{clip-path:url(#SVGID_2_);stroke-width:1.986000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+	.st3{fill:none;stroke:#000000;stroke-miterlimit:10;stroke-width:1.986000;stroke-linecap:round;stroke-linejoin:round;}
+
+	.st4{fill:#FFFFFF;stroke:#000000;stroke-miterlimit:10;stroke-width:1.986000;stroke-linecap:round;stroke-linejoin:round;}</style>
+<g
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="1.986000"
+   stroke="#000000"
+   id="scaffold_line">
+	<path
+   fill="none"
+   class="st3"
+   d="M830.2583008,922.9852905c-2.75,9.5-15.1065063,29.1668091-27.8774414,36.3613892"
+   stroke="#000000"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   stroke-width="1.986000"
+   id="path397" />
+	<path
+   fill="none"
+   class="st3"
+   d="M815.25,801.25c0,0,22.75,21.25,32.25,31.75s28.25,40.5,28.25,40.5   s-34.1834106,23.5604858-54.4299927,59.5800171"
+   stroke="#000000"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   stroke-width="1.986000"
+   id="path399" />
+	<path
+   fill="none"
+   class="st3"
+   d="M787.5,808.1199951c0,0,62.6439819-18.0935059,86.7520142-21.2868042   c0,0,1.5023804-18.3931885,2.7251587-33.8331909c0,0-59.2572021,4.5247803-80.8571777,8.9423828   C796.1199951,761.9423828,786.3808594,791.3743896,787.5,808.1199951z"
+   stroke="#000000"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   stroke-width="1.986000"
+   id="path401" />
+</g>
+</svg>

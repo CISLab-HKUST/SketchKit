@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xml:space="preserve"
+   y="0px"
+   x="0px"
+   width="1500.0"
+   viewBox="0 0 1500.000000 1779.000000"
+   version="1.1"
+   style="background-color:white"
+   id="svg54"
+   height="1779.0"><metadata
+   id="metadata60"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
+   id="defs58" />
+<style
+   type="text/css"
+   id="style2">.st0 {
+    fill: none;
+    stroke:#000000;
+    stroke-miterlimit: 10
+    stroke-width:1.779000;stroke-linecap:round;stroke-linejoin:round;}</style>
+<g
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="1.779000"
+   stroke="#000000"
+   id="scaffold">
+	<path
+   fill="none"
+   stroke-width="1.779000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path47"
+   d="M 178.696556 1476.523590 c 416.128998 30.166779 839.290466 -41.790161 1222.059021 -207.806778"
+   class="st0" />
+	<path
+   fill="none"
+   stroke-width="1.779000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path49"
+   d="M 810.224228 885.505905 c 39.214401 115.702362 58.828201 238.020782 57.755508 360.183182 c -0.233536 26.597366 -1.438675 53.178711 -3.089828 79.725799 c -8.163605 131.254730 -27.259521 261.828003 -57.024994 389.923553"
+   class="st0" />
+	<path
+   fill="none"
+   stroke-width="1.779000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path51"
+   d="M 17.648572 1558.234100 c 93.972092 95.422974 207.490387 171.513214 331.464004 222.177124"
+   class="st0" />
+</g>
+</svg>

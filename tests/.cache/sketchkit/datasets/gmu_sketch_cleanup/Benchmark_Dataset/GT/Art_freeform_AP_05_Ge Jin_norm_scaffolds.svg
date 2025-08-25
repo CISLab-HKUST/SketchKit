@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   height="2069.0"
+   width="1348.0"
+   style="background-color:white"
+   version="1.1"
+   viewBox="0 0 1348 2069"
+   x="0px"
+   y="0px"
+   xml:space="preserve"
+   id="svg181"><metadata
+   id="metadata187"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
+   id="defs185" />
+<style
+   type="text/css"
+   id="style2">.st0{display:none;stroke-width:2.069000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+	.st1{display:inline;opacity:0.7;stroke-width:2.069000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+	.st2{opacity:0.7;stroke-width:2.069000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+	.st3{clip-path:url(#SVGID_2_);stroke-width:2.069000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+	.st4{fill:none;stroke:#000000;stroke-miterlimit:10;stroke-width:2.069000;stroke-linecap:round;stroke-linejoin:round;}</style>
+<g
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="2.069000"
+   stroke="#000000"
+   id="scaffold_line">
+	<path
+   fill="none"
+   class="st4"
+   d="M537.8568726,1639.0097656C530.3461914,1633.3535156,522,1627,522,1627s0,0,14,3.3330078   c-25.6665039-21-72.898407-96.7685547-102.8970032-212.2626953c-4.8388062-22.8291016-7.8193054-45.8807373-9.2113953-68.9707031"
+   stroke="#000000"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   stroke-width="2.069000"
+   id="path176" />
+	<path
+   fill="none"
+   class="st4"
+   d="M932.59375,1256.671875C942.4198608,1315.9716797,949.0625,1383.9589844,944,1435   c-1.6738281,16.8701172,5.2910156,30.7666016,14.9276733,40.2460938"
+   stroke="#000000"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   stroke-width="2.069000"
+   id="path178" />
+</g>
+</svg>

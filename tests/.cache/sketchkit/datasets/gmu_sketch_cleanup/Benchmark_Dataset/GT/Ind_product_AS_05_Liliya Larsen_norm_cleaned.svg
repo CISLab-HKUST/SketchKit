@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   height="3120.0"
+   width="4160.0"
+   style="background-color:white"
+   version="1.1"
+   viewBox="0 0 4160 3120"
+   x="0px"
+   y="0px"
+   xml:space="preserve"
+   id="svg70"><metadata
+   id="metadata76"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
+   id="defs74" />
+<style
+   type="text/css"
+   id="style2">.st0{display:none;stroke-width:4.160000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+	.st1{fill:none;stroke:#000000;stroke-miterlimit:10;stroke-width:4.160000;stroke-linecap:round;stroke-linejoin:round;}</style>
+<g
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="4.160000"
+   stroke="#000000"
+   id="cleaned">
+	<path
+   fill="none"
+   class="st1"
+   d="M1260,750l38,200c0,0-244,58-362,188s-166,278-122,446s102,214,252,414s568,706,618,770s152,142,440-18   s1090-668,1180-728s282-288,312-560s42-326-116-422s-786-428-872-468s-131.9304199-71.8565979-346.4196777-28.3587646   S1260,750,1260,750z"
+   stroke="#000000"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   stroke-width="4.160000"
+   id="path53" />
+	<path
+   fill="none"
+   class="st1"
+   d="M1260,750c0,0,325.1109619,225.7495728,956.1433105,390C2900,1318,3220,1106,3336,1076   s240.5249023-42.6092529,291.2624512,103.6953125"
+   stroke="#000000"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   stroke-width="4.160000"
+   id="path55" />
+	<path
+   fill="none"
+   class="st1"
+   d="M1684,2768c-55.6798096-69.0058594-88-170-70-378s116-428,340-570s650-310,872-392s490-200,490-200l72,140   l-88,596l-39.7148438,86.4431152"
+   stroke="#000000"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   stroke-width="4.160000"
+   id="path57" />
+	<path
+   fill="none"
+   class="st1"
+   d="M1298,950c0,0,284.5985107,206.2384033,686.5952148,333.104248   c394.4802246,124.4937744,694.465332,193.4903564,984.4985352,89.875"
+   stroke="#000000"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   stroke-width="4.160000"
+   id="path59" />
+	<path
+   fill="none"
+   class="st1"
+   d="M1366.6260986,884.1242065v53.9973145C1366.6260986,938.121521,1487,1002,1634,1061s363,124,575,183   s400,86,400,86v-31c0,0-294-59-504-122S1580,1015,1366.6260986,884.1242065z"
+   stroke="#000000"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   stroke-width="4.160000"
+   id="path61" />
+	<path
+   fill="none"
+   class="st1"
+   d="M1399.192627,903.4116821V934c0,0,284.796875,160.5467529,727.3022461,286.7733154"
+   stroke="#000000"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   stroke-width="4.160000"
+   id="path63" />
+	<polyline
+   fill="none"
+   class="st1"
+   points="2407.064209,1594.4868164 2488,1770 2447.5319824,2488 2392.7858887,2591.9931641  "
+   stroke="#000000"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   stroke-width="4.160000"
+   id="polyline65" />
+	<path
+   fill="none"
+   class="st1"
+   d="M2488,1770c0,0-288,114-438,272s-176,380-162,496s24,232,192,164s367.5319824-214,367.5319824-214L3300,1964   c0,0,142-72,208-228s104.1955566-336.2435303,42-386c-50-40-162,18-162,18L2488,1770z"
+   stroke="#000000"
+   stroke-linecap="round"
+   stroke-linejoin="round"
+   stroke-width="4.160000"
+   id="path67" />
+</g>
+</svg>

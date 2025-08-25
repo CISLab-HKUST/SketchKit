@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   height="1573.0"
+   width="1205.0"
+   xml:space="preserve"
+   style="background-color:white"
+   viewBox="0 0 1205 1573"
+   y="0px"
+   x="0px"
+   id="svg82"
+   version="1.1"><metadata
+   id="metadata13"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
+   id="defs11" />
+<style
+   id="style2"
+   type="text/css">.st0{fill:none;stroke:#000000;stroke-width:1.573000;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}</style>
+<g
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="1.573000"
+   stroke="#000000"
+   id="scaffold_line">
+	<path
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="1.573000"
+   stroke="#000000"
+   d="M890.6,461c0,0,277.2,242.3,8,672.4c-110.5,188.6-328.4,375.5-509.3,363.8"
+   class="st0"
+   id="path75" />
+	<line
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="1.573000"
+   stroke="#000000"
+   y2="664.3"
+   x2="335"
+   y1="789.3"
+   x1="118.8"
+   class="st0"
+   id="line77" />
+	<line
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="1.573000"
+   stroke="#000000"
+   y2="960.5"
+   x2="113.4"
+   y1="793.8"
+   x1="178.2"
+   class="st0"
+   id="line79" />
+</g>
+</svg>

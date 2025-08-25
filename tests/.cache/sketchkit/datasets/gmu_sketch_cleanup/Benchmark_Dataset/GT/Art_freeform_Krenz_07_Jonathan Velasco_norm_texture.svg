@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xml:space="preserve"
+   y="0px"
+   x="0px"
+   width="1500.0"
+   viewBox="0 0 1500.000000 2122.000000"
+   version="1.1"
+   style="background-color:white"
+   id="svg706"
+   height="2122.0"><metadata
+   id="metadata712"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
+   id="defs710" />
+<style
+   type="text/css"
+   id="style2">.st0 {
+    fill: none;
+    stroke:#000000;
+    stroke-miterlimit: 10
+    stroke-width:2.122000;stroke-linecap:round;stroke-linejoin:round;}
+
+.st1 {
+    fill: #ED2724;
+    stroke:#000000;
+    stroke-miterlimit: 10
+    stroke-width:2.122000;stroke-linecap:round;stroke-linejoin:round;}
+
+.st2 {
+    font-family: &quot;MyriadPro-Regular&quot;
+    stroke-width:2.122000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+.st3 {
+    font-size: 5.71556px
+    stroke-width:2.122000;stroke-linecap:round;stroke-linejoin:round;stroke:#000000;}
+
+.st4 {
+    fill: none;
+    stroke:#000000;
+    stroke-miterlimit: 10
+    stroke-width:2.122000;stroke-linecap:round;stroke-linejoin:round;}</style>
+<g
+   fill="none"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke-width="2.122000"
+   stroke="#000000"
+   id="Texture">
+	<path
+   fill="none"
+   stroke-width="2.122000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path695"
+   d="M 842.890783 667.001599 c 1.102969 3.769529 2.205936 7.539059 3.308817 11.308545 c 3.371154 11.521649 6.823976 23.225188 13.334107 33.311382"
+   class="st0" />
+	<path
+   fill="none"
+   stroke-width="2.122000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path697"
+   d="M 867.345864 717.836842 c 6.453777 9.707065 13.539840 18.993689 21.198283 27.781542"
+   class="st0" />
+	<path
+   fill="none"
+   stroke-width="2.122000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path699"
+   d="M 854.411694 671.798583 c 10.265442 26.913265 23.110227 52.842035 38.301052 77.315366"
+   class="st0" />
+	<path
+   fill="none"
+   stroke-width="2.122000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path701"
+   d="M 781.787540 679.986531 c -0.805942 18.037631 5.602926 36.297599 17.505133 49.874892"
+   class="st0" />
+	<path
+   fill="none"
+   stroke-width="2.122000"
+   stroke-linejoin="round"
+   stroke-linecap="round"
+   stroke="#000000"
+   id="path703"
+   d="M 789.874095 678.718317 c -0.704765 14.142174 2.302084 28.453060 8.638906 41.115736"
+   class="st0" />
+</g>
+</svg>

@@ -212,9 +212,14 @@ class SketchVG:
             stroke_num += self.path_list[path_i].get_length()
         return stroke_num
 
-    def rasterize(self):
-        # TODO:
-        print()
+    def rasterize(self, outpath=None, color_switch='default', canvas_size=512, canvas_color=(1, 1, 1)):
+        from PIL import Image
+        from sketchkit.renderer.naive_rasterization import Renderer
+        renderer = Renderer(canvas_size, canvas_color)
+        raster_image = renderer.render(self)
+        if outpath is not None:
+            raster_image_png = Image.fromarray(raster_image, 'RGB')
+            raster_image_png.save(outpath, 'PNG')
 
     def vectorize(self):
         # TODO:

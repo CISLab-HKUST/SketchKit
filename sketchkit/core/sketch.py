@@ -2,7 +2,14 @@ import numpy as np
 
 
 class Point:
-    """A 2D point with x and y coordinates stored as 32-bit floats."""
+    """2D point.
+
+    Represents a 2D point with x and y coordinates stored as 32-bit floats.
+
+    Attributes:
+        x (np.float32): X coordinate.
+        y (np.float32): Y coordinate.
+    """
 
     def __init__(
         self,
@@ -14,26 +21,16 @@ class Point:
 
 
 class Vertex(Point):
-    """
-    A vertex point with additional drawing attributes.
-    Extends the base Point class with stroke-specific properties including pressure,
-    thickness, color, and opacity for rendering purposes.
-    Args:
-        x (float | np.float32): The x-coordinate of the vertex.
-        y (float | np.float32): The y-coordinate of the vertex.
-        pressure (None | float | np.float32, optional): The pressure value applied
-            at this vertex. Defaults to None.
-        thickness (None | float | np.float32, optional): The stroke thickness at
-            this vertex. Defaults to None.
-        color (None | tuple[float, float, float] | np.ndarray, optional): RGB color
-            values as a tuple or numpy array. Defaults to None.
-        opacity (None | float | np.float32, optional): The opacity/transparency
-            value (0.0 to 1.0). Defaults to None.
+    """Vertex point with drawing attributes.
+
+    Extends Point with stroke-specific properties: pressure, thickness, color,
+    and opacity for rendering.
+
     Attributes:
         pressure (np.float32 | None): Normalized pressure value.
         thickness (np.float32 | None): Stroke thickness value.
         color (np.ndarray | None): RGB color array with float32 dtype.
-        opacity (np.float32 | None): Opacity value.
+        opacity (np.float32 | None): Opacity value (0.0–1.0).
     """
 
     def __init__(
@@ -45,6 +42,20 @@ class Vertex(Point):
         color: None | tuple[float, float, float] | np.ndarray = None,
         opacity: None | float | np.float32 = None,
     ):
+        """Initialize a Vertex.
+
+        Args:
+            x (float | np.float32): X coordinate.
+            y (float | np.float32): Y coordinate.
+            pressure (float | np.float32 | None, optional): Pressure at this
+                vertex. Defaults to None.
+            thickness (float | np.float32 | None, optional): Stroke thickness at
+                this vertex. Defaults to None.
+            color (tuple[float, float, float] | np.ndarray | None, optional):
+                RGB color as tuple or numpy array. Defaults to None.
+            opacity (float | np.float32 | None, optional): Opacity (0.0–1.0).
+                Defaults to None.
+        """
         super().__init__(x, y)
         self.pressure = np.float32(pressure) if pressure is not None else None
         self.thickness = np.float32(thickness) if thickness is not None else None
@@ -53,28 +64,21 @@ class Vertex(Point):
 
 
 class Stroke:
-    """
-    Represents a stroke in a sketch, defined by two vertices and two control points.
-    A stroke is a fundamental drawing element that connects two vertices (start and end points)
-    with optional control points for creating curved paths. It supports various visual properties
-    such as color, pressure, thickness, and opacity that can be applied to both vertices.
+    """Stroke defined by two vertices and two control points.
+
+    Connects two vertices (start and end) with optional control points for a
+    curved path. Visual properties (color, pressure, thickness, opacity) are
+    applied to both vertices together.
+
     Attributes:
-        p_start (Vertex): The starting vertex of the stroke.
-        p_end (Vertex): The ending vertex of the stroke.
-        p_crtl1 (Point): The first control point for curve definition.
-        p_crtl2 (Point): The second control point for curve definition.
-    Properties:
-        color (list | None): RGB color values as a list of floats for both vertices.
-            Can be set with a tuple, numpy array, or None.
-        pressure (list | None): Pressure values for both vertices as floats.
-            Can be set with a single float value or None.
-        thickness (list | None): Thickness values for both vertices as floats.
-            Can be set with a single float value or None.
-        opacity (list | None): Opacity values for both vertices as floats.
-            Can be set with a single float value or None.
-    Note:
-        When setting properties, the same value is applied to both start and end vertices.
-        All numeric properties are automatically converted to numpy float32 format.
+        p_start (Vertex): Starting vertex.
+        p_end (Vertex): Ending vertex.
+        p_crtl1 (Point): First control point for curve definition.
+        p_crtl2 (Point): Second control point for curve definition.
+
+    Notes:
+        When setting properties, the same value is applied to both start and end
+        vertices. Numeric properties are converted to np.float32 automatically.
     """
 
     def __init__(
@@ -84,6 +88,14 @@ class Stroke:
         p_crtl1: Point,
         p_crtl2: Point,
     ):
+        """Initialize a Stroke.
+
+        Args:
+            p_start (Vertex): Starting vertex.
+            p_end (Vertex): Ending vertex.
+            p_crtl1 (Point): First control point.
+            p_crtl2 (Point): Second control point.
+        """
         self.p_start = p_start
         self.p_end = p_end
         self.p_crtl1 = p_crtl1
@@ -101,73 +113,114 @@ class Stroke:
 
     @property
     def color(self):
-        """
-        Get the color attribute of all vertices in the sketch.
-        
+        """Colors of the start and end vertices.
+
         Returns:
-            numpy.ndarray or None: Array containing color values for each vertex,
-                or None if no color attribute is set.
+            list[np.ndarray | None]: A two-element list of RGB colors for the
+            start and end vertices (each as float32 arrays) or None.
         """
         return self._get_vertices_attribute("color")
 
     @color.setter
     def color(self, value: None | tuple[float, float, float] | np.ndarray):
+        """Set color for both vertices.
+
+        Args:
+            value (tuple[float, float, float] | np.ndarray | None): RGB color as
+                tuple/ndarray, or None to clear.
+        """
         color_value = np.array(value, dtype=np.float32) if value is not None else None
         self._set_vertices_attribute("color", color_value)
 
     @property
     def pressure(self):
+        """Pressures of the start and end vertices.
+
+        Returns:
+            list[np.float32 | None]: Two-element list of pressures or None.
+        """
         return self._get_vertices_attribute("pressure")
 
     @pressure.setter
     def pressure(self, value: None | float | np.float32):
+        """Set pressure for both vertices.
+
+        Args:
+            value (float | np.float32 | None): Pressure value or None to clear.
+        """
         pressure_value = np.float32(value) if value is not None else None
         self._set_vertices_attribute("pressure", pressure_value)
 
     @property
     def thickness(self):
+        """Thicknesses of the start and end vertices.
+
+        Returns:
+            list[np.float32 | None]: Two-element list of thicknesses or None.
+        """
         return self._get_vertices_attribute("thickness")
 
     @thickness.setter
     def thickness(self, value: None | float | np.float32):
+        """Set thickness for both vertices.
+
+        Args:
+            value (float | np.float32 | None): Thickness value or None to clear.
+        """
         thickness_value = np.float32(value) if value is not None else None
         self._set_vertices_attribute("thickness", thickness_value)
 
     @property
     def opacity(self):
+        """Opacities of the start and end vertices.
+
+        Returns:
+            list[np.float32 | None]: Two-element list of opacities or None.
+        """
         return self._get_vertices_attribute("opacity")
 
     @opacity.setter
     def opacity(self, value: None | float | np.float32):
+        """Set opacity for both vertices.
+
+        Args:
+            value (float | np.float32 | None): Opacity (0.0–1.0) or None to clear.
+        """
         opacity_value = np.float32(value) if value is not None else None
         self._set_vertices_attribute("opacity", opacity_value)
 
 
 class Path:
-    """
-    A Path represents a collection of strokes that can be manipulated as a group.
-    This class provides a convenient way to manage multiple strokes and apply
-    common operations to all strokes in the path simultaneously.
+    """Collection of strokes.
+
+    Manages multiple strokes and applies common operations to all of them.
+
     Attributes:
-        strokes (list[Stroke]): List of stroke objects that make up this path.
-    Properties:
-        stroke_num (int): Number of strokes in the path.
-        color (list): List of colors for each stroke in the path.
-        pressure (list): List of pressure values for each stroke in the path.
-        thickness (list): List of thickness values for each stroke in the path.
-        opacity (list): List of opacity values for each stroke in the path.
-    Example:
+        strokes (list[Stroke]): Strokes in this path.
+
+    Examples:
         >>> path = Path([stroke1, stroke2, stroke3])
         >>> path.color = (1.0, 0.0, 0.0)  # Set all strokes to red
-        >>> path.thickness = 2.5  # Set all strokes to thickness 2.5
-        >>> print(path.stroke_num)  # Print number of strokes
+        >>> path.thickness = 2.5          # Set all strokes to thickness 2.5
+        >>> path.stroke_num
+        3
     """
 
     def __init__(self, strokes: list[Stroke] | None = None):
+        """Initialize a Path.
+
+        Args:
+            strokes (list[Stroke] | None, optional): Initial strokes. Defaults to None.
+        """
         self.strokes = strokes if strokes else []
 
     @property
     def stroke_num(self):
+        """Number of strokes in the path.
+
+        Returns:
+            int: Count of strokes.
+        """
         return len(self.strokes)
 
     def _get_strokes_attribute(self, attribute: str):
@@ -179,74 +232,125 @@ class Path:
 
     @property
     def color(self):
+        """Colors for each stroke.
+
+        Returns:
+            list[list[np.ndarray | None]]: For each stroke, a two-element list of
+            vertex colors (RGB arrays) or None.
+        """
         return self._get_strokes_attribute("color")
 
     @color.setter
     def color(self, value: None | tuple[float, float, float] | np.ndarray):
+        """Set color for all strokes.
+
+        Args:
+            value (tuple[float, float, float] | np.ndarray | None): RGB color as
+                tuple/ndarray, or None to clear.
+        """
         color_value = np.array(value, dtype=np.float32) if value is not None else None
         self._set_strokes_attribute("color", color_value)
 
     @property
     def pressure(self):
+        """Pressures for each stroke.
+
+        Returns:
+            list[list[np.float32 | None]]: For each stroke, a two-element list of
+            vertex pressures or None.
+        """
         return self._get_strokes_attribute("pressure")
 
     @pressure.setter
     def pressure(self, value: None | float | np.float32):
+        """Set pressure for all strokes.
+
+        Args:
+            value (float | np.float32 | None): Pressure value or None to clear.
+        """
         pressure_value = np.float32(value) if value is not None else None
         self._set_strokes_attribute("pressure", pressure_value)
 
     @property
     def thickness(self):
+        """Thicknesses for each stroke.
+
+        Returns:
+            list[list[np.float32 | None]]: For each stroke, a two-element list of
+            vertex thicknesses or None.
+        """
         return self._get_strokes_attribute("thickness")
 
     @thickness.setter
     def thickness(self, value: None | float | np.float32):
+        """Set thickness for all strokes.
+
+        Args:
+            value (float | np.float32 | None): Thickness value or None to clear.
+        """
         thickness_value = np.float32(value) if value is not None else None
         self._set_strokes_attribute("thickness", thickness_value)
 
     @property
     def opacity(self):
+        """Opacities for each stroke.
+
+        Returns:
+            list[list[np.float32 | None]]: For each stroke, a two-element list of
+            vertex opacities or None.
+        """
         return self._get_strokes_attribute("opacity")
 
     @opacity.setter
     def opacity(self, value: None | float | np.float32):
+        """Set opacity for all strokes.
+
+        Args:
+            value (float | np.float32 | None): Opacity (0.0–1.0) or None to clear.
+        """
         opacity_value = np.float32(value) if value is not None else None
         self._set_strokes_attribute("opacity", opacity_value)
 
 
 class Sketch:
-    """
-    A class representing a sketch composed of multiple paths.
-    A Sketch is a collection of Path objects that together form a complete drawing.
-    It provides convenient methods to access and modify properties of all paths
-    collectively, such as color, pressure, thickness, and opacity.
+    """Sketch composed of multiple paths.
+
+    A Sketch collects Path objects to form a complete drawing and exposes
+    convenient accessors for color, pressure, thickness, and opacity.
+
     Attributes:
-        paths (list[Path]): List of Path objects that make up the sketch.
-    Properties:
-        path_num (int): Number of paths in the sketch.
-        stroke_num (int): Total number of strokes across all paths in the sketch.
-        color (list): List of colors for each path in the sketch.
-        pressure (list): List of pressure values for each path in the sketch.
-        thickness (list): List of thickness values for each path in the sketch.
-        opacity (list): List of opacity values for each path in the sketch.
-    Methods:
-        __init__(paths=None): Initialize a sketch with optional list of paths.
-    Example:
-        >>> sketch = Sketch()
+        paths (list[Path]): Paths in the sketch.
+
+    Examples:
         >>> sketch = Sketch([path1, path2, path3])
         >>> sketch.color = (1.0, 0.0, 0.0)  # Set all paths to red
-        >>> sketch.thickness = 2.5  # Set all paths to thickness 2.5
+        >>> sketch.thickness = 2.5          # Set all paths to thickness 2.5
     """
 
     def __init__(self, paths: list[Path] | None = None):
+        """Initialize a Sketch.
+
+        Args:
+            paths (list[Path] | None, optional): Initial paths. Defaults to None.
+        """
         self.paths = paths if paths else []
 
     @property
     def path_num(self):
+        """Number of paths in the sketch.
+
+        Returns:
+            int: Count of paths.
+        """
         return len(self.paths)
 
     @property
     def stroke_num(self):
+        """Total number of strokes across all paths.
+
+        Returns:
+            int: Sum of strokes in all paths.
+        """
         return sum(path.stroke_num for path in self.paths)
     
     def _get_paths_attribute(self, attribute: str):
@@ -258,36 +362,81 @@ class Sketch:
 
     @property
     def color(self):
+        """Colors per path.
+
+        Returns:
+            list[list[list[np.ndarray | None]]]: For each path, a list of stroke
+            colors where each stroke has a two-element list of vertex colors.
+        """
         return self._get_paths_attribute("color")
 
     @color.setter
     def color(self, value: None | tuple[float, float, float] | np.ndarray):
+        """Set color for all paths.
+
+        Args:
+            value (tuple[float, float, float] | np.ndarray | None): RGB color as
+                tuple/ndarray, or None to clear.
+        """
         color_value = np.array(value, dtype=np.float32) if value is not None else None
         self._set_paths_attribute("color", color_value)
 
     @property
     def pressure(self):
+        """Pressures per path.
+
+        Returns:
+            list[list[list[np.float32 | None]]]: For each path, a list of stroke
+            pressures where each stroke has a two-element list of vertex pressures.
+        """
         return self._get_paths_attribute("pressure")
 
     @pressure.setter
     def pressure(self, value: None | float | np.float32):
+        """Set pressure for all paths.
+
+        Args:
+            value (float | np.float32 | None): Pressure value or None to clear.
+        """
         pressure_value = np.float32(value) if value is not None else None
         self._set_paths_attribute("pressure", pressure_value)
 
     @property
     def thickness(self):
+        """Thicknesses per path.
+
+        Returns:
+            list[list[list[np.float32 | None]]]: For each path, a list of stroke
+            thicknesses where each stroke has a two-element list of vertex values.
+        """
         return self._get_paths_attribute("thickness")
 
     @thickness.setter
     def thickness(self, value: None | float | np.float32):
+        """Set thickness for all paths.
+
+        Args:
+            value (float | np.float32 | None): Thickness value or None to clear.
+        """
         thickness_value = np.float32(value) if value is not None else None
         self._set_paths_attribute("thickness", thickness_value)
 
     @property
     def opacity(self):
+        """Opacities per path.
+
+        Returns:
+            list[list[list[np.float32 | None]]]: For each path, a list of stroke
+            opacities where each stroke has a two-element list of vertex values.
+        """
         return self._get_paths_attribute("opacity")
 
     @opacity.setter
     def opacity(self, value: None | float | np.float32):
+        """Set opacity for all paths.
+
+        Args:
+            value (float | np.float32 | None): Opacity (0.0–1.0) or None to clear.
+        """
         opacity_value = np.float32(value) if value is not None else None
         self._set_paths_attribute("opacity", opacity_value)

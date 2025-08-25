@@ -1,230 +1,442 @@
 import numpy as np
 
-class Vertex:
-    """
-    Represents a 2D vertex/point with x and y coordinates.
-    A Vertex is a fundamental geometric primitive that defines a point in 2D space.
-    It serves as a building block for more complex geometric shapes and sketching operations.
 
-    Args:
-        x : The x-coordinate position.
-        y : The y-coordinate position.
+class Point:
+    """2D point.
+
+    Represents a 2D point with x and y coordinates stored as 32-bit floats.
 
     Attributes:
-        x (np.float32): The x-coordinate of the vertex.
-        y (np.float32): The y-coordinate of the vertex.
-
-    Example:
-        >>> vertex = Vertex(10.0, 20.0)
-        >>> print(vertex.x, vertex.y)
-        10.0 20.0
+        x (np.float32): X coordinate.
+        y (np.float32): Y coordinate.
     """
 
-    def __init__(self, x: float|np.float32, y: float|np.float32):
+    def __init__(
+        self,
+        x: float | np.float32,
+        y: float | np.float32,
+    ):
         self.x = np.float32(x)
         self.y = np.float32(y)
 
 
-class BaseStroke:
-    """ A base class representing a stroke in a sketch.
-    A stroke is a fundamental drawing element that connects two points with specific
-    visual properties like thickness, pressure, color, opacity, and texture.
+class Vertex(Point):
+    """Vertex point with drawing attributes.
 
-    Args:
-        p_start (Vertex): The starting point of the stroke.
-        p_end (Vertex): The ending point of the stroke.
-        thickness: The thickness/width of the stroke.
-        pressure: The pressure applied when drawing the stroke.
-        color: The color of the stroke.
-        opacity: The opacity/transparency level of the stroke.
-        texture: The texture pattern applied to the stroke.
+    Extends Point with stroke-specific properties: pressure, thickness, color,
+    and opacity for rendering.
 
     Attributes:
-        p_start (Vertex): The starting vertex of the stroke.
-        p_end (Vertex): The ending vertex of the stroke.
-        thickness: The stroke thickness.
-        pressure: The applied pressure value.
-        color: The stroke color.
-        opacity: The stroke opacity level.
-        texture: The stroke texture.
+        pressure (np.float32 | None): Normalized pressure value.
+        thickness (np.float32 | None): Stroke thickness value.
+        color (np.ndarray | None): RGB color array with float32 dtype.
+        opacity (np.float32 | None): Opacity value (0.0–1.0).
     """
 
-    def __init__(self, p_start: Vertex, p_end: Vertex, thickness, pressure, color, opacity, texture):
+    def __init__(
+        self,
+        x: float | np.float32,
+        y: float | np.float32,
+        pressure: None | float | np.float32 = None,
+        thickness: None | float | np.float32 = None,
+        color: None | tuple[float, float, float] | np.ndarray = None,
+        opacity: None | float | np.float32 = None,
+    ):
+        """Initialize a Vertex.
+
+        Args:
+            x (float | np.float32): X coordinate.
+            y (float | np.float32): Y coordinate.
+            pressure (float | np.float32 | None, optional): Pressure at this
+                vertex. Defaults to None.
+            thickness (float | np.float32 | None, optional): Stroke thickness at
+                this vertex. Defaults to None.
+            color (tuple[float, float, float] | np.ndarray | None, optional):
+                RGB color as tuple or numpy array. Defaults to None.
+            opacity (float | np.float32 | None, optional): Opacity (0.0–1.0).
+                Defaults to None.
+        """
+        super().__init__(x, y)
+        self.pressure = np.float32(pressure) if pressure is not None else None
+        self.thickness = np.float32(thickness) if thickness is not None else None
+        self.color = np.array(color, dtype=np.float32) if color is not None else None
+        self.opacity = np.float32(opacity) if opacity is not None else None
+
+
+class Stroke:
+    """Stroke defined by two vertices and two control points.
+
+    Connects two vertices (start and end) with optional control points for a
+    curved path. Visual properties (color, pressure, thickness, opacity) are
+    applied to both vertices together.
+
+    Attributes:
+        p_start (Vertex): Starting vertex.
+        p_end (Vertex): Ending vertex.
+        p_crtl1 (Point): First control point for curve definition.
+        p_crtl2 (Point): Second control point for curve definition.
+
+    Notes:
+        When setting properties, the same value is applied to both start and end
+        vertices. Numeric properties are converted to np.float32 automatically.
+    """
+
+    def __init__(
+        self,
+        p_start: Vertex,
+        p_end: Vertex,
+        p_crtl1: Point,
+        p_crtl2: Point,
+    ):
+        """Initialize a Stroke.
+
+        Args:
+            p_start (Vertex): Starting vertex.
+            p_end (Vertex): Ending vertex.
+            p_crtl1 (Point): First control point.
+            p_crtl2 (Point): Second control point.
+        """
         self.p_start = p_start
         self.p_end = p_end
-        self.thickness = thickness
-        self.pressure = pressure
-        self.color = color
-        self.opacity = opacity
-        self.texture = texture
-
-
-# class Line(BaseStroke):
-#     """ A class representing a stroke with a polyline.
-#     A polyline connects two points.
-#
-#     Args:
-#         p_start (Vertex): The starting point of the stroke.
-#         p_end (Vertex): The ending point of the stroke.
-#         thickness: The thickness/width of the stroke.
-#         pressure: The pressure applied when drawing the stroke.
-#         color: The color of the stroke.
-#         opacity: The opacity/transparency level of the stroke.
-#         texture: The texture pattern applied to the stroke.
-#     """
-#
-#     def __init__(self, p_start: Vertex, p_end: Vertex,
-#                  thickness=None, pressure=None, color=None, opacity=None, texture=None):
-#         super(Line, self).__init__(p_start, p_end, thickness, pressure, color, opacity, texture)
-
-
-# class QuadraticBezierCurve(BaseStroke):
-#     """ A class representing a stroke with a quadratic Bézier curve.
-#     A quadratic Bézier curve is made up of a starting point, a control point, and an end point.
-#
-#     Args:
-#         p_start (Vertex): The starting point of the stroke.
-#         p_crtl (Vertex): The control point of the stroke.
-#         p_end (Vertex): The ending point of the stroke.
-#         thickness: The thickness/width of the stroke.
-#         pressure: The pressure applied when drawing the stroke.
-#         color: The color of the stroke.
-#         opacity: The opacity/transparency level of the stroke.
-#         texture: The texture pattern applied to the stroke.
-#
-#     Attributes:
-#         p_crtl (Vertex): The control point of the stroke.
-#     """
-#
-#     def __init__(self, p_start: Vertex, p_crtl: Vertex, p_end: Vertex,
-#                  thickness=None, pressure=None, color=None, opacity=None, texture=None):
-#         super(QuadraticBezierCurve, self).__init__(p_start, p_end, thickness, pressure, color, opacity, texture)
-#         self.p_crtl = p_crtl
-
-
-class CubicBezierCurve(BaseStroke):
-    """ A class representing a stroke with a cubic Bézier curve.
-    A cubic Bézier curve is made up of a starting point, two control points, and an end point.
-
-    Args:
-        p_start (Vertex): The starting point of the stroke.
-        p_crtl1 (Vertex): The first control point of the stroke.
-        p_crtl2 (Vertex): The second control point of the stroke.
-        p_end (Vertex): The ending point of the stroke.
-        thickness: The thickness/width of the stroke.
-        pressure: The pressure applied when drawing the stroke.
-        color: The color of the stroke.
-        opacity: The opacity/transparency level of the stroke.
-        texture: The texture pattern applied to the stroke.
-
-    Attributes:
-        p_crtl1 (Vertex): The first control point of the stroke.
-        p_crtl2 (Vertex): The second control point of the stroke.
-    """
-
-    def __init__(self, p_start: Vertex, p_crtl1: Vertex, p_crtl2: Vertex, p_end: Vertex,
-                 thickness=None, pressure=None, color=None, opacity=None, texture=None):
-        super(CubicBezierCurve, self).__init__(p_start, p_end, thickness, pressure, color, opacity, texture)
         self.p_crtl1 = p_crtl1
         self.p_crtl2 = p_crtl2
 
+    def _get_vertices_attribute(self, attribute: str):
+        return [
+            getattr(self.p_start, attribute),
+            getattr(self.p_end, attribute),
+        ]
+
+    def _set_vertices_attribute(self, attribute: str, value):
+        setattr(self.p_start, attribute, value)
+        setattr(self.p_end, attribute, value)
+
+    @property
+    def color(self):
+        """Colors of the start and end vertices.
+
+        Returns:
+            list[np.ndarray | None]: A two-element list of RGB colors for the
+            start and end vertices (each as float32 arrays) or None.
+        """
+        return self._get_vertices_attribute("color")
+
+    @color.setter
+    def color(self, value: None | tuple[float, float, float] | np.ndarray):
+        """Set color for both vertices.
+
+        Args:
+            value (tuple[float, float, float] | np.ndarray | None): RGB color as
+                tuple/ndarray, or None to clear.
+        """
+        color_value = np.array(value, dtype=np.float32) if value is not None else None
+        self._set_vertices_attribute("color", color_value)
+
+    @property
+    def pressure(self):
+        """Pressures of the start and end vertices.
+
+        Returns:
+            list[np.float32 | None]: Two-element list of pressures or None.
+        """
+        return self._get_vertices_attribute("pressure")
+
+    @pressure.setter
+    def pressure(self, value: None | float | np.float32):
+        """Set pressure for both vertices.
+
+        Args:
+            value (float | np.float32 | None): Pressure value or None to clear.
+        """
+        pressure_value = np.float32(value) if value is not None else None
+        self._set_vertices_attribute("pressure", pressure_value)
+
+    @property
+    def thickness(self):
+        """Thicknesses of the start and end vertices.
+
+        Returns:
+            list[np.float32 | None]: Two-element list of thicknesses or None.
+        """
+        return self._get_vertices_attribute("thickness")
+
+    @thickness.setter
+    def thickness(self, value: None | float | np.float32):
+        """Set thickness for both vertices.
+
+        Args:
+            value (float | np.float32 | None): Thickness value or None to clear.
+        """
+        thickness_value = np.float32(value) if value is not None else None
+        self._set_vertices_attribute("thickness", thickness_value)
+
+    @property
+    def opacity(self):
+        """Opacities of the start and end vertices.
+
+        Returns:
+            list[np.float32 | None]: Two-element list of opacities or None.
+        """
+        return self._get_vertices_attribute("opacity")
+
+    @opacity.setter
+    def opacity(self, value: None | float | np.float32):
+        """Set opacity for both vertices.
+
+        Args:
+            value (float | np.float32 | None): Opacity (0.0–1.0) or None to clear.
+        """
+        opacity_value = np.float32(value) if value is not None else None
+        self._set_vertices_attribute("opacity", opacity_value)
+
 
 class Path:
-    """ The class for a path.
-    A path contains a list of strokes.
+    """Collection of strokes.
 
-    Args:
-        stroke_list (list): A list of strokes, each stroke in shape (4, 2) indicating a cubic Bézier curve with four control points.
-        thickness_list: In size (N_strokes). Set to None by default.
-        pressure_list: In size (N_strokes). Set to None by default.
-        color_list: In shape (N_strokes, 3). Set to None by default.
-        opacity_list: In size (N_strokes). Set to None by default.
-        texture_list: In size (N_strokes). Set to None by default.
+    Manages multiple strokes and applies common operations to all of them.
 
     Attributes:
-        stroke_list (list): A list of strokes, each stroke is a CubicBezierCurve.
+        strokes (list[Stroke]): Strokes in this path.
+
+    Examples:
+        >>> path = Path([stroke1, stroke2, stroke3])
+        >>> path.color = (1.0, 0.0, 0.0)  # Set all strokes to red
+        >>> path.thickness = 2.5          # Set all strokes to thickness 2.5
+        >>> path.stroke_num
+        3
     """
 
-    def __init__(self, stroke_list: list,
-                 thickness_list=None, pressure_list=None,
-                 color_list=None, opacity_list=None, texture_list=None):
-        self.stroke_list = []
+    def __init__(self, strokes: list[Stroke] | None = None):
+        """Initialize a Path.
 
-        stroke_num = len(stroke_list)
-        for stroke_i in range(stroke_num):
-            stroke = stroke_list[stroke_i]
-            stroke_thickness = thickness_list[stroke_i] if thickness_list is not None else None
-            stroke_pressure = pressure_list[stroke_i] if pressure_list is not None else None
-            stroke_color = color_list[stroke_i] if color_list is not None else None
-            stroke_opacity = opacity_list[stroke_i] if opacity_list is not None else None
-            stroke_texture = texture_list[stroke_i] if texture_list is not None else None
+        Args:
+            strokes (list[Stroke] | None, optional): Initial strokes. Defaults to None.
+        """
+        self.strokes = strokes if strokes else []
 
-            p_start = Vertex(stroke[0][0], stroke[0][1])
-            p_crtl1 = Vertex(stroke[1][0], stroke[1][1])
-            p_crtl2 = Vertex(stroke[2][0], stroke[2][1])
-            p_end = Vertex(stroke[3][0], stroke[3][1])
-            self.stroke_list.append(CubicBezierCurve(p_start, p_crtl1, p_crtl2, p_end,
-                                                     stroke_thickness, stroke_pressure, stroke_color, stroke_opacity, stroke_texture))
+    @property
+    def stroke_num(self):
+        """Number of strokes in the path.
 
-    def get_length(self):
-        return len(self.stroke_list)
+        Returns:
+            int: Count of strokes.
+        """
+        return len(self.strokes)
+
+    def _get_strokes_attribute(self, attribute: str):
+        return [getattr(stroke, attribute) for stroke in self.strokes]
+
+    def _set_strokes_attribute(self, attribute: str, value):
+        for stroke in self.strokes:
+            setattr(stroke, attribute, value)
+
+    @property
+    def color(self):
+        """Colors for each stroke.
+
+        Returns:
+            list[list[np.ndarray | None]]: For each stroke, a two-element list of
+            vertex colors (RGB arrays) or None.
+        """
+        return self._get_strokes_attribute("color")
+
+    @color.setter
+    def color(self, value: None | tuple[float, float, float] | np.ndarray):
+        """Set color for all strokes.
+
+        Args:
+            value (tuple[float, float, float] | np.ndarray | None): RGB color as
+                tuple/ndarray, or None to clear.
+        """
+        color_value = np.array(value, dtype=np.float32) if value is not None else None
+        self._set_strokes_attribute("color", color_value)
+
+    @property
+    def pressure(self):
+        """Pressures for each stroke.
+
+        Returns:
+            list[list[np.float32 | None]]: For each stroke, a two-element list of
+            vertex pressures or None.
+        """
+        return self._get_strokes_attribute("pressure")
+
+    @pressure.setter
+    def pressure(self, value: None | float | np.float32):
+        """Set pressure for all strokes.
+
+        Args:
+            value (float | np.float32 | None): Pressure value or None to clear.
+        """
+        pressure_value = np.float32(value) if value is not None else None
+        self._set_strokes_attribute("pressure", pressure_value)
+
+    @property
+    def thickness(self):
+        """Thicknesses for each stroke.
+
+        Returns:
+            list[list[np.float32 | None]]: For each stroke, a two-element list of
+            vertex thicknesses or None.
+        """
+        return self._get_strokes_attribute("thickness")
+
+    @thickness.setter
+    def thickness(self, value: None | float | np.float32):
+        """Set thickness for all strokes.
+
+        Args:
+            value (float | np.float32 | None): Thickness value or None to clear.
+        """
+        thickness_value = np.float32(value) if value is not None else None
+        self._set_strokes_attribute("thickness", thickness_value)
+
+    @property
+    def opacity(self):
+        """Opacities for each stroke.
+
+        Returns:
+            list[list[np.float32 | None]]: For each stroke, a two-element list of
+            vertex opacities or None.
+        """
+        return self._get_strokes_attribute("opacity")
+
+    @opacity.setter
+    def opacity(self, value: None | float | np.float32):
+        """Set opacity for all strokes.
+
+        Args:
+            value (float | np.float32 | None): Opacity (0.0–1.0) or None to clear.
+        """
+        opacity_value = np.float32(value) if value is not None else None
+        self._set_strokes_attribute("opacity", opacity_value)
 
 
-class SketchVG:
-    """ The universal sketch class.
-    A sketch contains a list of paths. Each path contains a list of strokes. Each stroke is a cubic Bézier curve with four control points.
+class Sketch:
+    """Sketch composed of multiple paths.
 
-    Args:
-        path_list (list): A list of paths, each path in shape (N_strokes, 4, 2).
-        stroke_thickness_list: A list of stroke thickness, each in size (N_strokes). Set to None by default.
-        stroke_pressure_list: A list of stroke pressure, each in size (N_strokes). Set to None by default.
-        stroke_color_list: A list of stroke colors, each in shape (N_strokes, 3). Set to None by default.
-        stroke_opacity_list: A list of stroke opacity, each in size (N_strokes). Set to None by default.
-        stroke_texture_list: A list of stroke texture, each in size (N_strokes). Set to None by default.
+    A Sketch collects Path objects to form a complete drawing and exposes
+    convenient accessors for color, pressure, thickness, and opacity.
 
     Attributes:
-        path_list (list): A list of paths, each path is a list of strokes.
+        paths (list[Path]): Paths in the sketch.
+
+    Examples:
+        >>> sketch = Sketch([path1, path2, path3])
+        >>> sketch.color = (1.0, 0.0, 0.0)  # Set all paths to red
+        >>> sketch.thickness = 2.5          # Set all paths to thickness 2.5
     """
 
-    def __init__(self, path_list: list,
-                 stroke_thickness_list=None, stroke_pressure_list=None,
-                 stroke_color_list=None, stroke_opacity_list=None, stroke_texture_list=None):
-        self.path_list = []
+    def __init__(self, paths: list[Path] | None = None):
+        """Initialize a Sketch.
 
-        for path_i in range(len(path_list)):
-            path = path_list[path_i]
-            path_thickness = stroke_thickness_list[path_i] if stroke_thickness_list is not None else None
-            path_pressure = stroke_pressure_list[path_i] if stroke_pressure_list is not None else None
-            path_color = stroke_color_list[path_i] if stroke_color_list is not None else None
-            path_opacity = stroke_opacity_list[path_i] if stroke_opacity_list is not None else None
-            path_texture = stroke_texture_list[path_i] if stroke_texture_list is not None else None
+        Args:
+            paths (list[Path] | None, optional): Initial paths. Defaults to None.
+        """
+        self.paths = paths if paths else []
 
-            self.path_list.append(Path(path, path_thickness, path_pressure,
-                                       path_color, path_opacity, path_texture))
+    @property
+    def path_num(self):
+        """Number of paths in the sketch.
 
-    def get_path_num(self):
-        return len(self.path_list)
+        Returns:
+            int: Count of paths.
+        """
+        return len(self.paths)
 
-    def get_stroke_num(self):
-        path_num = self.get_path_num()
-        stroke_num = 0
-        for path_i in range(path_num):
-            stroke_num += self.path_list[path_i].get_length()
-        return stroke_num
+    @property
+    def stroke_num(self):
+        """Total number of strokes across all paths.
 
-    def rasterize(self, outpath=None, color_switch='default', canvas_size=512, canvas_color=(1, 1, 1)):
-        from PIL import Image
-        from sketchkit.renderer.naive_rasterization import Renderer
-        renderer = Renderer(canvas_size, canvas_color)
-        raster_image = renderer.render(self)
-        if outpath is not None:
-            raster_image_png = Image.fromarray(raster_image, 'RGB')
-            raster_image_png.save(outpath, 'PNG')
+        Returns:
+            int: Sum of strokes in all paths.
+        """
+        return sum(path.stroke_num for path in self.paths)
+    
+    def _get_paths_attribute(self, attribute: str):
+        return [getattr(path, attribute) for path in self.paths]
 
-    def vectorize(self):
-        # TODO:
-        print()
+    def _set_paths_attribute(self, attribute: str, value):
+        for path in self.paths:
+            setattr(path, attribute, value)
 
-    def save(self, save_path):
-        # TODO:
-        print()
+    @property
+    def color(self):
+        """Colors per path.
+
+        Returns:
+            list[list[list[np.ndarray | None]]]: For each path, a list of stroke
+            colors where each stroke has a two-element list of vertex colors.
+        """
+        return self._get_paths_attribute("color")
+
+    @color.setter
+    def color(self, value: None | tuple[float, float, float] | np.ndarray):
+        """Set color for all paths.
+
+        Args:
+            value (tuple[float, float, float] | np.ndarray | None): RGB color as
+                tuple/ndarray, or None to clear.
+        """
+        color_value = np.array(value, dtype=np.float32) if value is not None else None
+        self._set_paths_attribute("color", color_value)
+
+    @property
+    def pressure(self):
+        """Pressures per path.
+
+        Returns:
+            list[list[list[np.float32 | None]]]: For each path, a list of stroke
+            pressures where each stroke has a two-element list of vertex pressures.
+        """
+        return self._get_paths_attribute("pressure")
+
+    @pressure.setter
+    def pressure(self, value: None | float | np.float32):
+        """Set pressure for all paths.
+
+        Args:
+            value (float | np.float32 | None): Pressure value or None to clear.
+        """
+        pressure_value = np.float32(value) if value is not None else None
+        self._set_paths_attribute("pressure", pressure_value)
+
+    @property
+    def thickness(self):
+        """Thicknesses per path.
+
+        Returns:
+            list[list[list[np.float32 | None]]]: For each path, a list of stroke
+            thicknesses where each stroke has a two-element list of vertex values.
+        """
+        return self._get_paths_attribute("thickness")
+
+    @thickness.setter
+    def thickness(self, value: None | float | np.float32):
+        """Set thickness for all paths.
+
+        Args:
+            value (float | np.float32 | None): Thickness value or None to clear.
+        """
+        thickness_value = np.float32(value) if value is not None else None
+        self._set_paths_attribute("thickness", thickness_value)
+
+    @property
+    def opacity(self):
+        """Opacities per path.
+
+        Returns:
+            list[list[list[np.float32 | None]]]: For each path, a list of stroke
+            opacities where each stroke has a two-element list of vertex values.
+        """
+        return self._get_paths_attribute("opacity")
+
+    @opacity.setter
+    def opacity(self, value: None | float | np.float32):
+        """Set opacity for all paths.
+
+        Args:
+            value (float | np.float32 | None): Opacity (0.0–1.0) or None to clear.
+        """
+        opacity_value = np.float32(value) if value is not None else None
+        self._set_paths_attribute("opacity", opacity_value)

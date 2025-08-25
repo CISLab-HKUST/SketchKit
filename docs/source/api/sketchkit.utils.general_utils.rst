@@ -12,6 +12,14 @@ sketchkit.utils.general\_utils.extract\_files module
    :show-inheritance:
    :undoc-members:
 
+sketchkit.utils.general\_utils.line\_to\_cubic module
+-----------------------------------------------------
+
+.. automodule:: sketchkit.utils.general_utils.line_to_cubic
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 sketchkit.utils.general\_utils.md5sum module
 --------------------------------------------
 

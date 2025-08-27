@@ -12,6 +12,7 @@ dependencies = [
     "torch>=2.8.0",
     "torchvision>=0.23.0",
     "wget>=3.2",
+    "gdown>=5.2.0",
 ]
 
 [dependency-groups]

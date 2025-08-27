@@ -6,17 +6,8 @@ import xml.etree.ElementTree as ET
 from svg.path import parse_path, path
 import numpy as np
 
-# --------------------------------------------------------------------------
-# Section 1: Core Data Structures (Imported)
-# --------------------------------------------------------------------------
-# Assuming the core data structure classes are available from the sketchkit
-# library, as they were defined in the initial problem description.
 from sketchkit.core.sketch import Sketch, Path, Stroke, Vertex, Point
 
-
-# --------------------------------------------------------------------------
-# Section 2: Data Download and Extraction Utilities
-# --------------------------------------------------------------------------
 def download_and_extract_data(output_folder: str):
     """Downloads and extracts the Tracing-vs-Freehand dataset.
 
@@ -60,10 +51,6 @@ def download_and_extract_data(output_folder: str):
         if os.path.exists(temp_extract_path):
             shutil.rmtree(temp_extract_path)
 
-
-# --------------------------------------------------------------------------
-# Section 3: SVG Parsing Utilities
-# --------------------------------------------------------------------------
 def parse_single_path(path_str: str) -> list[tuple[float, float]] | None:
     """Parses an SVG path 'd' attribute string into Bézier control points.
 
@@ -146,9 +133,6 @@ def parse_svg(svg_file: str) -> list[list[list[tuple[float, float]]]]:
         return []
 
 
-# --------------------------------------------------------------------------
-# Section 4: Main Dataset Class
-# --------------------------------------------------------------------------
 class TracingVsFreehand:
     """Loads the Tracing-vs-Freehand dataset from SVG files.
 

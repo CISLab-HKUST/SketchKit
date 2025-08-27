@@ -2,23 +2,23 @@
 
 ## Data Format
 
-The representation of sketches is defined in `sketchkit/core/sketch`. 
+The representation of sketches is defined in `sketchkit/core/sketch`.
 
-We use **Sketch** class in folder `data/dataformat/sketch` as our sketch data format. 
+We use **Sketch** class in folder `data/dataformat/sketch` as our sketch data format.
 
-A `Sketch` contains a list of `Path`s. A `Path` contains a list of `Stroke`s. And each `Stroke` is a cubic bezier curve with start and end vertices and two control points. A `Vertex` is a point with many other drawing attributes than naive `Point` (which only has x,y position.)
+A `Sketch` contains a list of `Path`s. A `Path` contains a list of `Curve`s. And each `Curve` is a cubic bezier curve with start and end vertices and two control points. A `Vertex` is a point with many other drawing attributes than naive `Point` (which only has x,y position.)
 
 The structure can be visuialized as follows:
 
 ```
 Sketch
   - Path
-    - Stroke
+    - Curve
       - Start Vertex
       - End Vertex
       - Control Point 1
       - Control Point 2
-    - Stroke
+    - Curve
     ...
   - Path
   ...

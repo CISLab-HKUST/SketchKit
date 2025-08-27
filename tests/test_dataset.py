@@ -2,11 +2,12 @@ from sketchkit.datasets import TUBerlin
 from sketchkit.datasets import SketchyDatabase
 from sketchkit.datasets import GMUSketchCleanup
 
+
 if __name__ == "__main__":
-    # dataset = TUBerlin()
-    # print(len(dataset))
-    # sketch = dataset[0]
-    # print(sketch.stroke_num, sketch.path_num)
+    dataset = TUBerlin()
+    print(len(dataset))
+    sketch = dataset[0]
+    print(sketch.curve_num, sketch.path_num)
 
     # my_data2 = QuickDraw(category="cat", split="train")
     # print(len(my_data2))

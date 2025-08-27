@@ -23,14 +23,14 @@ class Point:
 class Vertex(Point):
     """Vertex point with drawing attributes.
 
-    Extends Point with stroke-specific properties: pressure, thickness, color,
+    Extends Point with curve-specific properties: pressure, thickness, color,
     and opacity for rendering.
 
     Attributes:
         pressure (np.float32 | None): Normalized pressure value.
         thickness (np.float32 | None): Stroke thickness value.
         color (np.ndarray | None): RGB color array with float32 dtype.
-        opacity (np.float32 | None): Opacity value (0.0–1.0).
+        opacity (np.float32 | None): Opacity value (0.0-1.0).
     """
 
     def __init__(
@@ -53,7 +53,7 @@ class Vertex(Point):
                 this vertex. Defaults to None.
             color (tuple[float, float, float] | np.ndarray | None, optional):
                 RGB color as tuple or numpy array. Defaults to None.
-            opacity (float | np.float32 | None, optional): Opacity (0.0–1.0).
+            opacity (float | np.float32 | None, optional): Opacity (0.0-1.0).
                 Defaults to None.
         """
         super().__init__(x, y)
@@ -63,8 +63,8 @@ class Vertex(Point):
         self.opacity = np.float32(opacity) if opacity is not None else None
 
 
-class Stroke:
-    """Stroke defined by two vertices and two control points.
+class Curve:
+    """Curve defined by two vertices and two control points.
 
     Connects two vertices (start and end) with optional control points for a
     curved path. Visual properties (color, pressure, thickness, opacity) are
@@ -88,7 +88,7 @@ class Stroke:
         p_crtl1: Point,
         p_crtl2: Point,
     ):
-        """Initialize a Stroke.
+        """Initialize a Curve.
 
         Args:
             p_start (Vertex): Starting vertex.
@@ -191,125 +191,125 @@ class Stroke:
 
 
 class Path:
-    """Collection of strokes.
+    """Collection of curves.
 
-    Manages multiple strokes and applies common operations to all of them.
+    Manages multiple curves and applies common operations to all of them.
 
     Attributes:
-        strokes (list[Stroke]): Strokes in this path.
+        curves (list[Curve]): Curves in this path.
 
     Examples:
-        >>> path = Path([stroke1, stroke2, stroke3])
-        >>> path.color = (1.0, 0.0, 0.0)  # Set all strokes to red
-        >>> path.thickness = 2.5          # Set all strokes to thickness 2.5
-        >>> path.stroke_num
+        >>> path = Path([curve1, curve2, curve3])
+        >>> path.color = (1.0, 0.0, 0.0)  # Set all curves to red
+        >>> path.thickness = 2.5          # Set all curves to thickness 2.5
+        >>> path.curve_num
         3
     """
 
-    def __init__(self, strokes: list[Stroke] | None = None):
+    def __init__(self, curves: list[Curve] | None = None):
         """Initialize a Path.
 
         Args:
-            strokes (list[Stroke] | None, optional): Initial strokes. Defaults to None.
+            curves (list[Curve] | None, optional): Initial curves. Defaults to None.
         """
-        self.strokes = strokes if strokes else []
+        self.curves = curves if curves else []
 
     @property
-    def stroke_num(self):
-        """Number of strokes in the path.
+    def curve_num(self):
+        """Number of curves in the path.
 
         Returns:
-            int: Count of strokes.
+            int: Count of curves.
         """
-        return len(self.strokes)
+        return len(self.curves)
 
-    def _get_strokes_attribute(self, attribute: str):
-        return [getattr(stroke, attribute) for stroke in self.strokes]
+    def _get_curves_attribute(self, attribute: str):
+        return [getattr(curve, attribute) for curve in self.curves]
 
-    def _set_strokes_attribute(self, attribute: str, value):
-        for stroke in self.strokes:
-            setattr(stroke, attribute, value)
+    def _set_curves_attribute(self, attribute: str, value):
+        for curve in self.curves:
+            setattr(curve, attribute, value)
 
     @property
     def color(self):
-        """Colors for each stroke.
+        """Colors for each curve.
 
         Returns:
-            list[list[np.ndarray | None]]: For each stroke, a two-element list of
+            list[list[np.ndarray | None]]: For each curve, a two-element list of
             vertex colors (RGB arrays) or None.
         """
-        return self._get_strokes_attribute("color")
+        return self._get_curves_attribute("color")
 
     @color.setter
     def color(self, value: None | tuple[float, float, float] | np.ndarray):
-        """Set color for all strokes.
+        """Set color for all curves.
 
         Args:
             value (tuple[float, float, float] | np.ndarray | None): RGB color as
                 tuple/ndarray, or None to clear.
         """
         color_value = np.array(value, dtype=np.float32) if value is not None else None
-        self._set_strokes_attribute("color", color_value)
+        self._set_curves_attribute("color", color_value)
 
     @property
     def pressure(self):
-        """Pressures for each stroke.
+        """Pressures for each curve.
 
         Returns:
-            list[list[np.float32 | None]]: For each stroke, a two-element list of
+            list[list[np.float32 | None]]: For each curve, a two-element list of
             vertex pressures or None.
         """
-        return self._get_strokes_attribute("pressure")
+        return self._get_curves_attribute("pressure")
 
     @pressure.setter
     def pressure(self, value: None | float | np.float32):
-        """Set pressure for all strokes.
+        """Set pressure for all curves.
 
         Args:
             value (float | np.float32 | None): Pressure value or None to clear.
         """
         pressure_value = np.float32(value) if value is not None else None
-        self._set_strokes_attribute("pressure", pressure_value)
+        self._set_curves_attribute("pressure", pressure_value)
 
     @property
     def thickness(self):
-        """Thicknesses for each stroke.
+        """Thicknesses for each curve.
 
         Returns:
-            list[list[np.float32 | None]]: For each stroke, a two-element list of
+            list[list[np.float32 | None]]: For each curve, a two-element list of
             vertex thicknesses or None.
         """
-        return self._get_strokes_attribute("thickness")
+        return self._get_curves_attribute("thickness")
 
     @thickness.setter
     def thickness(self, value: None | float | np.float32):
-        """Set thickness for all strokes.
+        """Set thickness for all curves.
 
         Args:
             value (float | np.float32 | None): Thickness value or None to clear.
         """
         thickness_value = np.float32(value) if value is not None else None
-        self._set_strokes_attribute("thickness", thickness_value)
+        self._set_curves_attribute("thickness", thickness_value)
 
     @property
     def opacity(self):
-        """Opacities for each stroke.
+        """Opacities for each curve.
 
         Returns:
-            list[list[np.float32 | None]]: For each stroke, a two-element list of
+            list[list[np.float32 | None]]: For each curve, a two-element list of
             vertex opacities or None.
         """
-        return self._get_strokes_attribute("opacity")
+        return self._get_curves_attribute("opacity")
 
     @opacity.setter
     def opacity(self, value: None | float | np.float32):
-        """Set opacity for all strokes.
+        """Set opacity for all curves.
 
         Args:
             value (float | np.float32 | None): Opacity (0.0–1.0) or None to clear.
         """
         opacity_value = np.float32(value) if value is not None else None
-        self._set_strokes_attribute("opacity", opacity_value)
+        self._set_curves_attribute("opacity", opacity_value)
 
 
 class Sketch:
@@ -345,14 +345,14 @@ class Sketch:
         return len(self.paths)
 
     @property
-    def stroke_num(self):
-        """Total number of strokes across all paths.
+    def curve_num(self):
+        """Total number of curves across all paths.
 
         Returns:
-            int: Sum of strokes in all paths.
+            int: Sum of curves in all paths.
         """
-        return sum(path.stroke_num for path in self.paths)
-    
+        return sum(path.curve_num for path in self.paths)
+
     def _get_paths_attribute(self, attribute: str):
         return [getattr(path, attribute) for path in self.paths]
 
@@ -365,8 +365,8 @@ class Sketch:
         """Colors per path.
 
         Returns:
-            list[list[list[np.ndarray | None]]]: For each path, a list of stroke
-            colors where each stroke has a two-element list of vertex colors.
+            list[list[list[np.ndarray | None]]]: For each path, a list of curve
+            colors where each curve has a two-element list of vertex colors.
         """
         return self._get_paths_attribute("color")
 
@@ -386,8 +386,8 @@ class Sketch:
         """Pressures per path.
 
         Returns:
-            list[list[list[np.float32 | None]]]: For each path, a list of stroke
-            pressures where each stroke has a two-element list of vertex pressures.
+            list[list[list[np.float32 | None]]]: For each path, a list of curve
+            pressures where each curve has a two-element list of vertex pressures.
         """
         return self._get_paths_attribute("pressure")
 
@@ -406,8 +406,8 @@ class Sketch:
         """Thicknesses per path.
 
         Returns:
-            list[list[list[np.float32 | None]]]: For each path, a list of stroke
-            thicknesses where each stroke has a two-element list of vertex values.
+            list[list[list[np.float32 | None]]]: For each path, a list of curve
+            thicknesses where each curve has a two-element list of vertex values.
         """
         return self._get_paths_attribute("thickness")
 
@@ -426,8 +426,8 @@ class Sketch:
         """Opacities per path.
 
         Returns:
-            list[list[list[np.float32 | None]]]: For each path, a list of stroke
-            opacities where each stroke has a two-element list of vertex values.
+            list[list[list[np.float32 | None]]]: For each path, a list of curve
+            opacities where each curve has a two-element list of vertex values.
         """
         return self._get_paths_attribute("opacity")
 

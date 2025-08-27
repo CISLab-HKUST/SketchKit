@@ -3,11 +3,43 @@ import numpy as np
 import cairocffi as cairo
 
 class CairoRenderer:
+    """
+    A class for rendering sketches using Cairo graphics.
+
+    This class provides functionality to render a sketch onto a canvas, where the sketch
+    is composed of paths with curves that are drawn using Cairo's vector graphics system.
+    
+    Attributes:
+        canvas_size (int): The size (width and height) of the canvas in pixels. Default is 512.
+        canvas_color (tuple): The background color of the canvas in RGB format (0.0 to 1.0). Default is white (1, 1, 1).
+    """
     def __init__(self, canvas_size=512, canvas_color=(1, 1, 1)):
+        """
+        Initializes the CairoRenderer with a given canvas size and color.
+
+        Args:
+            canvas_size (int, optional): The size of the canvas (both width and height) in pixels. Default is 512.
+            canvas_color (tuple, optional): The background color of the canvas as an (R, G, B) tuple. Default is (1, 1, 1) (white).
+        """
         self.canvas_size = canvas_size
         self.canvas_color = canvas_color
 
     def render(self, sketch: Sketch):
+        """
+        Renders the given sketch onto a canvas using Cairo's drawing functions.
+
+        This method initializes a Cairo surface, sets drawing properties like antialiasing, line width,
+        and color, and then iterates over the provided `sketch` object to draw its paths and curves.
+
+        Args:
+            sketch (Sketch): A Sketch object containing paths and strokes to be rendered.
+
+        Returns:
+            np.ndarray: A 3-channel image (height x width x 3) representing the rendered sketch, as a NumPy array.
+            
+        Raises:
+            ValueError: If any stroke in the sketch is not of type `Stroke`.
+        """
         surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, self.canvas_size, self.canvas_size)
         ctx = cairo.Context(surface)
         ctx.set_antialias(cairo.ANTIALIAS_BEST)

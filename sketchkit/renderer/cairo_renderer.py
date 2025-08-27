@@ -2,7 +2,7 @@ from sketchkit.core.sketch import Sketch, Stroke
 import numpy as np
 import cairocffi as cairo
 
-class Renderer:
+class CairoRenderer:
     def __init__(self, canvas_size=512, canvas_color=(1, 1, 1)):
         self.canvas_size = canvas_size
         self.canvas_color = canvas_color

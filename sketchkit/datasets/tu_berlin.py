@@ -4,7 +4,7 @@ import wget
 import xml.etree.ElementTree as ET
 from svg.path import parse_path, path
 
-from sketchkit.core.sketch import Sketch, Path, Stroke, Vertex, Point
+from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.general_utils.md5sum import *
 from sketchkit.utils.general_utils.md5sum_table import *
 from sketchkit.utils.general_utils.extract_files import *
@@ -211,14 +211,14 @@ class TUBerlin:
         paths = []
 
         for path in path_list:
-            strokes = []
+            curves = []
             for raw_stroke in path:
                 p_start = Vertex(raw_stroke[0][0], raw_stroke[0][1])
                 p_end = Vertex(raw_stroke[3][0], raw_stroke[3][1])
                 p_ctrl1 = Point(raw_stroke[1][0], raw_stroke[1][1])
                 p_ctrl2 = Point(raw_stroke[2][0], raw_stroke[2][1])
-                strokes.append(Stroke(p_start, p_end, p_ctrl1, p_ctrl2))
+                curves.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))
 
-            paths.append(Path(strokes=strokes))
+            paths.append(Path(curves=curves))
         sketch = Sketch(paths=paths)
         return sketch

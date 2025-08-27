@@ -7,9 +7,9 @@ import xml.etree.ElementTree as ET
 
 from svg.path import parse_path, path
 
-from sketchkit.core.sketch import Sketch, Path, Stroke, Vertex, Point
-from sketchkit.utils.general_utils.md5sum import calculate_md5  
-from sketchkit.core import Sketch as SketchCore 
+from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
+from sketchkit.utils.general_utils.md5sum import calculate_md5
+from sketchkit.core import Sketch as SketchCore
 import py7zr
 import gdown
 
@@ -45,15 +45,24 @@ def _download_from_gdrive(file_id: str, destination: str) -> None:
     URL = "https://drive.google.com/uc?export=download"
     with requests.Session() as session:
         # First request: may return a small HTML that requires confirmation
-        response = session.get(URL, params={"id": file_id}, stream=True, allow_redirects=True)
+        response = session.get(
+            URL, params={"id": file_id}, stream=True, allow_redirects=True
+        )
         token = _get_confirm_token(response)
         if token:
             response.close()
-            response = session.get(URL, params={"id": file_id, "confirm": token}, stream=True, allow_redirects=True)
+            response = session.get(
+                URL,
+                params={"id": file_id, "confirm": token},
+                stream=True,
+                allow_redirects=True,
+            )
         _save_response_content(response, destination)
     # Basic sanity check
     if not os.path.exists(destination) or os.path.getsize(destination) == 0:
-        raise RuntimeError("Downloaded file is empty; Google Drive may have blocked the request.")
+        raise RuntimeError(
+            "Downloaded file is empty; Google Drive may have blocked the request."
+        )
 
 
 def download_sketchy_database(
@@ -170,7 +179,12 @@ def prune_invalid_svgs(sketches_dir: str) -> tuple[int, dict]:
 
         for base in lines:
             # Skip headings or section markers
-            if base.lower() in {"invalid/error", "unidentifiable/ambiguous", "context", "perspective"}:
+            if base.lower() in {
+                "invalid/error",
+                "unidentifiable/ambiguous",
+                "context",
+                "perspective",
+            }:
                 continue
 
             target = os.path.join(class_dir, f"{base}.svg")
@@ -268,7 +282,7 @@ def parse_single_path(path_str: str):
 
 
 def parse_svg(svg_file: str):
-    """Parse an SVG file into SketchKit-compatible cubic Bézier strokes.
+    """Parse an SVG file into SketchKit-compatible cubic Bézier curves.
 
     The parser assumes:
     * No transforms on <path> elements.
@@ -281,7 +295,7 @@ def parse_svg(svg_file: str):
         (sketch_width, sketch_height), path_list, total_segment_num
         where:
             - (sketch_width, sketch_height) is derived from the viewBox.
-            - path_list is a list of strokes: list of (N_strokes, 4, 2).
+            - path_list is a list of curves: list of (N_curves, 4, 2).
             - total_segment_num is the total number of cubic segments.
 
     Raises:
@@ -314,7 +328,7 @@ def parse_svg(svg_file: str):
     sketch_width = int(view_width) - int(view_x)
     sketch_height = int(view_height) - int(view_y)
 
-    path_list = []  # list of (N_strokes, 4, 2)
+    path_list = []  # list of (N_curves, 4, 2)
     total_segment_num = 0
 
     for elem in root.iter():
@@ -335,18 +349,18 @@ def parse_svg(svg_file: str):
             control_points_list = parse_single_path(path_d)  # (N, 2)
             if control_points_list is not None:
                 segment_num = (len(control_points_list) - 1) // 3
-                stroke_list = []
+                curve_list = []
                 for i in range(segment_num):
-                    stroke = control_points_list[i * 3 : i * 3 + 4]  # (4, 2)
-                    stroke_list.append(stroke)
-                path_list.append(stroke_list)
+                    curve = control_points_list[i * 3 : i * 3 + 4]  # (4, 2)
+                    curve_list.append(curve)
+                path_list.append(curve_list)
                 total_segment_num += segment_num
 
     assert len(path_list) > 0
     return (sketch_width, sketch_height), path_list, total_segment_num
 
 
-class SketchyDatabase:
+class Sketchy:
     """The Sketchy Database (https://sketchy.eye.gatech.edu/), SVG subset.
 
     This loader expects the archive ``sketches-06-04.7z`` to extract into a
@@ -385,7 +399,7 @@ class SketchyDatabase:
         archive_name: str = "sketches-06-04.7z",
         md5: str | None = None,
         remove_sourcefile: bool = True,
-        prune: bool = True
+        prune: bool = True,
     ):
         data_root = os.path.join(os.environ.get("HOME"), data_base)
         os.makedirs(data_root, exist_ok=True)
@@ -404,12 +418,11 @@ class SketchyDatabase:
         # Build index of classes and svg files.
         self.svg_base = os.path.join(data_root, "sketches")
         if not os.path.isdir(self.svg_base):
-            raise FileNotFoundError(
-                f'Expected directory "{self.svg_base}" not found.'
-            )
+            raise FileNotFoundError(f'Expected directory "{self.svg_base}" not found.')
 
         class_names = [
-            d for d in os.listdir(self.svg_base)
+            d
+            for d in os.listdir(self.svg_base)
             if os.path.isdir(os.path.join(self.svg_base, d))
         ]
         class_names.sort()
@@ -441,7 +454,7 @@ class SketchyDatabase:
             idx: Index into the dataset.
 
         Returns:
-            A `Sketch` object composed of cubic Bézier `Path`/`Stroke`s.
+            A `Sketch` object composed of cubic Bézier `Path`/`Curve`s.
         """
         sketch_name = self.sketch_names[idx]  # e.g., "cat/12345.svg"
         class_name, file_name = sketch_name.split("/")
@@ -450,18 +463,18 @@ class SketchyDatabase:
         # Parse original SVG into SketchVG-compatible parts
         image_sizes, path_list, total_segment_num = parse_svg(svg_path)
         # image_sizes: (width, height)
-        # path_list: list of (N_strokes, 4, 2)
+        # path_list: list of (N_curves, 4, 2)
 
         paths = []
         for path_item in path_list:
-            strokes = []
-            for raw_stroke in path_item:
-                p_start = Vertex(raw_stroke[0][0], raw_stroke[0][1])
-                p_end = Vertex(raw_stroke[3][0], raw_stroke[3][1])
-                p_ctrl1 = Point(raw_stroke[1][0], raw_stroke[1][1])
-                p_ctrl2 = Point(raw_stroke[2][0], raw_stroke[2][1])
-                strokes.append(Stroke(p_start, p_end, p_ctrl1, p_ctrl2))
-            paths.append(Path(strokes=strokes))
+            curves = []
+            for raw_curve in path_item:
+                p_start = Vertex(raw_curve[0][0], raw_curve[0][1])
+                p_end = Vertex(raw_curve[3][0], raw_curve[3][1])
+                p_ctrl1 = Point(raw_curve[1][0], raw_curve[1][1])
+                p_ctrl2 = Point(raw_curve[2][0], raw_curve[2][1])
+                curves.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))
+            paths.append(Path(curves=curves))
 
         sketch = Sketch(paths=paths)
         return sketch

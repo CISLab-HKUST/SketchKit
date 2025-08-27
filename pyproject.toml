@@ -5,6 +5,8 @@ description = "An universal toolkit for sketching"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "gdown>=5.2.0",
+    "py7zr>=1.0.0",
     "pyunpack>=0.3",
     "svg-path>=7.0",
     "torch>=2.8.0",

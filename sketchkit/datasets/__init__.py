@@ -1,6 +1,15 @@
+from .tu_berlin import TUBerlin
 from .gmu_sketch_cleanup import GMUSketchCleanup
-from .sketchy_database import SketchyDatabase
+from .sketchy import Sketchy
 from .quickdraw import QuickDraw
 from .tracing_vs_freehand import TracingVsFreehand
+from .creative_sketch import CreativeSketch
 
-__all__ = ['TUBerlin', 'SketchyDatabase', 'QuickDraw', 'TracingVsFreehand']
+__all__ = [
+    "TUBerlin",
+    "Sketchy",
+    "QuickDraw",
+    "TracingVsFreehand",
+    "GMUSketchCleanup",
+    "CreativeSketch",
+]

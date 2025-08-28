@@ -107,7 +107,7 @@ class SketchXPRIS:
                 <sketchkit.core.sketch.Sketch object at 0x7f178d598110>
             >>> print(sketches_by_groupid)
                 [<sketchkit.core.sketch.Sketch object at 0x7f178f4f5810>, <sketchkit.core.sketch.Sketch object at 0x7f178f4f7c50>, <sketchkit.core.sketch.Sketch object at 0x7f178f503750>]
-            >>> print(sketches_by_groupid[0].group_name)  # 打印第一个子部件的名称
+            >>> print(sketches_by_groupid[0].group_name)  
                 body
     """
     def __init__(self, category="airplane", data_root=".cache/sketchkit/datasets"):
@@ -127,7 +127,6 @@ class SketchXPRIS:
         if os.path.exists(txt_path):
             with open(txt_path, "r") as f:
                 lines = [line.strip() for line in f.readlines() if line.strip()]
-            # 假设 group_id 是从 0,1,2,... 顺序对应的
             self.group_id_to_name = {i: name for i, name in enumerate(lines)}
         
 

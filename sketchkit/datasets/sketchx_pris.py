@@ -47,9 +47,7 @@ def download_sketchx_pris(output_folder=".cache/sketchkit/datasets", remove_zip=
         print("Removed zip file.")
 
     return extract_folder
-
-# ----------------- 解析代码 -----------------
-
+    
 def parse_stroke3_format(stroke_data):
     """ Convert stroke-3 format in QuickDraw into our desired input format of SketchVG.
 

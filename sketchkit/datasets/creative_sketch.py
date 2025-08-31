@@ -6,7 +6,7 @@ import numpy as np
 from sketchkit.core import Sketch
 from sketchkit.utils.general_utils import line_to_cubic
 
-from sketchkit.core.sketch import Sketch, Path, Stroke, Vertex, Point
+from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.general_utils.md5sum import *
 from sketchkit.utils.general_utils.md5sum_table import *
 from sketchkit.utils.general_utils.extract_files import *

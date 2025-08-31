@@ -7,7 +7,7 @@ import wget
 from svg.path import parse_path, path
 
 from sketchkit.core import Sketch
-from sketchkit.core.sketch import Path, Stroke, Vertex, Point
+from sketchkit.core.sketch import Path, Curve, Vertex, Point
 from sketchkit.utils.general_utils.extract_files import *
 
 

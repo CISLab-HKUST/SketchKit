@@ -79,7 +79,7 @@ INVALID_SVG_SHAPES = {"rect", "circle", "ellipse", "line", "polyline", "polygon"
 
 
 def parse_photosketch_svg(svg_file):
-    """Parse an SVG file into width, height, path list, and total segment number.
+    """Parse an SVG file into width, height, path list, total segment number, and path attributes.
     
     Args:
         svg_file: The path to the SVG file.
@@ -88,7 +88,8 @@ def parse_photosketch_svg(svg_file):
         A tuple containing:
         - (width, height): The dimensions of the SVG canvas.
         - path_list: A list of paths, where each path contains strokes.
-        - total_segment_num: The total number of segments in the SVG file.
+        - total_segment_num: The total number of segments in the SVG file [Segment here is curve in sketchkit].
+        - path_attributes: A list of dictionaries containing path attributes.
         
     Raises:
         Exception: If unsupported elements like transforms or arcs are encountered.
@@ -107,6 +108,7 @@ def parse_photosketch_svg(svg_file):
         height = int(float(root.get("height", "0").replace("px", "")) or 0)
     
     path_list = []
+    path_attributes = []  # path in sketchkit has attributes like color and thickness
     total_segment_num = 0
     
     for elem in root.iter():
@@ -116,18 +118,49 @@ def parse_photosketch_svg(svg_file):
         if tag == "path":
             if "transform" in elem.attrib:
                 raise Exception(f"Transform not supported in {svg_file}")
+            
+            # extract path attributes (only keep color and thickness)
+            # convert color value to RGB array format
+            stroke_color = elem.get('stroke', '#000000')
+            if stroke_color == '#000' or stroke_color == '#000000':
+                rgb_color = (0.0, 0.0, 0.0)  # black
+            elif stroke_color == '#fff' or stroke_color == '#ffffff':
+                rgb_color = (1.0, 1.0, 1.0)  # white
+            elif stroke_color.startswith('#'):
+                # handle other hexadecimal colors
+                hex_color = stroke_color.lstrip('#')
+                if len(hex_color) == 3:
+                    hex_color = ''.join([c+c for c in hex_color])
+                r = int(hex_color[0:2], 16) / 255.0
+                g = int(hex_color[2:4], 16) / 255.0
+                b = int(hex_color[4:6], 16) / 255.0
+                rgb_color = (r, g, b)
+            else:
+                rgb_color = (0.0, 0.0, 0.0)  # default black
+            
+            # original geometry parsing code
             d = elem.attrib.get("d")
             if not d:
                 continue
             ps = parse_path(d)
             cps = []
+            
+            # extract attributes of current path (path in svg file)
+            attrs = {
+                'stroke': rgb_color,    # color of path in svg file
+                'stroke-width': float(elem.get('stroke-width', 1)), # thickness of <path> in svg file
+                't': elem.get('t', ''),  # timestamp information of <path> in svg file, not used in sketchkit
+                'id': elem.get('id', '')  # id of <path> in svg file
+            }
+            
             for seg in ps:
                 if isinstance(seg, path.Move):
                     if len(cps) > 1:
-                        # Start a new path
+                        # start a new path
                         seg_num = (len(cps) - 1) // 3
-                        strokes = [cps[i * 3:i * 3 + 4] for i in range(seg_num)]
+                        strokes = [cps[i * 3:i * 3 + 4] for i in range(seg_num)] # stroke here is curve in sketchkit, so stroke[s] here is path in sketchkit
                         path_list.append(strokes)
+                        path_attributes.append(attrs)  # add corresponding attributes, the length of path_attributes is the same as path_list
                         total_segment_num += seg_num
                     cps = [(seg.start.real, seg.start.imag)]
                 elif isinstance(seg, path.CubicBezier):
@@ -147,15 +180,18 @@ def parse_photosketch_svg(svg_file):
                     cps.append((ex, ey))
                 elif isinstance(seg, path.Arc):
                     raise Exception("Arc not supported")
+                else:
+                    raise Exception("Unknown segment type", type(seg))
             
             # Handle the last path if there are remaining control points
             if len(cps) > 1:
                 seg_num = (len(cps) - 1) // 3
                 strokes = [cps[i * 3:i * 3 + 4] for i in range(seg_num)]
                 path_list.append(strokes)
+                path_attributes.append(attrs)  # add corresponding attributes, the length of path_attributes is the same as path_list
                 total_segment_num += seg_num
     
-    return (width, height), path_list, total_segment_num
+    return (width, height), path_list, total_segment_num, path_attributes
 
 
 class PhotoSketch:
@@ -295,14 +331,14 @@ class PhotoSketch:
         
         # Parse the SVG file and construct a Sketch object
         try:
-            (w, h), path_list, _ = parse_photosketch_svg(sketch_svg_path)
+            (w, h), path_list, _, path_attributes = parse_photosketch_svg(sketch_svg_path)
             
             # Validate that we have valid paths
             if not path_list:
                 raise ValueError(f"No valid paths found in SVG file: {sketch_svg_path}")
             
             paths = []
-            for p in path_list:
+            for i, p in enumerate(path_list):
                 strokes = []
                 for seg in p:
                     # Validate segment has exactly 4 control points
@@ -314,9 +350,25 @@ class PhotoSketch:
                     c1 = Point(seg[1][0], seg[1][1])
                     c2 = Point(seg[2][0], seg[2][1])
                     strokes.append(Curve(p0, p3, c1, c2))
-                paths.append(Path(curves=strokes))
+                
+                # create Path
+                path = Path(curves=strokes)
+                
+                # set Path level attributes (will be automatically passed to all Curves and Vertices)
+                if i < len(path_attributes):
+                    attrs = path_attributes[i]
+                    path.color = attrs['stroke']
+                    path.thickness = attrs['stroke-width']
+                
+                paths.append(path)
             
-            return Sketch(paths=paths)
+            # create Sketch
+            sketch = Sketch(paths=paths)
+            
+            # 如果所有path都有相同的属性，可以设置Sketch级别（可选）
+            # 这里我们让每个path保持自己的属性，所以不设置Sketch级别
+            
+            return sketch
         except Exception as e:
             raise Exception(f"Failed to parse SVG file {sketch_svg_path}: {str(e)}")
     

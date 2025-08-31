@@ -51,9 +51,47 @@ if __name__ == "__main__":
     # print(f"Sketch has {photosketch_sketch.curve_num} curves and {photosketch_sketch.path_num} paths")
     # print("Loaded first PhotoSketch successfully.")
     
+    # # Test color and thickness attributes
+    # print("\n" + "-"*30)
+    # print("Testing Color and Thickness Attributes:")
+    # print("-"*30)
+    
+    # if photosketch_sketch.paths:
+    #     first_path = photosketch_sketch.paths[0]
+    #     print(f"First Path:")
+    #     print(f"  - Color: {first_path.color}")
+    #     print(f"  - Thickness: {first_path.thickness}")
+        
+    #     if first_path.curves:
+    #         first_curve = first_path.curves[0]
+    #         print(f"First Curve:")
+    #         print(f"  - Color: {first_curve.color}")
+    #         print(f"  - Thickness: {first_curve.thickness}")
+            
+    #         print(f"Start Vertex:")
+    #         print(f"  - Color: {first_curve.p_start.color}")
+    #         print(f"  - Thickness: {first_curve.p_start.thickness}")
+            
+    #         print(f"End Vertex:")
+    #         print(f"  - Color: {first_curve.p_end.color}")
+    #         print(f"  - Thickness: {first_curve.p_end.thickness}")
+        
+    #     # Test multiple paths to see if attributes vary
+    #     if len(photosketch_sketch.paths) > 1:
+    #         second_path = photosketch_sketch.paths[1]
+    #         print(f"\nSecond Path:")
+    #         print(f"  - Color: {second_path.color}")
+    #         print(f"  - Thickness: {second_path.thickness}")
+            
+    #         # Check if attributes are consistent across paths
+    #         if first_path.color == second_path.color and first_path.thickness == second_path.thickness:
+    #             print("✅ All paths have consistent attributes")
+    #         else:
+    #             print("ℹ️  Paths have different attributes")
+    
     # # Test SVG path access
     # svg_path = photosketch_data.get_sketch_svg_path(0)
-    # print(f"SVG path: {svg_path}")
+    # print(f"\nSVG path: {svg_path}")
     
     # # Test PNG path access (note: may not exist)
     # try:

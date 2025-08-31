@@ -182,7 +182,7 @@ class CreativeSketch:
                     v_end = Vertex(p_end[0], p_end[1], color=stroke_color)
                     v_ctrl1 = Point(cubic[1][0], cubic[1][1])
                     v_ctrl2 = Point(cubic[2][0], cubic[2][1])
-                    strokes.append(Stroke(v_start, v_end, v_ctrl1, v_ctrl2))
+                    strokes.append(Curve(v_start, v_end, v_ctrl1, v_ctrl2))
             path_list.append(Path(strokes))
         # path_list: list of (N_strokes, 4, 2)
 

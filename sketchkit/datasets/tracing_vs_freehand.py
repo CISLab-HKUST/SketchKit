@@ -204,8 +204,8 @@ class TracingVsFreehand:
                 p_end   = Vertex(raw_stroke[3][0], raw_stroke[3][1])
                 p_ctrl1 = Point(raw_stroke[1][0], raw_stroke[1][1])
                 p_ctrl2 = Point(raw_stroke[2][0], raw_stroke[2][1])
-                strokes.append(Stroke(p_start, p_end, p_ctrl1, p_ctrl2))
-            paths.append(Path(strokes=strokes))
+                strokes.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))
+            paths.append(Path(curves=strokes))
 
         sketch = Sketch(paths=paths)
         return sketch

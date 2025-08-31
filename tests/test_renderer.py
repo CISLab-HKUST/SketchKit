@@ -1,7 +1,8 @@
-from sketchkit.datasets import QuickDraw #, TUBerlin
+from sketchkit.datasets import OpenSketch #, TUBerlin
+import gdown
 
 if __name__ == '__main__':
-    my_data = QuickDraw()
+    my_data = OpenSketch()
     print(len(my_data))
     print(my_data[0])
 

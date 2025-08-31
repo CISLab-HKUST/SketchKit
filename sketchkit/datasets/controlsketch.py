@@ -2,6 +2,7 @@ import os
 import glob
 import numpy as np
 import gdown
+import zipfile
 import xml.etree.ElementTree as ET
 from typing import List
 
@@ -41,9 +42,10 @@ def download_controlsketch(output_folder: str):
         print("Download finished.")
 
     print("Extracting ControlSketch...")
+    # with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+    #     zip_ref.extractall(output_folder)
     extract_files(zip_path, output_folder, remove_sourcefile=True)
     print("Extraction finished.")
-
 
 _INVALID = {"rect", "circle", "ellipse", "line", "polyline", "polygon"}
 

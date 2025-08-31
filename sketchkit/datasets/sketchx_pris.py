@@ -32,7 +32,6 @@ def download_sketchx_pris(output_folder=".cache/sketchkit/datasets", remove_zip=
     extract_folder = os.path.join(output_folder, "SketchX-PRIS-Dataset")
     if not os.path.exists(extract_folder):
         print("Extracting...")
-        print(zip_path)
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(output_folder)
         extracted_subfolder = os.path.join(output_folder, "SketchX-PRIS-Dataset-main")
@@ -131,23 +130,18 @@ class SketchXPRIS:
         
 
     def __len__(self):
-        return len(self.data)
+        return len(self.data[0]["train_data"])
 
     def __getitem__(self, idx):
         sketches = self.data[0]
         stroke_data = sketches["train_data"][idx]  # fallback to whole item
         path_list,total_segment_num = parse_stroke3_format(np.array(stroke_data))
-
         paths = []
         for p in path_list:
             curves = []
             i = 0
             for seg in p:
-                p0 = Vertex(seg[0][0], seg[0][1])
-                p3 = Vertex(seg[3][0], seg[3][1])
-                c1 = Point(seg[1][0], seg[1][1])
-                c2 = Point(seg[2][0], seg[2][1])
-                curves.append(Curve(p0, p3, c1, c2))
+                curves.append(seg)
                 i += 1
             paths.append(Path(curves=curves))
 
@@ -165,11 +159,7 @@ class SketchXPRIS:
             for p in path_list:
                 curves = []
                 for seg in p:
-                    p0 = Vertex(seg[0][0], seg[0][1])
-                    p3 = Vertex(seg[3][0], seg[3][1])
-                    c1 = Point(seg[1][0], seg[1][1])
-                    c2 = Point(seg[2][0], seg[2][1])
-                    curves.append(Curve(p0, p3, c1, c2))
+                    curves.append(seg)
                 paths.append(Path(curves=curves))
             sketch_obj_gid = Sketch(paths=paths)
 
@@ -177,5 +167,5 @@ class SketchXPRIS:
             group_name = self.group_id_to_name.get(gid, f"unknown_{gid}")
             setattr(sketch_obj_gid, "group_name", group_name)
             sketches_by_groupid.append(sketch_obj_gid)
-        return sketch_obj, sketches_by_groupid
+        return sketch_obj #, sketches_by_groupid
        

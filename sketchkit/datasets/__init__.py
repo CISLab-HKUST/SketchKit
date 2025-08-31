@@ -5,6 +5,7 @@ from .quickdraw import QuickDraw
 from .tracing_vs_freehand import TracingVsFreehand
 from .creative_sketch import CreativeSketch
 from .sketchx_pris import SketchXPRIS
+from .controlsketch import ControlSketch
 
 __all__ = [
     "TUBerlin",
@@ -14,4 +15,5 @@ __all__ = [
     "GMUSketchCleanup",
     "CreativeSketch",
     "SketchXPRIS",
+    "ControlSketch"
 ]

@@ -2,7 +2,7 @@ import os
 import wget
 import numpy as np
 
-from sketchkit.core.sketch import SketchVG
+from sketchkit.core.sketch import Sketch
 from sketchkit.utils.general_utils import line_to_cubic
 
 

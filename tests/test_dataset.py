@@ -1,14 +1,15 @@
-from sketchkit.datasets import TUBerlin
-from sketchkit.datasets import SketchyDatabase
-from sketchkit.datasets import GMUSketchCleanup
-from sketchkit.datasets import CreativeSketch
+# from sketchkit.datasets import TUBerlin
+# from sketchkit.datasets import SketchyDatabase
+# from sketchkit.datasets import GMUSketchCleanup
+# from sketchkit.datasets import CreativeSketch
+from sketchkit.datasets import OpenSketch
 
 
 if __name__ == "__main__":
-    dataset = TUBerlin()
-    print(len(dataset))
-    sketch = dataset[0]
-    print(sketch.curve_num, sketch.path_num)
+    # dataset = TUBerlin()
+    # print(len(dataset))
+    # sketch = dataset[0]
+    # print(sketch.curve_num, sketch.path_num)
 
     # my_data2 = QuickDraw(category="cat", split="train")
     # print(len(my_data2))
@@ -33,7 +34,15 @@ if __name__ == "__main__":
     # print(sketchGMU.curve_num, sketchGMU.path_num)
 
 
-    data = CreativeSketch()
+    # data = CreativeSketch()
+    # print(f"Total sketches: {len(data)}")
+    # sketch = data[0]
+    # print(sketch)
+    # print(sketch.curve_num, sketch.path_num)
+    # print("Loaded first sketch successfully.")
+
+
+    data = OpenSketch()
     print(f"Total sketches: {len(data)}")
     sketch = data[0]
     print(sketch)

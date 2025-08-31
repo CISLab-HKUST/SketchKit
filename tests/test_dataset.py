@@ -1,8 +1,9 @@
-# from sketchkit.datasets import TUBerlin
-# from sketchkit.datasets import SketchyDatabase
-# from sketchkit.datasets import GMUSketchCleanup
-# from sketchkit.datasets import CreativeSketch
 from sketchkit.datasets import OpenSketch
+from sketchkit.datasets import TUBerlin
+from sketchkit.datasets import SketchyDatabase
+from sketchkit.datasets import GMUSketchCleanup
+from sketchkit.datasets import CreativeSketch
+from sketchkit.datasets import ControlSketch
 
 
 if __name__ == "__main__":
@@ -15,6 +16,12 @@ if __name__ == "__main__":
     # print(len(my_data2))
     # print(my_data2[0])
 
+    # data = ControlSketch(category="ant", split="all")
+    # print(f"Total sketches: {len(data)}")
+    # sketch = data[0]
+    # print(sketch)
+    # print(sketch.curve_num, sketch.path_num)
+    # print("Loaded first sketch successfully.")
 
     # data = SketchyDatabase()
     # print(f"Total sketches: {len(data)}")
@@ -41,10 +48,10 @@ if __name__ == "__main__":
     # print(sketch.curve_num, sketch.path_num)
     # print("Loaded first sketch successfully.")
 
-
     data = OpenSketch()
     print(f"Total sketches: {len(data)}")
     sketch = data[0]
     print(sketch)
     print(sketch.curve_num, sketch.path_num)
     print("Loaded first sketch successfully.")
+

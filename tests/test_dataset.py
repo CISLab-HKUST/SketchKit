@@ -1,20 +1,28 @@
+from sketchkit.datasets import OpenSketch
 from sketchkit.datasets import TUBerlin
 from sketchkit.datasets import SketchyDatabase
 from sketchkit.datasets import GMUSketchCleanup
 from sketchkit.datasets import CreativeSketch
 from sketchkit.datasets import PhotoSketch
+from sketchkit.datasets import ControlSketch
 
 
 if __name__ == "__main__":
-    dataset = TUBerlin()
-    print(len(dataset))
-    sketch = dataset[0]
-    print(sketch.curve_num, sketch.path_num)
+    # dataset = TUBerlin()
+    # print(len(dataset))
+    # sketch = dataset[0]
+    # print(sketch.curve_num, sketch.path_num)
 
     # my_data2 = QuickDraw(category="cat", split="train")
     # print(len(my_data2))
     # print(my_data2[0])
 
+    # data = ControlSketch(category="ant", split="all")
+    # print(f"Total sketches: {len(data)}")
+    # sketch = data[0]
+    # print(sketch)
+    # print(sketch.curve_num, sketch.path_num)
+    # print("Loaded first sketch successfully.")
 
     # data = SketchyDatabase()
     # print(f"Total sketches: {len(data)}")
@@ -34,76 +42,16 @@ if __name__ == "__main__":
     # print(sketchGMU.curve_num, sketchGMU.path_num)
 
 
-    data = CreativeSketch()
+    # data = CreativeSketch()
+    # print(f"Total sketches: {len(data)}")
+    # sketch = data[0]
+    # print(sketch)
+    # print(sketch.curve_num, sketch.path_num)
+    # print("Loaded first sketch successfully.")
+
+    data = OpenSketch()
     print(f"Total sketches: {len(data)}")
     sketch = data[0]
     print(sketch)
     print(sketch.curve_num, sketch.path_num)
     print("Loaded first sketch successfully.")
-
-    # PhotoSketch dataset test----------------begin----------------
-    # print("\n" + "="*50)
-    # print("Testing PhotoSketch dataset...")
-    # photosketch_data = PhotoSketch()
-    # print(f"Total sketches: {len(photosketch_data)}")
-    # photosketch_sketch = photosketch_data[0]
-    # print(photosketch_sketch)
-    # print(f"Sketch has {photosketch_sketch.curve_num} curves and {photosketch_sketch.path_num} paths")
-    # print("Loaded first PhotoSketch successfully.")
-    
-    # # Test color and thickness attributes
-    # print("\n" + "-"*30)
-    # print("Testing Color and Thickness Attributes:")
-    # print("-"*30)
-    
-    # if photosketch_sketch.paths:
-    #     first_path = photosketch_sketch.paths[0]
-    #     print(f"First Path:")
-    #     print(f"  - Color: {first_path.color}")
-    #     print(f"  - Thickness: {first_path.thickness}")
-        
-    #     if first_path.curves:
-    #         first_curve = first_path.curves[0]
-    #         print(f"First Curve:")
-    #         print(f"  - Color: {first_curve.color}")
-    #         print(f"  - Thickness: {first_curve.thickness}")
-            
-    #         print(f"Start Vertex:")
-    #         print(f"  - Color: {first_curve.p_start.color}")
-    #         print(f"  - Thickness: {first_curve.p_start.thickness}")
-            
-    #         print(f"End Vertex:")
-    #         print(f"  - Color: {first_curve.p_end.color}")
-    #         print(f"  - Thickness: {first_curve.p_end.thickness}")
-        
-    #     # Test multiple paths to see if attributes vary
-    #     if len(photosketch_sketch.paths) > 1:
-    #         second_path = photosketch_sketch.paths[1]
-    #         print(f"\nSecond Path:")
-    #         print(f"  - Color: {second_path.color}")
-    #         print(f"  - Thickness: {second_path.thickness}")
-            
-    #         # Check if attributes are consistent across paths
-    #         if first_path.color == second_path.color and first_path.thickness == second_path.thickness:
-    #             print("✅ All paths have consistent attributes")
-    #         else:
-    #             print("ℹ️  Paths have different attributes")
-    
-    # # Test SVG path access
-    # svg_path = photosketch_data.get_sketch_svg_path(0)
-    # print(f"\nSVG path: {svg_path}")
-    
-    # # Test PNG path access (note: may not exist)
-    # try:
-    #     png_path = photosketch_data.get_sketch_png_path(0)
-    #     print(f"PNG path: {png_path}")
-    # except Exception as e:
-    #     print(f"PNG path access: {e}")
-    
-    # # Test photo path access (note: may not exist)
-    # try:
-    #     photo_path = photosketch_data.get_photo_path(0)
-    #     print(f"Photo path: {photo_path}")
-    # except Exception as e:
-    #     print(f"Photo path access: {e}")
-    # PhotoSketch dataset test----------------end----------------

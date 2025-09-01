@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from svg.path import parse_path, path
 import numpy as np
 
-from sketchkit.core.sketch import Sketch, Path, Stroke, Vertex, Point
+from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 
 def download_and_extract_data(output_folder: str):
     """Downloads and extracts the Tracing-vs-Freehand dataset.

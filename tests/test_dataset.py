@@ -3,6 +3,7 @@ from sketchkit.datasets import TUBerlin
 from sketchkit.datasets import SketchyDatabase
 from sketchkit.datasets import GMUSketchCleanup
 from sketchkit.datasets import CreativeSketch
+from sketchkit.datasets import PhotoSketch
 from sketchkit.datasets import ControlSketch
 
 
@@ -54,4 +55,3 @@ if __name__ == "__main__":
     print(sketch)
     print(sketch.curve_num, sketch.path_num)
     print("Loaded first sketch successfully.")
-

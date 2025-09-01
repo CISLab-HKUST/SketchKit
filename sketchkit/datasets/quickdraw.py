@@ -2,7 +2,7 @@ import os
 import wget
 import numpy as np
 
-from sketchkit.core.sketch import Sketch
+from sketchkit.core.sketch import Sketch, Path
 from sketchkit.utils.general_utils import line_to_cubic
 
 
@@ -41,7 +41,7 @@ def download_quickdraw(output_folder, category):
 
 
 def parse_stroke3_format(stroke_data):
-    """ Convert stroke-3 format in QuickDraw into our desired input format of SketchVG.
+    """ Convert stroke-3 format in QuickDraw into our desired input format of Sketch.
 
     Args:
         stroke_data: (N_point, 3), each point is in stroke-3 format (dx, dy, pen_state). Pen state is 0 (drawing) or 1 (lifting).
@@ -71,7 +71,8 @@ def parse_stroke3_format(stroke_data):
             stroke_list.append(cubic)
             total_segment_num += 1
         else:
-            path_list.append(np.stack(stroke_list, axis=0))
+            # path_list.append(np.stack(stroke_list, axis=0))
+            path_list.append(Path(stroke_list))
             stroke_list = []
     return path_list, total_segment_num
 
@@ -95,7 +96,7 @@ class QuickDraw:
         >>> print(len(my_data))
         70000
         >>> print(my_data[0])
-        (<sketchkit.core.sketch.SketchVG object at 0x7555af6973a0>, 81)
+        (<sketchkit.core.sketch.Sketch object at 0x7555af6973a0>, 81)
     """
 
     def __init__(self, category="cat", split="train", data_base=".cache/sketchkit/datasets"):
@@ -127,9 +128,9 @@ class QuickDraw:
     def __getitem__(self, item):
         single_sketch_stroke = self.stroke_data[item]  # (N_point, 3)
 
-        # Parse the original data into the desired input format of SketchVG
+        # Parse the original data into the desired input format of Sketch
         path_list, total_segment_num = parse_stroke3_format(single_sketch_stroke)
         # path_list: list of (N_strokes, 4, 2)
 
-        sketch = SketchVG(path_list=path_list)
-        return sketch, total_segment_num
+        sketch = Sketch(paths=path_list)
+        return sketch #, total_segment_num

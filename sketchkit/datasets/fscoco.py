@@ -29,7 +29,7 @@ import numpy as np
 import requests
 import tarfile
 from tqdm import tqdm
-from sketchkit.core.sketch import Sketch, Path, Stroke, Vertex, Point
+from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 
 def download_fs_coco(output_folder):
     """
@@ -102,10 +102,10 @@ def load_npy_vector_sketch(npy_path):
                     p_end = Vertex(end[0], end[1])
                     p_ctrl1 = Point(ctrl1[0], ctrl1[1])
                     p_ctrl2 = Point(ctrl2[0], ctrl2[1])
-                    strokes.append(Stroke(p_start, p_end, p_ctrl1, p_ctrl2))
+                    strokes.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))
             current_stroke = []
     if strokes:
-        sketch = Sketch(paths=[Path(strokes=strokes)])
+        sketch = Sketch(paths=[Path(curves=strokes)])
     else:
         sketch = Sketch(paths=[])
     return sketch

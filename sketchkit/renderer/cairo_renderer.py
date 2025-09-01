@@ -1,4 +1,4 @@
-from sketchkit.core.sketch import Sketch, Stroke
+from sketchkit.core.sketch import Sketch, Curve
 import numpy as np
 import cairocffi as cairo
 
@@ -52,8 +52,8 @@ class CairoRenderer:
 
         seq_i = 0
         for j, each_path in enumerate(sketch.paths):
-            for curve in each_path.strokes:
-                if isinstance(curve, Stroke):
+            for curve in each_path.curves:
+                if isinstance(curve, Curve):
                     p0, p1, p2, p3 = curve.p_start, curve.p_crtl1, curve.p_crtl2, curve.p_end
                     x0, y0 = p0.x, p0.y
                     x1, y1 = p1.x, p1.y

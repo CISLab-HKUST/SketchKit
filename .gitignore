@@ -13,6 +13,8 @@ venv/
 .pytest_cache/
 .coverage
 htmlcov/
+*.png
+.cache
 
 # IDEs
 .vscode/
@@ -23,3 +25,4 @@ htmlcov/
 
 # Docs
 docs/source/api/
+

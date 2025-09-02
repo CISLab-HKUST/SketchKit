@@ -8,10 +8,9 @@ from .photosketch import PhotoSketch
 from .opensketch import OpenSketch
 from .sketchx_pris import SketchXPRIS
 from .controlsketch import ControlSketch
-
+from .hzy_sketch import hzy_sketch
 
 __all__ = [
-    "TUBerlin",
     "Sketchy",
     "QuickDraw",
     "TracingVsFreehand",
@@ -20,5 +19,6 @@ __all__ = [
     "PhotoSketch",
     "OpenSketch",
     "SketchXPRIS",
-    "ControlSketch"
+    "ControlSketch",
+    "hzy_sketch"
 ]

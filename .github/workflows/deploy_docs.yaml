@@ -79,7 +79,7 @@ jobs:
           
       - name: Deploy to local directory
         env:
-          DOCS_DEST_DIR: /home/www/projects/sketchkit-docs
+          DOCS_DEST_DIR: /home/www/projects/sketchkit/docs
         run: |
           mkdir -p $DOCS_DEST_DIR
           cp -r ./docs-build/* $DOCS_DEST_DIR/

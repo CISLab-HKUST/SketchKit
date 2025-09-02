@@ -6,7 +6,7 @@ def line_to_cubic(line):
     """
     Args:
         line: In shape (2, 2), including two points.
-        
+
     Returns:
         cubic: In shape (4, 2), including a starting point, two control points, and an end point.
 

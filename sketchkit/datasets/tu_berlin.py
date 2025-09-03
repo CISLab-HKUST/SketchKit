@@ -14,7 +14,12 @@ import pandas as pd
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_tqdm, dir_md5, CISLAB_CDN, extract_files, file_md5
+from sketchkit.utils.file import (
+    download_with_tqdm,
+    CISLAB_CDN,
+    extract_files,
+    file_md5,
+)
 
 
 invalid_svg_shapes = ["rect", "circle", "ellipse", "line", "polyline", "polygon"]
@@ -79,7 +84,7 @@ def parse_single_path(path_str):
 
 def parse_transform(svg_transform):
     # Regular expression to find translate and scale commands
-    pattern = r'(\w+)\s*\(([^)]+)\)'
+    pattern = r"(\w+)\s*\(([^)]+)\)"
 
     # Find all matches
     matches = re.findall(pattern, svg_transform)
@@ -88,9 +93,9 @@ def parse_transform(svg_transform):
     transformations = []
     for command, values in matches:
         # Split the values by comma and convert to float
-        values = tuple(map(float, values.split(',')))
+        values = tuple(map(float, values.split(",")))
         transformations.append([command, values])
-        assert command in ['translate', 'scale'], command
+        assert command in ["translate", "scale"], command
 
     return transformations
 
@@ -142,16 +147,18 @@ class TUBerlin(SketchDataset):
     References:
         - Original dataset: http://cybertron.cg.tu-berlin.de/eitz/projects/classifysketch/
     """
+
     # MD5 Sum of the whole dir, you set a list for zip files
     md5_sum = "aa7d8ae9c8bf5f5cb6d28cee9741737c"
 
     # Metadata columns for each items
     metadata = ["id", "sub_id", "category", "split"]
 
-    def __init__(self,
-                 root: str | PathLibPath | None = None,
-                 load_all: bool = False,
-                 cislab_source: bool = False,
+    def __init__(
+        self,
+        root: str | PathLibPath | None = None,
+        load_all: bool = False,
+        cislab_source: bool = False,
     ):
         """Initialize the TU-Berlin dataset.
 
@@ -197,16 +204,12 @@ class TUBerlin(SketchDataset):
         try:
             if self.cislab_source:
                 url = (
-                        f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/"
-                        + "sketches_svg.zip"
+                    f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/"
+                    + "sketches_svg.zip"
                 )
             else:
                 url = "http://cybertron.cg.tu-berlin.de/eitz/projects/classifysketch/sketches_svg.zip"
-            download_with_tqdm(
-                url,
-                file_path=svg_zip_path,
-                pg_bar=False,
-            )
+            download_with_tqdm(url, file_path=svg_zip_path)
         except Exception as e:
             raise e
 
@@ -243,6 +246,7 @@ class TUBerlin(SketchDataset):
             self._all_categories = sorted(all_categories)
 
             items_metadata = pd.DataFrame(columns=["category", "split", "id", "sub_id"])
+            cnt = 0
             for category in tqdm(self._all_categories, desc="Caching metadata"):
                 class_base = os.path.join(self.root, "svg", category)
                 file_names = os.listdir(class_base)
@@ -255,11 +259,12 @@ class TUBerlin(SketchDataset):
                     {
                         "category": category,
                         "split": split,
-                        "id": file_id,
-                        "sub_id": id,
+                        "id": cnt + id,
+                        "sub_id": file_id,
                     }
                     for id, file_id in enumerate(file_ids)
                 ]
+                cnt += len(file_ids)
                 items_metadata = pd.concat(
                     [items_metadata, pd.DataFrame(new_rows)], ignore_index=True
                 )
@@ -278,7 +283,7 @@ class TUBerlin(SketchDataset):
             self._all_categories = sorted(
                 self.items_metadata["category"].unique().tolist()
             )
-        self.raw_data = [None] * len(self.items_metadata)
+        self.raw_data = [None] * len(self.items_metadata)  # type: list[list | None]
 
     def _load_all(self):
         """Load all sketch data into memory if load_all is enabled.
@@ -296,7 +301,7 @@ class TUBerlin(SketchDataset):
             file_ids.sort()
 
             for file_id in file_ids:
-                svg_path = os.path.join(class_base, str(file_id) + '.svg')
+                svg_path = os.path.join(class_base, str(file_id) + ".svg")
                 _, path_list = parse_svg(svg_path)
                 # path_list: list of (N_curves, 4, 2)
                 self.raw_data[cnt] = path_list
@@ -323,11 +328,11 @@ class TUBerlin(SketchDataset):
         if self.raw_data[idx] is None:
             item_metadata = self.items_metadata.iloc[idx]
             class_base = os.path.join(self.root, "svg", item_metadata["category"])
-            svg_path = os.path.join(class_base, str(item_metadata["id"]) + ".svg")
-            print('@@', idx, item_metadata["id"])
+            svg_path = os.path.join(class_base, str(item_metadata["sub_id"]) + ".svg")
             _, path_list = parse_svg(svg_path)
-        else:
-            path_list = self.raw_data[idx]
+            self.raw_data[idx] = path_list
+
+        path_list = self.raw_data[idx]
         # path_list: list of (N_curves, 4, 2)
 
         paths = []
@@ -362,7 +367,7 @@ if __name__ == "__main__":
     objects = dataset.items_metadata[
         (dataset.items_metadata["category"] == "airplane")
         & (dataset.items_metadata["split"] == "None")
-        ]
+    ]
 
     # Load sketches
     sketches = [dataset[row.id] for _, row in objects[:5].iterrows()]
@@ -372,7 +377,7 @@ if __name__ == "__main__":
 
     renderer = CairoRenderer(800, (1, 1, 1))
     raster_image = renderer.render(sketches[0])
-    outpath = 'test.png'
+    outpath = "test.png"
     if outpath is not None:
-        raster_image_png = Image.fromarray(raster_image, 'RGB')
-        raster_image_png.save(outpath, 'PNG')
+        raster_image_png = Image.fromarray(raster_image, "RGB")
+        raster_image_png.save(outpath, "PNG")

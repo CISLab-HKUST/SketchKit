@@ -79,7 +79,7 @@ class QuickDraw(SketchDataset):
         - Paper: "The Quick, Draw! Dataset" by Ha and Eck, 2017
     """
 
-    # MD5 Sum of the whole dir, you set a list for zip files
+    # MD5 Sum of the whole dir, you can set a list for zip files
     md5_sum = "4d3c05094288833fccc0d28af45af4cd"
     # Metadata columns for each items
     metadata = ["id", "sub_id", "category", "split"]

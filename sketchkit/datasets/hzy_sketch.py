@@ -1,8 +1,8 @@
 import os
-import wget
+import shutil
+
+import pandas
 import json
-#import xml.etree.ElementTree as ET
-#from svg.path import parse_path, path
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
@@ -10,42 +10,38 @@ from sketchkit.utils.file import download_with_tqdm, dir_md5, CISLAB_CDN, extrac
 from pathlib import Path as PathLibPath
 from sketchkit.core import Sketch
 
-dataset_name="hzy_sketch"
-dataset_filename="hzy_sketch-samples.zip"
-def download_and_extract_data(output_folder, remove_sourcefile=True,cislab_source=True):
-    print("Downloading started......")
+dataset_name = "hzy_sketch"
+dataset_filename = "hzy_sketch-samples.zip"
 
+
+def download_and_extract_data(
+    output_folder, remove_sourcefile=True, cislab_source=True
+):
     os.makedirs(output_folder, exist_ok=True)
     try:
         if cislab_source:
-            url = "https://cislab.hkust-gz.edu.cn/demos/aisketch/data/"+f"{dataset_filename}"
+            url = (
+                "https://cislab.hkust-gz.edu.cn/demos/aisketch/data/"
+                + f"{dataset_filename}"
+            )
         else:
-            #TODO: Add another source
-            url = "https://cislab.hkust-gz.edu.cn/demos/aisketch/data/"+f"{dataset_filename}"
-        wget.download(
-            url = url,
-            out=os.path.join(output_folder, dataset_filename),
+            # TODO: Add another source
+            url = (
+                "https://cislab.hkust-gz.edu.cn/demos/aisketch/data/"
+                + f"{dataset_filename}"
+            )
+        download_with_tqdm(
+            url,
+            os.path.join(output_folder, dataset_filename),
         )
     except Exception as e:
         print(e)
         return
 
-    print("hzy is downloaded!")
-    '''
-    assert (
-        calculate_md5(os.path.join(output_folder, "sketches_svg.zip"))
-        == MD5SUM_TABLE["sketches_svg.zip"]
-    ), "sketches_svg.zip md5 checksum error"
-
-
-    print("Md5 checksum passed!")
-    '''
-    print("Extracting started......")
-
     try:
         extract_files(
             file_path=os.path.join(output_folder, dataset_filename),
-            output_dir=os.path.join(output_folder, dataset_name),
+            output_dir=output_folder,
             remove_sourcefile=remove_sourcefile,
         )
 
@@ -53,7 +49,6 @@ def download_and_extract_data(output_folder, remove_sourcefile=True,cislab_sourc
         print(e)
         return
 
-    print(f"{dataset_name} is extracted!")
 
 def load_hzy_sketch_json(drawing_path):
     """
@@ -64,31 +59,30 @@ def load_hzy_sketch_json(drawing_path):
         Sketch: A SketchVG object representing the sketch.
     """
     with open(drawing_path, "rb") as fp:
-        txt=fp.read().decode('utf-8')
-    strokes=json.loads(txt)
-            
+        txt = fp.read().decode("utf-8")
+    strokes = json.loads(txt)
+
     paths = []
 
     for stroke in strokes:
-        points = stroke["points"]               # [{"x":x,y:"y","w":width,"t":time_stamp}...]
+        points = stroke["points"]  # [{"x":x,y:"y","w":width,"t":time_stamp}...]
         pressures = stroke.get("pressure", [None] * len(points))
         thickness = stroke.get("width", None)
 
         curves = []
         for i in range(len(points) - 1):
-            x0, y0 = points[i]["x"],points[i]["y"]
-            x1, y1 = points[i + 1]["x"],points[i + 1]["y"]
+            x0, y0 = points[i]["x"], points[i]["y"]
+            x1, y1 = points[i + 1]["x"], points[i + 1]["y"]
             thickness = points[i]["w"]
 
             p0 = pressures[i] if pressures else None
             p1 = pressures[i + 1] if pressures else None
 
             v_start = Vertex(x0, y0, pressure=p0, thickness=thickness)
-            v_end   = Vertex(x1, y1, pressure=p1, thickness=thickness)
+            v_end = Vertex(x1, y1, pressure=p1, thickness=thickness)
 
-
-            ctrl1 = Point(2/3*x0 + 1/3*x1, 2/3*y0 + 1/3*y1)
-            ctrl2 = Point(1/3*x0 + 2/3*x1, 1/3*y0 + 2/3*y1)
+            ctrl1 = Point(2 / 3 * x0 + 1 / 3 * x1, 2 / 3 * y0 + 1 / 3 * y1)
+            ctrl2 = Point(1 / 3 * x0 + 2 / 3 * x1, 1 / 3 * y0 + 2 / 3 * y1)
 
             curve = Curve(v_start, v_end, ctrl1, ctrl2)
             curves.append(curve)
@@ -99,13 +93,15 @@ def load_hzy_sketch_json(drawing_path):
 
     return Sketch(paths=paths)
 
-class hzy_sketch(SketchDataset):
+
+class hzySketch(SketchDataset):
     """The hzy dataset,
     which contains drawing process for high-quality anime line arts.
 
     Args:
         data_base: The directory of storing the dataset, which is automatically downloaded if not existed.
     """
+
     """Loads the hzy_sketch dataset from json files.
 
     This class handles the automatic download, extraction, and parsing of the
@@ -126,6 +122,8 @@ class hzy_sketch(SketchDataset):
        <sketchkit.core.sketch.Sketch object at 0x000001AB5033ACE0>
     """
 
+    md5_sum = "bb0d0fdc6eefa2e2ab41f990cc8cd5f4"
+
     def __init__(
         self,
         root: str | PathLibPath | None = None,
@@ -142,12 +140,7 @@ class hzy_sketch(SketchDataset):
             data_base: The base directory for storing all datasets.
                 Defaults to '~/.cache/sketchkit/datasets'.
         """
-        self.md5_sum="bb0d0fdc6eefa2e2ab41f990cc8cd5f4"
         super().__init__(root, load_all=load_all, cislab_source=cislab_source)
-        #self.data_root = os.path.join(self.root, dataset_name)
-        #self.root = os.path.join(data_base, dataset_name)
-        
-        
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.
@@ -155,11 +148,9 @@ class hzy_sketch(SketchDataset):
         Returns:
             bool: True if the dataset integrity is verified, False otherwise.
         """
-        
+
         print(f"Checking integrity of cached {self.__class__.__name__} dataset...")
-        #return True
         current_md5 = dir_md5(self.root)
-        print(current_md5,self.root)
         return current_md5 == self.md5_sum
 
     def _download(self):
@@ -172,43 +163,42 @@ class hzy_sketch(SketchDataset):
         Raises:
             Exception: If download fails for any file.
         """
-
-            
         if os.path.exists(self.root):
             shutil.rmtree(self.root)
         os.makedirs(self.root, exist_ok=True)
 
         download_and_extract_data(self.root)
-        
-        #print("MD5 Checksum:", dir_md5(self.root))
-    def _load_all(self):
 
-        self.json_base = os.path.join(self.root, dataset_name,"json")
+        print("MD5 Checksum:", dir_md5(self.root))
+
+    def _load_all(self):
+        for _, row in self.items_metadata.iterrows():
+            self.raw_data[row["id"]] = load_hzy_sketch_json(
+                os.path.join(self.json_base, row["json"])
+            )
+
+    def _load_items_metadata(self):
+        self.json_base = os.path.join(self.root, "json")
         if not os.path.isdir(self.json_base):
             raise FileNotFoundError(
                 f"JSON directory not found at '{self.json_base}'. "
                 "Please check the download or extraction process."
             )
-        json_list=[]
-        
 
         dest_dir = self.json_base
         if not os.path.isdir(dest_dir):
             print(f"Warning: Directory not found, skipping. Path: {dest_dir}")
             return
-        for filename in sorted(os.listdir(dest_dir)):
+        items_metadata = []
+        for id, filename in enumerate(sorted(os.listdir(dest_dir))):
             if filename.endswith(".json"):
-                json_list.append(os.path.join(dest_dir, filename))
-        self.raw_data = [None]*len(json_list)
-        for i in range(len(json_list)):
-            self.raw_data[i]=json_list[i]
-        print('json_list',len(json_list))
-    def _load_items_metadata(self):
-        pass
+                items_metadata.append({"id": id, "json": filename})
+        self.items_metadata = pandas.DataFrame(items_metadata)
+        self.raw_data: list[Sketch | None] = [None] * len(self.items_metadata)
 
     def __len__(self) -> int:
         return len(self.raw_data)
-        
+
     def __getitem__(self, idx: int) -> Sketch:
         """Retrieves a sketch by its index.
 
@@ -220,16 +210,29 @@ class hzy_sketch(SketchDataset):
         """
         if idx < 0 or idx >= len(self):
             raise IndexError("Index out of range")
-        json_path = self.raw_data[idx]
-        return load_hzy_sketch_json(json_path)
+        if self.raw_data[idx] is None:
+            self.json_base = os.path.join(self.root, "json")
+            self.raw_data[idx] = load_hzy_sketch_json(
+                os.path.join(self.json_base, self.items_metadata.iloc[idx]["json"])
+            )
+        sketch = self.raw_data[idx]
+        if sketch is None:
+            raise RuntimeError(f"Failed to load sketch at index {idx}")
+        return sketch
+
 
 if __name__ == "__main__":
-    import tempfile
-    with tempfile.TemporaryDirectory() as tmpdir:
-        data_base = os.path.join(os.path.expanduser("~"), ".cache/sketchkit/datasets")
-        data = hzy_sketch(data_base)
-        print(f"Total sketches: {len(data)}")
-        sketch = data[0]
-        print(sketch)
-        print(sketch.curve_num, sketch.path_num)
-        print("Loaded first sketch successfully.")
+    dataset = hzySketch(load_all=True)
+    print(dataset)
+    sketch = dataset[1]
+    print(sketch.curve_num, sketch.path_num)
+
+    from PIL import Image
+    from sketchkit.renderer.cairo_renderer import CairoRenderer
+
+    renderer = CairoRenderer(1024, (1, 1, 1))
+    raster_image = renderer.render(sketch)
+    outpath = "test.png"
+    if outpath is not None:
+        raster_image_png = Image.fromarray(raster_image, "RGB")
+        raster_image_png.save(outpath, "PNG")

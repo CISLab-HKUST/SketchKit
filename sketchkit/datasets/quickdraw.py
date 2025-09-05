@@ -233,8 +233,6 @@ class QuickDraw(SketchDataset):
         Concatenates all sketch data from all categories and splits into a single
         numpy array for faster access. Only loads if self.load_all is True.
         """
-        if not self.load_all:
-            return
         cnt = 0
         for category in tqdm(self._all_categories, desc="Loading all data to memory"):
             npz_path = os.path.join(self.root, category + ".npz")

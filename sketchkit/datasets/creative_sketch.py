@@ -178,11 +178,11 @@ class CreativeSketch:
                     p_end = [seg[2], seg[3]]
                     line = np.stack([p_start, p_end], axis=0)
                     cubic = line_to_cubic(line)
-                    v_start = Vertex(p_start[0], p_start[1], color=stroke_color)
-                    v_end = Vertex(p_end[0], p_end[1], color=stroke_color)
-                    v_ctrl1 = Point(cubic[1][0], cubic[1][1])
-                    v_ctrl2 = Point(cubic[2][0], cubic[2][1])
-                    strokes.append(Curve(v_start, v_end, v_ctrl1, v_ctrl2))
+                    # v_start = Vertex(p_start[0], p_start[1], color=stroke_color)
+                    # v_end = Vertex(p_end[0], p_end[1], color=stroke_color)
+                    # v_ctrl1 = Point(cubic[1][0], cubic[1][1])
+                    # v_ctrl2 = Point(cubic[2][0], cubic[2][1])
+                    strokes.append(cubic)
             path_list.append(Path(strokes))
         # path_list: list of (N_strokes, 4, 2)
 

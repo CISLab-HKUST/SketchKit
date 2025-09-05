@@ -45,11 +45,10 @@ class CairoRenderer:
         ctx.set_antialias(cairo.ANTIALIAS_BEST)
         ctx.set_line_cap(cairo.LINE_CAP_ROUND)
         ctx.set_line_join(cairo.LINE_JOIN_ROUND)
-        ctx.set_line_width(10)
         ctx.set_source_rgb(*self.canvas_color)
+        ctx.set_line_width(3)
         ctx.paint()
         
-
         seq_i = 0
         for j, each_path in enumerate(sketch.paths):
             for curve in each_path.curves:
@@ -60,7 +59,8 @@ class CairoRenderer:
                     x2, y2 = p2.x, p2.y
                     x3, y3 = p3.x, p3.y
                     # ctx.set_source_rgb(colors[seq_i][0], colors[seq_i][1], colors[seq_i][2])
-                    ctx.set_source_rgb(0, 0, 0)
+                    # print(curve.color, curve.thickness)
+                    ctx.set_source_rgb(0,0,0)
                     # seq_i += 1
                     ctx.move_to(x0, y0)
                     ctx.curve_to(x1, y1, x2, y2, x3, y3)

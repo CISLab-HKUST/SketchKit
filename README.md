@@ -2,14 +2,14 @@
 
 ## Documentation
 
-The docs can found on [https://cislab.hkust-gz.edu.cn/projects/sketchkit-docs/](https://cislab.hkust-gz.edu.cn/projects/sketchkit-docs/). The api docs will be auto generated after each commit.
+The docs can found on [https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/](https://cislab.hkust-gz.edu.cn/projects/sketchkit-docs/). The api docs will be auto generated after each commit.
 
 If you want to contribute to manual docs, please refer to documents in `docs/source/manual` folder, just like:
 
-- [docs/source/manual/0_SketchVG.md](docs/source/manual/0_SketchVG.md)
-
+- [docs/source/manual/0_representation.md](docs/source/manual/0_representation.md)
 
 ### Docstring
+
 A [Python Docstring](https://peps.python.org/pep-0257/) (short for documentation string) is a special kind of string in Python used to describe what your code does. It’s written as a string literal — usually triple quotes """ ... """ or ''' ... ''' — placed immediately after a function, class, or module definition.
 
 We can auto-generate documentation with these docstrings using some tools.
@@ -52,7 +52,7 @@ If you don’t have write access to the original repository, fork it to your acc
 - Keeps changes isolated from the default branch.
 - [How to create a branch](https://docs.github.com/en/repositories/creating-and-managing-branches)
 
-```
+```bash
 git checkout -b {new_branch_name}
 ```
 
@@ -88,7 +88,7 @@ git checkout -b {new_branch_name}
 - Removes clutter and signals work completion.
 - You can restore or revert changes later if needed.
 
-```
+```bash
 git branch -d your_local_branch
 ```
 
@@ -100,7 +100,7 @@ git branch -d your_local_branch
 
 ## File Structure
 
-```
+```plaintext
 sketchkit/
     data/                  /* For data format class and datasets. */
         dataformat/

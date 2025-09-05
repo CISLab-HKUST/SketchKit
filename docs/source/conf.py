@@ -5,7 +5,8 @@
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath('../..'))
+
+sys.path.insert(0, os.path.abspath("../.."))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -29,19 +30,17 @@ autosummary_generate = True
 
 apidoc_modules = [
     {
-        'path': '../../sketchkit',
-        'destination': 'api',
-        'exclude_patterns': ['**/test*'],
-        'max_depth': 4,
-        'follow_links': False,
-        'separate_modules': False,
-        'include_private': False,
-        'no_headings': False,
-        'module_first': False,
-        'implicit_namespaces': False,
-        'automodule_options': {
-            'members', 'show-inheritance', 'undoc-members'
-        },
+        "path": "../../sketchkit",
+        "destination": "api",
+        "exclude_patterns": ["**/test*"],
+        "max_depth": 4,
+        "follow_links": False,
+        "separate_modules": False,
+        "include_private": True,
+        "no_headings": False,
+        "module_first": False,
+        "implicit_namespaces": False,
+        "automodule_options": {"members", "show-inheritance", "undoc-members"},
     }
 ]
 

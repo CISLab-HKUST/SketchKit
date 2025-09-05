@@ -1,40 +1,42 @@
 # Sketch Datasets
 
-## Conversion
+## How to implement a dataset?
 
-<!-- We should write a class (use `torch.utils.data.Dataset` as a base class) for each dataset. An example is [TUBerlin](../../data/datasets/tu_berlin.py#L142) in folder `data/datasets`. The main procedure is as follows: -->
+```{eval-rst}
+The base class is :class:`sketchkit.utils.dataset.SketchDataset`. You should implement `_check_integrity`, `_download`, `_load_items_metadata`, `_load_all`, `__getitem__` methods.
 
-1. Automatically download and extract the dataset if it is not existed.
-2. Load the dataset to obtain data like class names and all the file names.
-3. Define the `__getitem__` function:
+By default, the dataset doesn't load data to memory, only metadata.`_load_items_metadata` should load all metadata of items into memory, which can be used for searching later. Metadata should be stored in a `pandas.DataFrame` for better indexing. You can caching the metadata using a file to load after the first time.
 
-   - Parse the original data into the desired input format of SketchVG.
-   - Define the SketchVG format and return.
+`_check_integrity` is to validate the downloaded dir/files is intact.
 
-## Supported Datasets
+An example implementation is `sketchkit.datasets.QuickDraw`:
 
-   | Dataset | Status | Description | Domain |
-   |---------|---------|-------------|---------|
-   | OpenSketch | | Open source sketch dataset | General sketches |
-   | DifferSketching | | Differentiable sketching dataset | Sketch generation |
-   | Tracing-vs-freehand | | Comparison dataset for drawing styles | Drawing analysis |
-   | TU-Berlin| ✅ |||
-   |Sketchy Database |✅| Large-scale sketch recognition datasets | Sketch classification |
-   | Sketch2Pose | | Sketch to pose estimation dataset | Human pose |
-   | Where do people draw lines | | Line drawing behavior analysis | Drawing patterns |
-   | Benchmark for sketch cleanup (GMU) | | Sketch cleaning and simplification | Sketch processing |
-   | PhotoSketching (CMU) | | Photo to sketch conversion dataset | Image-to-sketch |
-   | Haoran's awesome datasets | | Collection of sketch datasets | Various |
-   | QuickDraw |✅ | Google's quick drawing dataset | Doodle recognition |
-   | VR sketching | | Virtual reality sketching dataset | 3D/VR sketching |
+.. autoclass:: sketchkit.datasets.QuickDraw
+   :members:
+   :private-members:
+   :special-members: __getitem__
+```
 
-## Examples
+## Dataset Usages
 
 After the dataset conversion, we can load a dataset with a single-line code:
 
 ```python
-from sketchkit.data.datasets.tu_berlin import TUBerlin
-my_data = TUBerlin()
-```
+   # Default Load
+   dataset = QuickDraw()
 
-See testing scripts in folders `scripts` for more details.
+   # Load all data to memory at once
+   dataset = QuickDraw(load_all=True)
+
+   # Download from CISLAB CDN
+   dataset = QuickDraw(root=tmpdir, cislab_source=True)
+
+   # Search items using metadata
+   cats = dataset.items_metadata[
+      (dataset.items_metadata["category"] == "cat")
+      & (dataset.items_metadata["split"] == "train")
+   ]
+
+   # Load sketches
+   cats_sketch = [dataset[row.id] for _, row in cats[:100].iterrows()]
+```

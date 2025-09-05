@@ -1,5 +1,5 @@
 from .quickdraw import QuickDraw
-from .hzy_sketch import hzy_sketch
+from .sketchy import Sketchy
 
 
-__all__ = ["QuickDraw","hzy_sketch"]
+__all__ = ["QuickDraw","Sketchy"]

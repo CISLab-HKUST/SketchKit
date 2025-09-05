@@ -4,12 +4,14 @@ import traceback
 import re
 import requests
 import xml.etree.ElementTree as ET
+import pandas as pd
 
 from svg.path import parse_path, path
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
-from sketchkit.utils.general_utils.md5sum import calculate_md5
-from sketchkit.core import Sketch as SketchCore
+from sketchkit.utils.dataset import SketchDataset
+from sketchkit.utils.file import download_with_tqdm, extract_files, CISLAB_CDN
+from sketchkit.utils.transform import line_to_cubic
 import py7zr
 import gdown
 
@@ -68,28 +70,23 @@ def _download_from_gdrive(file_id: str, destination: str) -> None:
 def download_sketchy_database(
     output_folder: str,
     remove_sourcefile: bool = True,
-    expected_md5: str | None = None,
     gdrive_id: str = "1Qr8HhjRuGqgDONHigGszyHG_awCstivo",
     filename: str = "sketches-06-04.7z",
     prune_invalid: bool = True,
+    cislab_source: bool = False,
 ):
     """Download and extract The Sketchy Database (SVG version).
 
     Downloads the 7z archive from Google Drive by file ID (preferred),
-    verifies MD5 if provided, and extracts it into a ``sketches/`` directory.
+    and extracts it into a ``sketchy/`` directory.
 
     Args:
         output_folder: Directory where the archive will be saved and extracted.
         remove_sourcefile: If True, delete the downloaded 7z after extraction.
-        expected_md5: Optional MD5 checksum string. If provided, the file's MD5
-            will be verified and an AssertionError is raised on mismatch.
         gdrive_id: Google Drive file ID for the archive.
         filename: Local filename to save the downloaded 7z.
-
-    Raises:
-        AssertionError: If `expected_md5` is provided and the digest mismatches.
-        FileNotFoundError: If extraction target is not created after extraction.
-        RuntimeError: If extraction fails or download returns an empty file.
+        prune_invalid: If True, prune invalid SVGs after extraction.
+        cislab_source: If True, use CISLAB CDN instead of Google Drive.
     """
     print("Downloading Sketchy Database...")
 
@@ -97,34 +94,43 @@ def download_sketchy_database(
     archive_path = os.path.join(output_folder, filename)
 
     try:
-        print("Using gdown for Google Drive download...")
-        # Prefer gdown when available, it handles confirm tokens and cookies internally.
-        gdown.download(id=gdrive_id, output=archive_path, quiet=False)
+        if cislab_source:
+            # Use CISLAB CDN
+            cislab_url = f"{CISLAB_CDN}/sketchy/{filename}"
+            print(f"Downloading from CISLAB: {cislab_url}")
+            download_with_tqdm(
+                cislab_url, archive_path, desc="Downloading Sketchy Database"
+            )
+        else:
+            print("Using gdown for Google Drive download...")
+            gdown.download(id=gdrive_id, output=archive_path, quiet=False)
         print("\nDownload finished!")
     except Exception as e:
         traceback.print_exc()
         print("Download failed.")
         return
 
-    # Optional MD5 check
-    if expected_md5 is not None:
-        print("Verifying MD5 checksum...")
-        md5_val = calculate_md5(archive_path)
-        assert md5_val == expected_md5, f"MD5 mismatch: {md5_val} != {expected_md5}"
-        print("MD5 checksum passed!")
-
     print("Extracting archive...")
-    extract_target = os.path.join(output_folder, "sketches")
+    extract_target = os.path.join(output_folder, "sketchy")
 
     try:
+        # Use original py7zr extraction method
         with py7zr.SevenZipFile(archive_path, mode="r") as zf:
             zf.extractall(path=output_folder)
+        
+        # Rename the extracted folder from "sketches" to "sketchy"
+        extracted_sketches = os.path.join(output_folder, "sketches")
+        if os.path.isdir(extracted_sketches):
+            if os.path.exists(extract_target):
+                import shutil
+                shutil.rmtree(extract_target)
+            os.rename(extracted_sketches, extract_target)
     except Exception:
         traceback.print_exc()
         print("Extraction failed.")
         return
 
-    # Expect a folder named "sketches" after extraction.
+    # Expect a folder named "sketchy" after extraction.
     if not os.path.isdir(extract_target):
         raise FileNotFoundError(
             f'Expected directory "{extract_target}" not found after extraction.'
@@ -252,23 +258,23 @@ def parse_single_path(path_str: str):
             raise Exception("Arc is not supported")
 
         elif path_type == path.Line:
-            # Convert a line segment to a cubic by interpolation between start and end.
-            # Do not assume a previous Move; add the start anchor if missing.
+            # Use line_to_cubic from transform.py for line segment conversion
             if len(control_points_list) == 0:
                 s = path_item.start
                 control_points_list.append((s.real, s.imag))
+            
             start, end = path_item.start, path_item.end
-            start_x, start_y = start.real, start.imag
-            end_x, end_y = end.real, end.imag
-
-            control1_x = 2.0 / 3.0 * start_x + 1.0 / 3.0 * end_x
-            control1_y = 2.0 / 3.0 * start_y + 1.0 / 3.0 * end_y
-            control2_x = 1.0 / 3.0 * start_x + 2.0 / 3.0 * end_x
-            control2_y = 1.0 / 3.0 * start_y + 2.0 / 3.0 * end_y
-
-            control_points_list.append((control1_x, control1_y))
-            control_points_list.append((control2_x, control2_y))
-            control_points_list.append((end_x, end_y))
+            line_points = [
+                [start.real, start.imag],
+                [end.real, end.imag]
+            ]
+            
+            # Convert line to cubic using transform.py function
+            cubic_curve = line_to_cubic(line_points)
+            # Fix: use correct attribute names p_crtl1 and p_crtl2
+            control_points_list.append((cubic_curve.p_crtl1.x, cubic_curve.p_crtl1.y))
+            control_points_list.append((cubic_curve.p_crtl2.x, cubic_curve.p_crtl2.y))
+            control_points_list.append((cubic_curve.p_end.x, cubic_curve.p_end.y))
 
         else:
             raise Exception("Unknown path_type", path_type)
@@ -360,11 +366,11 @@ def parse_svg(svg_file: str):
     return (sketch_width, sketch_height), path_list, total_segment_num
 
 
-class Sketchy:
+class Sketchy(SketchDataset):
     """The Sketchy Database (https://sketchy.eye.gatech.edu/), SVG subset.
 
     This loader expects the archive ``sketches-06-04.7z`` to extract into a
-    ``sketches/`` directory whose immediate subfolders are category names,
+    ``sketchy/`` directory whose immediate subfolders are category names,
     each containing multiple ``.svg`` files. Any ``checked.txt`` or
     ``invalid.txt`` files present in category folders are ignored.
 
@@ -375,7 +381,7 @@ class Sketchy:
     The data is represented using cubic Bézier curves consistent with SketchKit.
 
     Example:
-        >>> data = SketchyDatabase()
+        >>> data = Sketchy()
         >>> len(data)
         20000
         >>> s = data[0]
@@ -383,40 +389,51 @@ class Sketchy:
         True
 
     Args:
-        data_base: Relative base under $HOME where the dataset will be stored.
-            If the expected directory does not exist, it will be downloaded
-            and extracted automatically.
-        gdrive_url: Direct Google Drive download URL for the archive.
+        root: Root directory where the dataset will be stored.
+        load_all: Whether to load all data into memory at initialization.
+        cislab_source: Whether to use CISLAB as the data source.
+        file_id: Google Drive file ID for the archive.
         archive_name: Local filename for the 7z archive.
-        md5: Optional MD5 checksum string to verify archive integrity.
         remove_sourcefile: If True, delete the archive after extraction.
+        prune: Whether to prune invalid SVGs during download.
     """
 
     def __init__(
         self,
-        data_base: str = ".cache/sketchkit/datasets",
+        root: str = None,
+        load_all: bool = False,
+        cislab_source: bool = False,
         file_id: str = "1Qr8HhjRuGqgDONHigGszyHG_awCstivo",
         archive_name: str = "sketches-06-04.7z",
-        md5: str | None = None,
         remove_sourcefile: bool = True,
         prune: bool = True,
     ):
-        data_root = os.path.join(os.environ.get("HOME"), data_base)
-        os.makedirs(data_root, exist_ok=True)
+        self.file_id = file_id
+        self.archive_name = archive_name
+        self.remove_sourcefile = remove_sourcefile
+        self.prune = prune
+        
+        super().__init__(root=root, load_all=load_all, cislab_source=cislab_source)
 
-        # Download & extract if needed.
-        if not os.path.isdir(os.path.join(data_root, "sketches")):
-            download_sketchy_database(
-                output_folder=data_root,
-                remove_sourcefile=remove_sourcefile,
-                expected_md5=md5,
-                gdrive_id=file_id,
-                filename=archive_name,
-                prune_invalid=prune,
-            )
+    def _check_integrity(self) -> bool:
+        """Check if the dataset files are complete and valid."""
+        sketchy_dir = os.path.join(self.root, "sketchy")
+        return os.path.isdir(sketchy_dir) and len(os.listdir(sketchy_dir)) > 0
 
-        # Build index of classes and svg files.
-        self.svg_base = os.path.join(data_root, "sketches")
+    def _download(self):
+        """Download the dataset files to the root directory."""
+        download_sketchy_database(
+            output_folder=self.root,
+            remove_sourcefile=self.remove_sourcefile,
+            gdrive_id=self.file_id,
+            filename=self.archive_name,
+            prune_invalid=self.prune,
+            cislab_source=self.cislab_source,
+        )
+
+    def _load_items_metadata(self):
+        """Load metadata for all items in the dataset into a pandas DataFrame."""
+        self.svg_base = os.path.join(self.root, "sketchy")
         if not os.path.isdir(self.svg_base):
             raise FileNotFoundError(f'Expected directory "{self.svg_base}" not found.')
 
@@ -429,12 +446,21 @@ class Sketchy:
         self.class_names = class_names
 
         sketch_names = []
+        metadata_list = []
         for class_name in self.class_names:
             class_base = os.path.join(self.svg_base, class_name)
             files = os.listdir(class_base)
-            # Ignore marker TXT files, keep only .svg
             svg_files = sorted([f for f in files if f.lower().endswith(".svg")])
-            sketch_names += [class_name + "/" + f for f in svg_files]
+            
+            for svg_file in svg_files:
+                sketch_name = f"{class_name}/{svg_file}"
+                sketch_names.append(sketch_name)
+                metadata_list.append({
+                    'class_name': class_name,
+                    'filename': svg_file,
+                    'path': os.path.join(class_base, svg_file),
+                    'sketch_name': sketch_name
+                })
 
         if len(sketch_names) == 0:
             raise RuntimeError(
@@ -443,27 +469,21 @@ class Sketchy:
             )
 
         self.sketch_names = sketch_names
+        self.items_metadata = pd.DataFrame(metadata_list)
 
-    def __len__(self) -> int:
-        return len(self.sketch_names)
+    def _load_all(self):
+        """Load all dataset items into memory."""
+        self.raw_data = [None] * len(self.items_metadata)
+        for idx in range(len(self.items_metadata)):
+            self.raw_data[idx] = self._load_sketch(idx)
 
-    def __getitem__(self, idx: int) -> Sketch:
-        """Load a single sketch as a `Sketch` instance.
-
-        Args:
-            idx: Index into the dataset.
-
-        Returns:
-            A `Sketch` object composed of cubic Bézier `Path`/`Curve`s.
-        """
-        sketch_name = self.sketch_names[idx]  # e.g., "cat/12345.svg"
-        class_name, file_name = sketch_name.split("/")
-        svg_path = os.path.join(self.svg_base, class_name, file_name)
+    def _load_sketch(self, idx: int) -> Sketch:
+        """Load a single sketch by index."""
+        row = self.items_metadata.iloc[idx]
+        svg_path = row['path']
 
         # Parse original SVG into SketchVG-compatible parts
         image_sizes, path_list, total_segment_num = parse_svg(svg_path)
-        # image_sizes: (width, height)
-        # path_list: list of (N_curves, 4, 2)
 
         paths = []
         for path_item in path_list:
@@ -478,3 +498,17 @@ class Sketchy:
 
         sketch = Sketch(paths=paths)
         return sketch
+
+    def __getitem__(self, idx: int) -> Sketch:
+        """Load a single sketch as a `Sketch` instance.
+
+        Args:
+            idx: Index into the dataset.
+
+        Returns:
+            A `Sketch` object composed of cubic Bézier `Path`/`Curve`s.
+        """
+        if self.raw_data is not None:
+            return self.raw_data[idx]
+        else:
+            return self._load_sketch(idx)

@@ -1,12 +1,12 @@
 import os
+import shutil
+
 import glob
 import numpy as np
 import gdown
-import zipfile
+
 import xml.etree.ElementTree as ET
 import pandas as pd
-from tqdm import tqdm
-from typing import List
 from pathlib import Path as PathLibPath
 
 from svg.path import parse_path, path
@@ -18,14 +18,15 @@ from sketchkit.utils.file import extract_files, download_with_tqdm, dir_md5, CIS
 
 _INVALID = {"rect", "circle", "ellipse", "line", "polyline", "polygon"}
 
-def parse_svg(svg_path: str) -> List[Path]:
+
+def parse_svg(svg_path: str) -> list[Path]:
     """Parse an SVG file into a list of Path objects.
 
     Args:
         svg_path (str): Path to the SVG file to parse.
 
     Returns:
-        List[Path]: Parsed sketch represented as a list of Path objects.
+        list[Path]: Parsed sketch represented as a list of Path objects.
 
     Raises:
         AssertionError: If a transform attribute is encountered.
@@ -34,7 +35,7 @@ def parse_svg(svg_path: str) -> List[Path]:
     tree = ET.parse(svg_path)
     root = tree.getroot()
 
-    paths: List[Path] = []
+    paths: list[Path] = []
 
     for elem in root.iter():
         tag = elem.tag.split("}", 1)[-1]
@@ -73,9 +74,13 @@ def parse_svg(svg_path: str) -> List[Path]:
                 p0 = (s.real, s.imag)
                 p1 = (e.real, e.imag)
                 cubic = line_to_cubic(np.stack([p0, p1], axis=0))
-                cps.extend([(cubic[1, 0], cubic[1, 1]),
-                            (cubic[2, 0], cubic[2, 1]),
-                            (cubic[3, 0], cubic[3, 1])])
+                cps.extend(
+                    [
+                        (cubic[1, 0], cubic[1, 1]),
+                        (cubic[2, 0], cubic[2, 1]),
+                        (cubic[3, 0], cubic[3, 1]),
+                    ]
+                )
 
             elif t == path.Arc:
                 raise Exception("Arc not supported")
@@ -110,13 +115,13 @@ class ControlSketch(SketchDataset):
           ├── train/<category>/*.svg
           ├── validation/<category>/*.svg
           └── test/<category>/*.svg
-    
+
     References:
         - Original dataset: https://swiftsketch.github.io/#controlsketch-data
         - Paper: "SwiftSketch: A Diffusion Model for Image-to-Vector Sketch Generation" by E Arar, 2025
     """
 
-    md5_sum = "3b3e73dd66fc42e55cd6cc54b4b08656"
+    md5_sum = "05f38b94a8025007b40f77f95270a7a6"
     metadata = ["id", "sub_id", "category", "split", "filepath"]
 
     def __init__(
@@ -135,7 +140,6 @@ class ControlSketch(SketchDataset):
             cislab_source (bool): If True, downloads from CISLAB CDN mirror.
                 If False, downloads from original Google storage. Defaults to False.
         """
-
 
         super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
@@ -160,22 +164,22 @@ class ControlSketch(SketchDataset):
         Downloads the dataset archive from CISLAB CDN or Google Drive,
         extracts it into the dataset root, and removes the source file if successful.
         """
+        if os.path.exists(self.root):
+            shutil.rmtree(self.root)
         os.makedirs(self.root, exist_ok=True)
-        ds_root = os.path.join(self.root, "controlsketch_sketches")
-        if os.path.isdir(ds_root):
-            print("ControlSketch already exists. Skip download and extract.")
-            return
 
         zip_name = "controlsketch_sketches.zip"
         zip_path = os.path.join(self.root, zip_name)
 
         if self.cislab_source:
             try:
-                url = f"{CISLAB_CDN}/datasets/ControlSketch/{zip_name}"
+                url = f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/{zip_name}"
                 print(f"Downloading ControlSketch from CISLAB CDN: {url}")
                 download_with_tqdm(url, file_path=zip_path, pg_bar=True)
             except Exception:
-                print("CISLAB mirror unavailable. Falling back to Google Drive (gdown).")
+                print(
+                    "CISLAB mirror unavailable. Falling back to Google Drive (gdown)."
+                )
                 file_id = "1-kffChm6RXwTuP8qxUOT-QDf8-bSCH0w"
                 if not os.path.exists(zip_path):
                     print("Downloading ControlSketch from Google Drive…")
@@ -194,8 +198,7 @@ class ControlSketch(SketchDataset):
             print("Extraction finished.")
         except Exception as e:
             raise e
-            print("Extraction finished.")
-        
+
     def _load_items_metadata(self):
         """Build metadata index for dataset items.
 
@@ -228,14 +231,16 @@ class ControlSketch(SketchDataset):
 
         splits = ["train", "validation", "test"]
         rows = []
-        gid = 0  
+        gid = 0
 
         for sp in splits:
             sp_dir = os.path.join(ds_root, sp)
             if not os.path.isdir(sp_dir):
                 continue
 
-            cats = [d for d in os.listdir(sp_dir) if os.path.isdir(os.path.join(sp_dir, d))]
+            cats = [
+                d for d in os.listdir(sp_dir) if os.path.isdir(os.path.join(sp_dir, d))
+            ]
             for cat in sorted(cats):
                 cdir = os.path.join(sp_dir, cat)
                 svgs = sorted(glob.glob(os.path.join(cdir, "*.svg")))
@@ -251,7 +256,6 @@ class ControlSketch(SketchDataset):
                     rows.append(row)
                     gid += 1
 
-        import pandas as pd
         self.items_metadata = pd.DataFrame(rows, columns=self.metadata)
 
         try:
@@ -261,15 +265,12 @@ class ControlSketch(SketchDataset):
 
         self.raw_data = [None] * len(self.items_metadata)
 
-
     def _load_all(self):
         """Load all sketch data into memory if load_all is enabled.
 
         Concatenates all sketch data from all categories and splits into a single
         numpy array for faster access. Only loads if self.load_all is True.
         """
-        if not self.load_all:
-            return
         for idx in range(len(self.items_metadata)):
             fp = self.items_metadata.iloc[idx]["filepath"]
             self.raw_data[idx] = parse_svg(fp)
@@ -303,9 +304,8 @@ class ControlSketch(SketchDataset):
             str: A string with number of categories and sample counts
                 for train/validation/test splits.
         """
-        import pandas as pd
-
         df = self.items_metadata
+
         def _n(sp):
             return int((df["split"] == sp).sum()) if isinstance(df, pd.DataFrame) else 0
 
@@ -317,15 +317,15 @@ class ControlSketch(SketchDataset):
         return f"Categories: {n_cat}\nTrain: {num_train} Validation: {num_val} Test samples: {num_test}"
 
 
-# if __name__ == "__main__":
-#     import psutil
-#     from rich.console import Console
-#     import time
+if __name__ == "__main__":
+    import psutil
+    from rich.console import Console
+    import time
 
-#     console = Console()
+    console = Console()
 
-#     console.print("ControlSketch Dataset Test", style="bold blue")
-#     console.print()
+    console.print("ControlSketch Dataset Test", style="bold blue")
+    console.print()
 
     # console.print("1. Default Load", style="green")
     # dataset = ControlSketch()
@@ -366,25 +366,36 @@ class ControlSketch(SketchDataset):
 
     # console.print()
 
-    # console.print("3. Load from CISLAB CDN", style="green")
+    console.print("3. Load from CISLAB CDN", style="green")
 
-    # # tempfile can create a temporary directory
-    # import tempfile
+    # tempfile can create a temporary directory
+    import tempfile
 
-    # with tempfile.TemporaryDirectory() as tmpdir:
-    #     dataset = ControlSketch(root=tmpdir, cislab_source=True)
-    #     # show brief information of the dataset
-    #     console.print(dataset)
-    #     process = psutil.Process()
-    #     memory_mb = process.memory_info().rss / 1024 / 1024
-    #     console.print(f"Current memory usage: {memory_mb:.2f} MB")
-    #     bears = dataset.items_metadata[
-    #         (dataset.items_metadata["category"] == "bear")
-    #         & (dataset.items_metadata["split"] == "validation")
-    #     ]
-    #     start_time = time.time()
-    #     bears_sketch = [dataset[row.id] for _, row in bears[:100].iterrows()]
-    #     console.print(f"Loading 100 sketches in {time.time() - start_time}")
-    #     del dataset, bears
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dataset = ControlSketch(root=tmpdir, cislab_source=True)
+        # show brief information of the dataset
+        console.print(dataset)
+        process = psutil.Process()
+        memory_mb = process.memory_info().rss / 1024 / 1024
+        console.print(f"Current memory usage: {memory_mb:.2f} MB")
+        bears = dataset.items_metadata[
+            (dataset.items_metadata["category"] == "bear")
+            & (dataset.items_metadata["split"] == "validation")
+        ]
+        start_time = time.time()
+        bears_sketch = [dataset[row.id] for _, row in bears[:100].iterrows()]
+        console.print(f"Loading 100 sketches in {time.time() - start_time}")
+        del dataset, bears
 
-    #     console.print()
+        console.print()
+
+        from PIL import Image
+        from sketchkit.renderer.cairo_renderer import CairoRenderer
+
+        renderer = CairoRenderer(256, (1, 1, 1))
+        raster_image = renderer.render(bears_sketch[0])
+        outpath = "test.png"
+        if outpath is not None:
+            raster_image_png = Image.fromarray(raster_image, "RGB")
+            raster_image_png.save(outpath, "PNG")
+

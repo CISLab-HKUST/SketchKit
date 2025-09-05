@@ -59,7 +59,7 @@ def extract_files(file_path, output_dir, remove_sourcefile=True):
     try:
         Archive(file_path).extractall(output_dir)
     except Exception as e:
-        print(e)
+        raise e
 
     print("{} has been extracted succesfully!".format(file_path))
 
@@ -69,7 +69,7 @@ def extract_files(file_path, output_dir, remove_sourcefile=True):
     try:
         os.remove(file_path)
     except Exception as e:
-        print(e)
+        raise e
 
     print("Source file has been removed succesfully!")
 

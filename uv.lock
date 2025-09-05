@@ -786,6 +786,15 @@ wheels = [
 ]
 
 [[package]]
+name = "patool"
+version = "4.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/93/c7/f9d5c6f9c51433d95399e40c9dd214f2b44bdcb79cbbd86028f55535725e/patool-4.0.1.tar.gz", hash = "sha256:41f7ee21be337a5baf07b2cb4796e9d94397ab741d2379c622f98fc001099802", size = 2006713, upload-time = "2025-05-02T19:08:16.768Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d2/07/a7aefd5b3ee565b4d959bcf7061666c7fbf66ed83e58d07cdcdca35c9b33/patool-4.0.1-py2.py3-none-any.whl", hash = "sha256:a7430eb08edcbd71feaf9c40f55c46f6a0ac385dc68dd0f5010cfa4ad2e9341a", size = 86512, upload-time = "2025-05-02T19:08:19.407Z" },
+]
+
+[[package]]
 name = "pillow"
 version = "11.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1180,6 +1189,7 @@ dependencies = [
     { name = "fastparquet" },
     { name = "gdown" },
     { name = "pandas" },
+    { name = "patool" },
     { name = "py7zr" },
     { name = "pyunpack" },
     { name = "rich" },
@@ -1209,6 +1219,7 @@ requires-dist = [
     { name = "fastparquet", specifier = ">=2024.11.0" },
     { name = "gdown", specifier = ">=5.2.0" },
     { name = "pandas", specifier = ">=2.3.2" },
+    { name = "patool", specifier = ">=4.0.1" },
     { name = "py7zr", specifier = ">=1.0.0" },
     { name = "pyunpack", specifier = ">=0.3" },
     { name = "rich", specifier = ">=14.1.0" },

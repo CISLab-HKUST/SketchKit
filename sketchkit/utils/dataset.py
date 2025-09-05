@@ -71,7 +71,8 @@ class SketchDataset(ABC):
             if not self._check_integrity():
                 raise RuntimeError("Dataset not found or corrupted.")
         self._load_items_metadata()
-        self._load_all()
+        if self.load_all:
+            self._load_all()
 
     @abstractmethod
     def _check_integrity(self) -> bool:

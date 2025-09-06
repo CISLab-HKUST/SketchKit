@@ -239,6 +239,17 @@ class SketchXPRIS(SketchDataset):
     def __getitem__(self, idx):
         if idx < 0 or idx >= len(self):
             raise IndexError("Index out of range")
+        if self.raw_data[idx] is None:
+            item_metadata = self.items_metadata.iloc[idx]
+            category = item_metadata["category"]
+            ndjson_path = os.path.join(self.dataset_folder, f"{category}.ndjson")
+            with open(ndjson_path, "r", encoding="utf-8") as fp:
+                samples = ndjson.load(fp)[0]['train_data']
+            cnt = self.items_metadata[
+                self.items_metadata["category"] == item_metadata["category"]
+            ]["id"].min()
+            self.raw_data[cnt : cnt + samples.shape[0]] = samples.tolist()
+            cnt += samples.shape[0]
         single_sketch_stroke = self.raw_data[idx]
         print(f"Loading sketch at index {idx}, stroke data shape: {np.array(single_sketch_stroke).shape}")
         path_list,total_segment_num = parse_stroke3_format(np.array(single_sketch_stroke))
@@ -248,6 +259,6 @@ class SketchXPRIS(SketchDataset):
 if __name__ == "__main__":
     dataset = SketchXPRIS()
     
-    alarm_clock = dataset.items_metadata[
-            (dataset.items_metadata["category"] == "alarm_clock")]
-    airplane_sketch = [dataset[row.id] for _, row in alarm_clock[:100].iterrows()]
+    ice_cream = dataset.items_metadata[
+            (dataset.items_metadata["category"] == "ice_cream")]
+    ice_cream_sketch = [dataset[row.id] for _, row in ice_cream[:100].iterrows()]

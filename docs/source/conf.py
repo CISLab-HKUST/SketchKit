@@ -27,6 +27,7 @@ extensions = [
     "myst_parser",
 ]
 autosummary_generate = True
+primary_domain = 'py'
 
 apidoc_modules = [
     {
@@ -43,6 +44,8 @@ apidoc_modules = [
         "automodule_options": {"members", "show-inheritance", "undoc-members"},
     }
 ]
+
+autodoc_mock_imports = ["gdown", "svg", "ndjson"]
 
 templates_path = ["_templates"]
 exclude_patterns = []

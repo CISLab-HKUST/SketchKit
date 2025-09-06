@@ -132,7 +132,7 @@ class OpenSketch(SketchDataset):
         self,
         root: str | PathLibPath | None = None,
         load_all: bool = False,
-        cislab_source: bool = False,
+        cislab_source: bool = True,
     ):
         """Initialize the OpenSketch dataset.
 
@@ -170,14 +170,26 @@ class OpenSketch(SketchDataset):
 
         svg_zip_path = os.path.join(self.root, "sketches_svg.zip")
         
-        try:
-            print("Using gdown for Google Drive download...")
-            # Prefer gdown when available, it handles confirm tokens and cookies internally.
-            gdown.download(id=self.gdrive_id, output=svg_zip_path, quiet=False)
-            print("\nDownload finished!")
-        except Exception as e:
-            traceback.print_exc()
-            print("Download failed.")
+        if self.cislab_source:
+            print("Using CISLAB CDN for download...")
+            url = (
+                f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/"
+                + "sketches_svg.zip"
+            )
+            download_with_tqdm(
+                url,
+                file_path=svg_zip_path,
+                pg_bar=False,
+            )
+        else:
+            try:
+                print("Using gdown for Google Drive download...")
+                # Prefer gdown when available, it handles confirm tokens and cookies internally.
+                gdown.download(id=self.gdrive_id, output=svg_zip_path, quiet=False)
+                print("\nDownload finished!")
+            except Exception as e:
+                traceback.print_exc()
+                print("Download failed.")
 
         try:
             extract_files(
@@ -199,14 +211,13 @@ class OpenSketch(SketchDataset):
         - category: Drawing category name
         - split: Data split (train/valid/test)
         - id: Global unique identifier across all sketches
-        - sub_id: Identifier within the category and split
         """
         if not os.path.exists(os.path.join(self.root, ".metadata.parquet")):
             svg_base = os.path.join(self.root, "opensketch_svgs")
             all_categories = ['svg']
             self._all_categories = sorted(all_categories)
 
-            items_metadata = pd.DataFrame(columns=["category", "split", "id", "sub_id"])
+            items_metadata = pd.DataFrame(columns=["category", "split", "id"])
             cnt = 0
             for category in tqdm(self._all_categories, desc="Caching metadata"):
                 class_base = os.path.join(self.root, "opensketch_svgs")
@@ -220,10 +231,9 @@ class OpenSketch(SketchDataset):
                     {
                         "category": category,
                         "split": split,
-                        "id": cnt + id,
-                        "sub_id": file_id,
+                        "id": id
                     }
-                    for id, file_id in enumerate(file_ids)
+                    for id in file_ids
                 ]
                 cnt += len(file_ids)
                 items_metadata = pd.concat(
@@ -286,7 +296,7 @@ class OpenSketch(SketchDataset):
         if self.raw_data[idx] is None:
             item_metadata = self.items_metadata.iloc[idx]
             class_base = os.path.join(self.root, "opensketch_svgs")
-            svg_path = os.path.join(class_base, str(item_metadata["sub_id"]) + ".svg")
+            svg_path = os.path.join(class_base, str(item_metadata["id"]) + ".svg")
             _, path_list = parse_svg(svg_path)
             self.raw_data[idx] = path_list
 
@@ -323,14 +333,14 @@ if __name__ == "__main__":
     ]
 
     # Load sketches
-    sketches = [dataset[row.id] for _, row in objects[:5].iterrows()]
+    sketches = [dataset[id] for id, _ in objects[:5].iterrows()]
 
     from PIL import Image
     from sketchkit.renderer.cairo_renderer import CairoRenderer
 
     renderer = CairoRenderer(800, (1, 1, 1))
     raster_image = renderer.render(sketches[1])
-    outpath = "opensketch-new.png"
+    outpath = "opensketch-test.png"
     if outpath is not None:
         raster_image_png = Image.fromarray(raster_image, "RGB")
         raster_image_png.save(outpath, "PNG")

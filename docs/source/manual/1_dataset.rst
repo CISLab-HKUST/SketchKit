@@ -58,7 +58,6 @@ Available Datasets
 
     hzySketch
     QuickDraw
-    TracingVsFreehand
     ControlSketch
 
 

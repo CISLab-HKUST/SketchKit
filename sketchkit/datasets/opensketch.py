@@ -339,7 +339,7 @@ if __name__ == "__main__":
     from sketchkit.renderer.cairo_renderer import CairoRenderer
 
     renderer = CairoRenderer(800, (1, 1, 1))
-    raster_image = renderer.render(sketches[1])
+    raster_image = renderer.render(sketches[1], random_color=False)
     outpath = "opensketch-test.png"
     if outpath is not None:
         raster_image_png = Image.fromarray(raster_image, "RGB")

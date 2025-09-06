@@ -2,6 +2,21 @@ from sketchkit.core.sketch import Sketch, Curve
 import numpy as np
 import cairocffi as cairo
 
+def generate_random_colors(n):
+    """
+    Generate n distinct random colors.
+
+    Args:
+        n (int): The number of distinct colors to generate.
+
+    Returns:
+        list: A list of n tuples, each representing an RGB color with values in the range [0, 1].
+    """
+    colors = []
+    for _ in range(n):
+        color = (np.random.rand(), np.random.rand(), np.random.rand())
+        colors.append(color)
+    return colors
 class CairoRenderer:
     """
     A class for rendering sketches using Cairo graphics.
@@ -24,7 +39,7 @@ class CairoRenderer:
         self.canvas_size = canvas_size
         self.canvas_color = canvas_color
 
-    def render(self, sketch: Sketch):
+    def render(self, sketch: Sketch, random_color=True):
         """
         Renders the given sketch onto a canvas using Cairo's drawing functions.
 
@@ -33,6 +48,7 @@ class CairoRenderer:
 
         Args:
             sketch (Sketch): A Sketch object containing paths and strokes to be rendered.
+            random_color (bool, optional): If True, each path will be drawn in a random color. Default is True.
 
         Returns:
             np.ndarray: A 3-channel image (height x width x 3) representing the rendered sketch, as a NumPy array.
@@ -49,6 +65,8 @@ class CairoRenderer:
         ctx.set_line_width(3)
         ctx.paint()
         
+        if random_color:
+            colors = generate_random_colors(len(sketch.paths))
         seq_i = 0
         for j, each_path in enumerate(sketch.paths):
             for curve in each_path.curves:
@@ -59,8 +77,10 @@ class CairoRenderer:
                     x2, y2 = p2.x, p2.y
                     x3, y3 = p3.x, p3.y
                     # ctx.set_source_rgb(colors[seq_i][0], colors[seq_i][1], colors[seq_i][2])
-                    # print(curve.color, curve.thickness)
-                    ctx.set_source_rgb(0,0,0)
+                    if random_color:
+                        ctx.set_source_rgb(colors[j][0], colors[j][1], colors[j][2])
+                    else:
+                        ctx.set_source_rgb(0,0,0)
                     # seq_i += 1
                     ctx.move_to(x0, y0)
                     ctx.curve_to(x1, y1, x2, y2, x3, y3)

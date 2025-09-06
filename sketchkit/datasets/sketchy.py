@@ -10,104 +10,70 @@ from svg.path import parse_path, path
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_tqdm, extract_files, CISLAB_CDN
+from sketchkit.utils.file import download_with_tqdm, dir_md5, CISLAB_CDN
 from sketchkit.utils.transform import line_to_cubic
 import py7zr
 import gdown
 
-
-def _get_confirm_token(response) -> str | None:
-    """Return Google Drive confirm token if the first request needs confirmation."""
-    # Check special cookie first
-    for k, v in response.cookies.items():
-        if k.startswith("download_warning"):
-            return v
-    # Fallback: parse HTML for confirm token
-    try:
-        text = response.text
-    except Exception:
-        return None
-    m = re.search(r"confirm=([0-9A-Za-z_]+)&amp;", text)
-    if not m:
-        m = re.search(r"confirm=([0-9A-Za-z_]+)&", text)
-    return m.group(1) if m else None
-
-
-def _save_response_content(response, destination: str, chunk_size: int = 32768) -> None:
-    """Stream HTTP response content to disk."""
-    response.raise_for_status()
-    with open(destination, "wb") as f:
-        for chunk in response.iter_content(chunk_size):
-            if chunk:  # filter out keep-alive chunks
-                f.write(chunk)
-
-
-def _download_from_gdrive(file_id: str, destination: str) -> None:
-    """Download a file from Google Drive by file ID, handling confirm token."""
-    URL = "https://drive.google.com/uc?export=download"
-    with requests.Session() as session:
-        # First request: may return a small HTML that requires confirmation
-        response = session.get(
-            URL, params={"id": file_id}, stream=True, allow_redirects=True
-        )
-        token = _get_confirm_token(response)
-        if token:
-            response.close()
-            response = session.get(
-                URL,
-                params={"id": file_id, "confirm": token},
-                stream=True,
-                allow_redirects=True,
-            )
-        _save_response_content(response, destination)
-    # Basic sanity check
-    if not os.path.exists(destination) or os.path.getsize(destination) == 0:
-        raise RuntimeError(
-            "Downloaded file is empty; Google Drive may have blocked the request."
-        )
-
-
 def download_sketchy_database(
     output_folder: str,
-    remove_sourcefile: bool = True,
     gdrive_id: str = "1Qr8HhjRuGqgDONHigGszyHG_awCstivo",
     filename: str = "sketches-06-04.7z",
     prune_invalid: bool = True,
-    cislab_source: bool = False,
+    cislab_source: bool = True,  # Changed default to True
 ):
     """Download and extract The Sketchy Database (SVG version).
 
-    Downloads the 7z archive from Google Drive by file ID (preferred),
+    Downloads the 7z archive from CISLAB CDN (preferred) or Google Drive as fallback,
     and extracts it into a ``sketchy/`` directory.
 
     Args:
         output_folder: Directory where the archive will be saved and extracted.
-        remove_sourcefile: If True, delete the downloaded 7z after extraction.
         gdrive_id: Google Drive file ID for the archive.
         filename: Local filename to save the downloaded 7z.
         prune_invalid: If True, prune invalid SVGs after extraction.
-        cislab_source: If True, use CISLAB CDN instead of Google Drive.
+        cislab_source: If True, try CISLAB CDN first, then fallback to Google Drive.
     """
     print("Downloading Sketchy Database...")
 
     os.makedirs(output_folder, exist_ok=True)
     archive_path = os.path.join(output_folder, filename)
 
-    try:
-        if cislab_source:
-            # Use CISLAB CDN
-            cislab_url = f"{CISLAB_CDN}/sketchy/{filename}"
-            print(f"Downloading from CISLAB: {cislab_url}")
+    download_success = False
+
+    # Try CISLAB CDN first (if enabled)
+    if cislab_source:
+        try:
+            cislab_url = f"{CISLAB_CDN}/datasets/Sketchy/{filename}"
+            print(f"Attempting download from CISLAB: {cislab_url}")
             download_with_tqdm(
-                cislab_url, archive_path, desc="Downloading Sketchy Database"
+                cislab_url, archive_path, desc="Downloading from CISLAB CDN"
             )
-        else:
+            download_success = True
+            print("CISLAB download completed successfully!")
+        except Exception as e:
+            print(f"CISLAB download failed: {e}")
+            print("Falling back to Google Drive...")
+            # Remove potentially corrupted partial file
+            if os.path.exists(archive_path):
+                try:
+                    os.remove(archive_path)
+                except:
+                    pass
+
+    # Fallback to Google Drive if CISLAB failed or was disabled
+    if not download_success:
+        try:
             print("Using gdown for Google Drive download...")
             gdown.download(id=gdrive_id, output=archive_path, quiet=False)
-        print("\nDownload finished!")
-    except Exception as e:
-        traceback.print_exc()
-        print("Download failed.")
+            download_success = True
+            print("Google Drive download completed successfully!")
+        except Exception as e:
+            print(f"Google Drive download also failed: {e}")
+            traceback.print_exc()
+
+    if not download_success:
+        print("All download methods failed.")
         return
 
     print("Extracting archive...")
@@ -147,12 +113,10 @@ def download_sketchy_database(
             traceback.print_exc()
             print("Warning: failed to prune invalid SVGs; continuing.")
 
-    if remove_sourcefile:
-        try:
-            os.remove(archive_path)
-            print("Removed source archive.")
-        except Exception as e:
-            print(f"Warning: could not remove archive: {e}")
+    try:
+        os.remove(archive_path)
+    except Exception as e:
+        print(f"Warning: could not remove archive: {e}")
 
 
 # Helper function to prune SVGs listed in invalid.txt per class
@@ -391,42 +355,50 @@ class Sketchy(SketchDataset):
     Args:
         root: Root directory where the dataset will be stored.
         load_all: Whether to load all data into memory at initialization.
-        cislab_source: Whether to use CISLAB as the data source.
-        file_id: Google Drive file ID for the archive.
-        archive_name: Local filename for the 7z archive.
-        remove_sourcefile: If True, delete the archive after extraction.
+        cislab_source: Whether to use CISLAB as the primary data source (with Google Drive fallback).
         prune: Whether to prune invalid SVGs during download.
     """
+
+    # MD5 Sum of the whole sketchy directory for integrity verification
+    md5_sums = {
+        "pruned": "072914946f1601bebd99f01c1a4fa3f8",
+        "unpruned": "b6bd94118d0a4c27e5e653d79558958f", 
+    }
 
     def __init__(
         self,
         root: str = None,
         load_all: bool = False,
-        cislab_source: bool = False,
-        file_id: str = "1Qr8HhjRuGqgDONHigGszyHG_awCstivo",
-        archive_name: str = "sketches-06-04.7z",
-        remove_sourcefile: bool = True,
+        cislab_source: bool = True,  # Changed default to True
         prune: bool = True,
     ):
-        self.file_id = file_id
-        self.archive_name = archive_name
-        self.remove_sourcefile = remove_sourcefile
         self.prune = prune
         
         super().__init__(root=root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
-        """Check if the dataset files are complete and valid."""
+        """Check the integrity of the cached dataset using MD5 checksum.
+
+        Returns:
+            bool: True if the dataset integrity is verified, False otherwise.
+        """
         sketchy_dir = os.path.join(self.root, "sketchy")
-        return os.path.isdir(sketchy_dir) and len(os.listdir(sketchy_dir)) > 0
+        if not os.path.isdir(sketchy_dir) or len(os.listdir(sketchy_dir)) == 0:
+            return False
+            
+        print(f"Checking integrity of cached {self.__class__.__name__} dataset...")
+        current_md5 = dir_md5(sketchy_dir)
+        expected_md5 = self.md5_sums["pruned"] if self.prune else self.md5_sums["unpruned"]
+        if current_md5 != expected_md5:
+            print(f"MD5 mismatch: expected {expected_md5}, got {current_md5}")
+        return current_md5 == expected_md5
 
     def _download(self):
         """Download the dataset files to the root directory."""
         download_sketchy_database(
             output_folder=self.root,
-            remove_sourcefile=self.remove_sourcefile,
-            gdrive_id=self.file_id,
-            filename=self.archive_name,
+            gdrive_id="1Qr8HhjRuGqgDONHigGszyHG_awCstivo",
+            filename="sketches-06-04.7z",
             prune_invalid=self.prune,
             cislab_source=self.cislab_source,
         )
@@ -512,3 +484,19 @@ class Sketchy(SketchDataset):
             return self.raw_data[idx]
         else:
             return self._load_sketch(idx)
+
+if __name__ == "__main__":
+    my_data = Sketchy(cislab_source=False, prune=False)
+    print(len(my_data))
+    print(my_data[0])
+    index = 12
+    print(f"The file name of the {index}th sketch is: {my_data.sketch_names[index]}")
+
+    from PIL import Image
+    from sketchkit.renderer.cairo_renderer import CairoRenderer
+    renderer = CairoRenderer(512, (1,1,1))
+    raster_image = renderer.render(my_data[index])
+    outpath = f'test_{index}.png'
+    if outpath is not None:
+        raster_image_png = Image.fromarray(raster_image, 'RGB')
+        raster_image_png.save(outpath, 'PNG')

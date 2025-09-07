@@ -133,7 +133,7 @@ class GMUSketchCleanup(SketchDataset):
     """
 
     # Replace this value with the actual directory MD5 (MD5 of the Benchmark_Dataset directory or the entire root after download and extraction).
-    md5_sum: str = "73d5321708ec65b9c9ac9f9614813af2"
+    md5_sum: str = "8dbea6e9cd42810c80f41595a633ff33"
 
     # Only `id` is mandatory; add columns as needed.
     metadata = ["id", "split", "file_path"]
@@ -307,7 +307,7 @@ if __name__ == "__main__":
     # 2) Test preloading all items at once
     with tempfile.TemporaryDirectory() as tmpdir:
         console.print("[green]2) Load All[/green]")
-        ds = GMUSketchCleanup(root=tmpdir, cislab_source=False, load_all=True)
+        ds = GMUSketchCleanup(root=tmpdir, cislab_source=True, load_all=True)
         console.print(ds)
         mem = psutil.Process().memory_info().rss / 1024 / 1024
         console.print(f"Memory: {mem:.2f} MB")

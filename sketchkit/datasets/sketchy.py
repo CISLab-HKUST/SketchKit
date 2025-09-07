@@ -5,6 +5,7 @@ import re
 import requests
 import xml.etree.ElementTree as ET
 import pandas as pd
+import shutil
 
 from svg.path import parse_path, path
 
@@ -20,7 +21,6 @@ def download_sketchy_database(
     gdrive_id: str = "1Qr8HhjRuGqgDONHigGszyHG_awCstivo",
     filename: str = "sketches-06-04.7z",
     prune_invalid: bool = True,
-    cislab_source: bool = True,  # Changed default to True
 ):
     """Download and extract The Sketchy Database (SVG version).
 
@@ -32,7 +32,6 @@ def download_sketchy_database(
         gdrive_id: Google Drive file ID for the archive.
         filename: Local filename to save the downloaded 7z.
         prune_invalid: If True, prune invalid SVGs after extraction.
-        cislab_source: If True, try CISLAB CDN first, then fallback to Google Drive.
     """
     print("Downloading Sketchy Database...")
 
@@ -41,25 +40,24 @@ def download_sketchy_database(
 
     download_success = False
 
-    # Try CISLAB CDN first (if enabled)
-    if cislab_source:
-        try:
-            cislab_url = f"{CISLAB_CDN}/datasets/Sketchy/{filename}"
-            print(f"Attempting download from CISLAB: {cislab_url}")
-            download_with_tqdm(
-                cislab_url, archive_path, desc="Downloading from CISLAB CDN"
-            )
-            download_success = True
-            print("CISLAB download completed successfully!")
-        except Exception as e:
-            print(f"CISLAB download failed: {e}")
-            print("Falling back to Google Drive...")
-            # Remove potentially corrupted partial file
-            if os.path.exists(archive_path):
-                try:
-                    os.remove(archive_path)
-                except:
-                    pass
+    # Try CISLAB CDN first
+    try:
+        cislab_url = f"{CISLAB_CDN}/datasets/Sketchy/{filename}"
+        print(f"Attempting download from CISLAB: {cislab_url}")
+        download_with_tqdm(
+            cislab_url, archive_path, desc="Downloading from CISLAB CDN"
+        )
+        download_success = True
+        print("CISLAB download completed successfully!")
+    except Exception as e:
+        print(f"CISLAB download failed: {e}")
+        print("Falling back to Google Drive...")
+        # Remove potentially corrupted partial file
+        if os.path.exists(archive_path):
+            try:
+                os.remove(archive_path)
+            except:
+                pass
 
     # Fallback to Google Drive if CISLAB failed or was disabled
     if not download_success:
@@ -80,7 +78,6 @@ def download_sketchy_database(
     extract_target = os.path.join(output_folder, "sketchy")
 
     try:
-        # Use original py7zr extraction method
         with py7zr.SevenZipFile(archive_path, mode="r") as zf:
             zf.extractall(path=output_folder)
         
@@ -235,7 +232,6 @@ def parse_single_path(path_str: str):
             
             # Convert line to cubic using transform.py function
             cubic_curve = line_to_cubic(line_points)
-            # Fix: use correct attribute names p_crtl1 and p_crtl2
             control_points_list.append((cubic_curve.p_crtl1.x, cubic_curve.p_crtl1.y))
             control_points_list.append((cubic_curve.p_crtl2.x, cubic_curve.p_crtl2.y))
             control_points_list.append((cubic_curve.p_end.x, cubic_curve.p_end.y))
@@ -355,7 +351,6 @@ class Sketchy(SketchDataset):
     Args:
         root: Root directory where the dataset will be stored.
         load_all: Whether to load all data into memory at initialization.
-        cislab_source: Whether to use CISLAB as the primary data source (with Google Drive fallback).
         prune: Whether to prune invalid SVGs during download.
     """
 
@@ -369,12 +364,11 @@ class Sketchy(SketchDataset):
         self,
         root: str = None,
         load_all: bool = False,
-        cislab_source: bool = True,  # Changed default to True
         prune: bool = True,
     ):
         self.prune = prune
         
-        super().__init__(root=root, load_all=load_all, cislab_source=cislab_source)
+        super().__init__(root=root, load_all=load_all)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.
@@ -389,9 +383,16 @@ class Sketchy(SketchDataset):
         print(f"Checking integrity of cached {self.__class__.__name__} dataset...")
         current_md5 = dir_md5(sketchy_dir)
         expected_md5 = self.md5_sums["pruned"] if self.prune else self.md5_sums["unpruned"]
+        
         if current_md5 != expected_md5:
-            print(f"MD5 mismatch: expected {expected_md5}, got {current_md5}")
-        return current_md5 == expected_md5
+            print(f"MD5 mismatch: Dataset appears to be corrupted. Removing corrupted data...")
+        
+            shutil.rmtree(sketchy_dir)
+            print(f"Removed corrupted directory: {sketchy_dir}")
+
+            return False
+            
+        return True
 
     def _download(self):
         """Download the dataset files to the root directory."""
@@ -400,7 +401,6 @@ class Sketchy(SketchDataset):
             gdrive_id="1Qr8HhjRuGqgDONHigGszyHG_awCstivo",
             filename="sketches-06-04.7z",
             prune_invalid=self.prune,
-            cislab_source=self.cislab_source,
         )
 
     def _load_items_metadata(self):
@@ -417,7 +417,6 @@ class Sketchy(SketchDataset):
         class_names.sort()
         self.class_names = class_names
 
-        sketch_names = []
         metadata_list = []
         for class_name in self.class_names:
             class_base = os.path.join(self.svg_base, class_name)
@@ -426,7 +425,6 @@ class Sketchy(SketchDataset):
             
             for svg_file in svg_files:
                 sketch_name = f"{class_name}/{svg_file}"
-                sketch_names.append(sketch_name)
                 metadata_list.append({
                     'class_name': class_name,
                     'filename': svg_file,
@@ -434,20 +432,21 @@ class Sketchy(SketchDataset):
                     'sketch_name': sketch_name
                 })
 
-        if len(sketch_names) == 0:
+        if len(metadata_list) == 0:
             raise RuntimeError(
                 f"No SVG files found under '{self.svg_base}'. "
                 "Please ensure the correct archive is downloaded."
             )
 
-        self.sketch_names = sketch_names
         self.items_metadata = pd.DataFrame(metadata_list)
+        # Initialize raw_data array for caching
+        self.raw_data = [None] * len(self.items_metadata)
 
     def _load_all(self):
         """Load all dataset items into memory."""
-        self.raw_data = [None] * len(self.items_metadata)
         for idx in range(len(self.items_metadata)):
-            self.raw_data[idx] = self._load_sketch(idx)
+            if self.raw_data[idx] is None:
+                self.raw_data[idx] = self._load_sketch(idx)
 
     def _load_sketch(self, idx: int) -> Sketch:
         """Load a single sketch by index."""
@@ -480,17 +479,24 @@ class Sketchy(SketchDataset):
         Returns:
             A `Sketch` object composed of cubic Bézier `Path`/`Curve`s.
         """
-        if self.raw_data is not None:
+        if idx < 0 or idx >= len(self):
+            raise IndexError("Index out of range")
+            
+        # First try to read from cache
+        if self.raw_data[idx] is not None:
             return self.raw_data[idx]
-        else:
-            return self._load_sketch(idx)
+        
+        # If not cached, load from disk and cache
+        sketch = self._load_sketch(idx)
+        self.raw_data[idx] = sketch
+        return sketch
 
 if __name__ == "__main__":
-    my_data = Sketchy(cislab_source=False, prune=False)
+    my_data = Sketchy()
     print(len(my_data))
     print(my_data[0])
     index = 12
-    print(f"The file name of the {index}th sketch is: {my_data.sketch_names[index]}")
+    print(f"The file name of the {index}th sketch is: {my_data.items_metadata.iloc[index]['sketch_name']}")
 
     from PIL import Image
     from sketchkit.renderer.cairo_renderer import CairoRenderer

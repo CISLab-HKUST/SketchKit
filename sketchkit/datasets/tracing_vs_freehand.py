@@ -1,211 +1,248 @@
 import os
 import shutil
-import wget
 import zipfile
 import xml.etree.ElementTree as ET
+from pathlib import Path as PathLibPath
+from typing import List, Optional
+
+import pandas as pd
 from svg.path import parse_path, path
-import numpy as np
+from tqdm import tqdm
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
+from sketchkit.utils.dataset import SketchDataset
+from sketchkit.utils.file import download_with_tqdm, dir_md5, CISLAB_CDN
 
-def download_and_extract_data(output_folder: str):
-    """Downloads and extracts the Tracing-vs-Freehand dataset.
 
-    Downloads a zip file from a predefined URL, extracts its contents to a
-    structured directory, and cleans up the downloaded zip file.
-
-    Args:
-        output_folder: The base directory where datasets are stored. The
-            data will be extracted into a 'tracing_vs_freehand' subdirectory
-            within this folder.
-    """
-    url = "https://cislab.hkust-gz.edu.cn/projects/tracing-vs-freehand/data/sketch.zip"
-    zip_path = os.path.join(output_folder, "sketch.zip")
-    final_data_path = os.path.join(output_folder, "tracing_vs_freehand")
-
-    os.makedirs(output_folder, exist_ok=True)
-    print("Downloading the Tracing-vs-Freehand dataset...")
-    try:
-        wget.download(url, out=zip_path)
-        print("\nDownload finished!")
-    except Exception as e:
-        print(f"\nDownload failed: {e}")
-        return
-
-    print("Extracting files...")
-    try:
-        temp_extract_path = os.path.join(output_folder, "temp_extract")
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(temp_extract_path)
-
-        # The zip archive contains a root 'data' folder; move it to the final path.
-        extracted_root = os.path.join(temp_extract_path, "data")
-        shutil.move(extracted_root, final_data_path)
-        print("Extraction complete!")
-    except Exception as e:
-        print(f"Extraction failed: {e}")
-    finally:
-        # Clean up the downloaded zip and temporary directories
-        if os.path.exists(zip_path):
-            os.remove(zip_path)
-        if os.path.exists(temp_extract_path):
-            shutil.rmtree(temp_extract_path)
-
-def parse_single_path(path_str: str) -> list[tuple[float, float]] | None:
-    """Parses an SVG path 'd' attribute string into Bézier control points.
-
-    Converts various SVG path commands (Move, CubicBezier, Line) into a
-    standardized list of control points for cubic Bézier curves.
+def _parse_svg_to_sketch(svg_path: str) -> Sketch:
+    """Parses an SVG file and converts its content into a Sketch object.
 
     Args:
-        path_str: The string from the 'd' attribute of an SVG <path> element.
+        svg_path (str): The file path to the SVG file to be parsed.
 
     Returns:
-        A list of (x, y) control points, or None if the path is invalid or empty.
-    """
-    ps = parse_path(path_str)
-    control_points_list = []
-    for item_i, path_item in enumerate(ps):
-        path_type = type(path_item)
-        if path_type == path.Move:
-            assert item_i == 0, "Move command should only appear at the start"
-            start = path_item.start
-            control_points_list.append((start.real, start.imag))
-        elif path_type == path.CubicBezier:
-            c1, c2, end = path_item.control1, path_item.control2, path_item.end
-            control_points_list.extend([(c1.real, c1.imag), (c2.real, c2.imag), (end.real, end.imag)])
-        elif path_type == path.Line:
-            start, end = path_item.start, path_item.end
-            # Convert line to an equivalent cubic Bézier curve
-            c1_x = (start.real * 2/3 + end.real * 1/3)
-            c1_y = (start.imag * 2/3 + end.imag * 1/3)
-            c2_x = (start.real * 1/3 + end.real * 2/3)
-            c2_y = (start.imag * 1/3 + end.imag * 2/3)
-            control_points_list.extend([(c1_x, c1_y), (c2_x, c2_y), (end.real, end.imag)])
-        elif path_type == path.Arc:
-            raise NotImplementedError("Arc path segments are not supported.")
-        else:
-            raise TypeError(f"Unknown path segment type: {path_type}")
-
-    if not control_points_list or (len(control_points_list) - 1) % 3 != 0:
-        return None
-    return control_points_list
-
-
-def parse_svg(svg_file: str) -> list[list[list[tuple[float, float]]]]:
-    """Parses an entire SVG file to extract all path data.
-
-    Reads an SVG file, finds all <path> elements, and uses parse_single_path
-    to convert them into a list of strokes, where each stroke is represented
-    by its four control points.
-
-    Args:
-        svg_file: The file path to the SVG file.
-
-    Returns:
-        A nested list representing the sketch. The structure is:
-        list of paths -> list of strokes -> list of 4 control points.
-        Returns an empty list if the file cannot be parsed.
+        Sketch: An object representing the parsed sketch. Returns an empty Sketch
+            if the file cannot be parsed or is not found.
     """
     try:
-        tree = ET.parse(svg_file)
+        tree = ET.parse(svg_path)
         root = tree.getroot()
         namespaces = {'svg': 'http://www.w3.org/2000/svg'}
-        path_list = []
+        
+        sketch_paths = []
         for elem in root.findall('svg:path', namespaces):
             path_d = elem.attrib.get('d', '')
             if not path_d:
                 continue
-            control_points = parse_single_path(path_d)
-            if control_points:
-                segment_num = (len(control_points) - 1) // 3
-                stroke_list = []
-                for i in range(segment_num):
-                    p_start = control_points[i * 3]
-                    p_ctrl1 = control_points[i * 3 + 1]
-                    p_ctrl2 = control_points[i * 3 + 2]
-                    p_end   = control_points[i * 3 + 3]
-                    stroke_list.append([p_start, p_ctrl1, p_ctrl2, p_end])
-                path_list.append(stroke_list)
-        return path_list
-    except ET.ParseError:
-        print(f"Warning: Failed to parse SVG file: {svg_file}")
-        return []
+            
+            parsed = parse_path(path_d)
+            curves = []
+            for segment in parsed:
+                if isinstance(segment, path.CubicBezier):
+                    p_start = Vertex(segment.start.real, segment.start.imag)
+                    p_end = Vertex(segment.end.real, segment.end.imag)
+                    p_ctrl1 = Point(segment.control1.real, segment.control1.imag)
+                    p_ctrl2 = Point(segment.control2.real, segment.control2.imag)
+                    curves.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))
+                elif isinstance(segment, path.Line):
+                    # Convert line to an equivalent cubic Bézier curve.
+                    start, end = segment.start, segment.end
+                    p_start_v = Vertex(start.real, start.imag)
+                    p_end_v = Vertex(end.real, end.imag)
+                    c1 = start * (2/3) + end * (1/3)
+                    c2 = start * (1/3) + end * (2/3)
+                    p_ctrl1 = Point(c1.real, c1.imag)
+                    p_ctrl2 = Point(c2.real, c2.imag)
+                    curves.append(Curve(p_start_v, p_end_v, p_ctrl1, p_ctrl2))
+            
+            if curves:
+                sketch_paths.append(Path(curves=curves))
+
+        return Sketch(paths=sketch_paths)
+    except (ET.ParseError, FileNotFoundError):
+        print(f"Warning: Failed to parse or find SVG file: {svg_path}")
+        return Sketch(paths=[])
 
 
-class TracingVsFreehand:
-    """Loads the Tracing-vs-Freehand dataset from SVG files.
+class TracingVsFreehand(SketchDataset):
+    """Tracing-vs-Freehand dataset loader.
 
-    This class handles the automatic download, extraction, and parsing of the
-    Tracing-vs-Freehand dataset. It indexes all SVG sketches and provides an
-    interface to access them as `Sketch` objects. Accessing an item
-    (e.g., `dataset[0]`) returns a single `Sketch` object.
+    This dataset contains sketches categorized as freehand drawings, registered
+    drawings, and tracings, stored in SVG format. This loader handles automatic
+    downloading, integrity checking, and parsing of these SVG files.
 
     Attributes:
-        data_root (str): The absolute path to the dataset's root directory.
-        svg_base (str): The path to the subdirectory containing SVG files.
-        sketch_paths (list[str]): A list of file paths for all indexed sketches.
+        md5_sum (str): MD5 checksum for the extracted dataset directory.
+        URL (str): Download URL for the dataset zip file.
     """
-    def __init__(self, data_base: str = os.path.join(os.path.expanduser("~"), ".cache/sketchkit/datasets")):
-        """Initializes the dataset loader.
+    md5_sum = "3b002235ddf0c2a5713df232105321f4"
+    URL = f"{CISLAB_CDN}/datasets/TracingVsFreehand/sketch.zip"
 
-        Checks if the dataset exists locally. If not, it triggers the download
-        and extraction process. It then scans the SVG directories to populate a
-        list of all available sketch file paths.
-
+    def __init__(
+        self,
+        root: Optional[PathLibPath | str] = None,
+        load_all: bool = False,
+        cislab_source: bool = True,
+    ):
+        """Initializes the Tracing-vs-Freehand dataset loader.
+        
         Args:
-            data_base: The base directory for storing all datasets.
-                Defaults to '~/.cache/sketchkit/datasets'.
+            root (Optional[PathLibPath | str]): Root directory for the dataset.
+                If None, a default cache path is used.
+            load_all (bool): If True, loads all data into memory at init.
+            cislab_source (bool): If True, uses the CISLAB CDN. This dataset is
+                only available from this source.
         """
-        self.data_root = os.path.join(data_base, "tracing_vs_freehand")
-        if not os.path.isdir(self.data_root):
-            print(f"Dataset not found at '{self.data_root}'.")
-            download_and_extract_data(data_base)
+        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
-        self.svg_base = os.path.join(self.data_root, "svg")
-        if not os.path.isdir(self.svg_base):
-            raise FileNotFoundError(
-                f"SVG directory not found at '{self.svg_base}'. "
-                "Please check the download or extraction process."
-            )
-
-        self.sketch_paths = []
-        sketch_types = ["drawings", "drawings_registered", "tracings"]
-        for sketch_type in sketch_types:
-            type_dir = os.path.join(self.svg_base, sketch_type)
-            if not os.path.isdir(type_dir):
-                print(f"Warning: Directory for type '{sketch_type}' not found, skipping. Path: {type_dir}")
-                continue
-            for filename in sorted(os.listdir(type_dir)):
-                if filename.endswith(".svg"):
-                    self.sketch_paths.append(os.path.join(type_dir, filename))
-
-    def __len__(self) -> int:
-        """Returns the total number of sketches in the dataset."""
-        return len(self.sketch_paths)
-
-    def __getitem__(self, index: int) -> Sketch:
-        """Retrieves a sketch by its index.
-
-        Args:
-            index: The index of the sketch to retrieve.
+    def _check_integrity(self) -> bool:
+        """Checks if the dataset is present and uncorrupted.
 
         Returns:
-            The parsed sketch as a `Sketch` object.
+            bool: True if the dataset's integrity is verified, False otherwise.
         """
-        svg_path = self.sketch_paths[index]
-        raw_path_list = parse_svg(svg_path)
+        if not os.path.exists(os.path.join(self.root, "svg")):
+             return False
+        print(f"Checking integrity of cached {self.__class__.__name__} dataset...")
+        current_md5 = dir_md5(self.root)
+        return current_md5 == self.md5_sum
 
-        paths = []
-        for raw_path in raw_path_list:
-            strokes = []
-            for raw_stroke in raw_path:
-                p_start = Vertex(raw_stroke[0][0], raw_stroke[0][1])
-                p_end   = Vertex(raw_stroke[3][0], raw_stroke[3][1])
-                p_ctrl1 = Point(raw_stroke[1][0], raw_stroke[1][1])
-                p_ctrl2 = Point(raw_stroke[2][0], raw_stroke[2][1])
-                strokes.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))
-            paths.append(Path(curves=strokes))
+    def _download(self):
+        """Downloads and extracts the dataset from the source URL.
+        
+        Raises:
+            RuntimeError: If the download or extraction process fails.
+        """
+        if os.path.exists(self.root):
+            shutil.rmtree(self.root)
+        os.makedirs(self.root, exist_ok=True)
+        
+        zip_path = os.path.join(self.root, "sketch.zip")
+        
+        try:
+            download_with_tqdm(self.URL, zip_path, desc="Downloading dataset")
+        except Exception as e:
+            raise RuntimeError(f"Download failed: {e}")
 
-        sketch = Sketch(paths=paths)
-        return sketch
+        try:
+            temp_extract_path = os.path.join(self.root, "temp_extract")
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(temp_extract_path)
+            
+            extracted_root = os.path.join(temp_extract_path, "data")
+            
+            for item in os.listdir(extracted_root):
+                s = os.path.join(extracted_root, item)
+                d = os.path.join(self.root, item)
+                shutil.move(s, d)
+
+        except Exception as e:
+            raise RuntimeError(f"Extraction failed: {e}")
+        finally:
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+            if os.path.exists(temp_extract_path):
+                shutil.rmtree(temp_extract_path)
+
+    def _load_items_metadata(self):
+        """Scans the dataset directory to create and cache metadata.
+
+        This method generates a pandas DataFrame with metadata for each sketch
+        and caches it as a .parquet file for fast subsequent loading.
+
+        Raises:
+            FileNotFoundError: If no SVG files are found after scanning.
+        """
+        metadata_cache_path = os.path.join(self.root, ".metadata.parquet")
+        dataset_path = os.path.join(self.root, "svg")
+
+        if os.path.exists(metadata_cache_path):
+            self.items_metadata = pd.read_parquet(metadata_cache_path)
+        else:
+            print("Metadata cache not found. Scanning files...")
+            metadata_list = []
+            sketch_types = ["drawings", "drawings_registered", "tracings"]
+            
+            for sketch_type in sketch_types:
+                type_dir = os.path.join(dataset_path, sketch_type)
+                if not os.path.isdir(type_dir):
+                    print(f"Warning: Directory '{sketch_type}' not found, skipping.")
+                    continue
+                
+                files = sorted(os.listdir(type_dir))
+                for filename in tqdm(files, desc=f"Scanning {sketch_type}"):
+                    if filename.endswith(".svg"):
+                        file_path = os.path.join(type_dir, filename)
+                        parts = os.path.splitext(filename)[0].rsplit('_', 1)
+                        category = parts[0]
+                        file_id = parts[1] if len(parts) > 1 else 'unknown'
+                        
+                        metadata_list.append({
+                            "file_path": file_path,
+                            "sketch_type": sketch_type,
+                            "category": category,
+                            "file_id": file_id
+                        })
+            
+            if not metadata_list:
+                 raise FileNotFoundError(
+                    f"No SVG files found in {dataset_path}. "
+                    "The dataset might be corrupted."
+                )
+
+            self.items_metadata = pd.DataFrame(metadata_list)
+            self.items_metadata["id"] = range(len(self.items_metadata))
+            self.items_metadata.to_parquet(metadata_cache_path, compression="zstd")
+        
+        self.raw_data = [None] * len(self.items_metadata)
+
+    def _load_all(self):
+        """Loads all sketch data into memory if `load_all` is True."""
+        if not self.load_all:
+            return
+        
+        print("Loading all SVG data into memory...")
+        for idx, row in tqdm(self.items_metadata.iterrows(), total=len(self)):
+            try:
+                # Parsing directly is more memory-efficient than storing text.
+                self.raw_data[idx] = _parse_svg_to_sketch(row["file_path"])
+            except Exception as e:
+                print(f"Warning: Could not load {row['file_path']}. Error: {e}")
+                self.raw_data[idx] = Sketch(paths=[])
+
+    def __getitem__(self, idx: int) -> Sketch:
+        """Retrieves a single sketch from the dataset by its index.
+
+        Args:
+            idx (int): The index of the sketch to retrieve.
+
+        Returns:
+            Sketch: The sketch object at the specified index.
+
+        Raises:
+            IndexError: If the index is out of bounds.
+        """
+        if not 0 <= idx < len(self):
+            raise IndexError("Index out of range")
+        
+        if self.raw_data[idx] is not None:
+            return self.raw_data[idx]
+        
+        file_path = self.items_metadata.iloc[idx]["file_path"]
+        return _parse_svg_to_sketch(file_path)
+
+    def extra_repr(self) -> str:
+        """Returns a string with extra information about the dataset.
+        
+        Returns:
+            str: A string containing dataset statistics by sketch type.
+        """
+        if not hasattr(self, 'items_metadata') or self.items_metadata.empty:
+            return "Metadata not loaded."
+        counts = self.items_metadata['sketch_type'].value_counts()
+        return (
+            f"Sketch Types:\n"
+            f"    drawings: {counts.get('drawings', 0)}\n"
+            f"    drawings_registered: {counts.get('drawings_registered', 0)}\n"
+            f"    tracings: {counts.get('tracings', 0)}"
+        )

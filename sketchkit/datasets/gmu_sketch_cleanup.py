@@ -1,25 +1,22 @@
-import glob
 import os
 import shutil
-import xml.etree.ElementTree as ET
-import zipfile
-from pathlib import Path as PathLibPath
-from typing import List, Tuple, Optional
+import ssl
 
+import glob
+import xml.etree.ElementTree as ET
+from pathlib import Path as PathLibPath
 import numpy as np
 import pandas as pd
 from svg.path import parse_path, Path as SvgPath, Move, CubicBezier, Line, Arc
 
-from sketchkit.core.sketch import Curve, Vertex, Point
-from sketchkit.core.sketch import Sketch, Path
+from sketchkit.core.sketch import Curve, Vertex, Point, Sketch, Path
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_tqdm, dir_md5, CISLAB_CDN
+from sketchkit.utils.file import download_with_tqdm, dir_md5, CISLAB_CDN, extract_files
 
-# ---------- SVG Parsing ----------
 INVALID_SVG_SHAPES = {"rect", "circle", "ellipse", "line", "polyline", "polygon"}
 
 
-def parse_gmu_svg(svg_file: str) -> Tuple[Tuple[int, int], List[List[np.ndarray]], int]:
+def parse_gmu_svg(svg_file: str) -> tuple[tuple[int, int], list[list[np.ndarray]], int]:
     """Parses a GMU SVG file into (width, height), path_list, and total_segment_num.
 
     Args:
@@ -40,7 +37,8 @@ def parse_gmu_svg(svg_file: str) -> Tuple[Tuple[int, int], List[List[np.ndarray]
         width = int(view_w - view_x)
         height = int(view_h - view_y)
     else:
-        def _to_int_px(v: Optional[str]) -> int:
+
+        def _to_int_px(v: str | None) -> int:
             if v is None:
                 return 0
             v = v.replace("px", "")
@@ -52,7 +50,7 @@ def parse_gmu_svg(svg_file: str) -> Tuple[Tuple[int, int], List[List[np.ndarray]
         width = _to_int_px(root.get("width"))
         height = _to_int_px(root.get("height"))
 
-    path_list: List[List[np.ndarray]] = []
+    path_list: list[list[np.ndarray]] = []
     total_segment_num = 0
 
     for elem in root.iter():
@@ -66,13 +64,18 @@ def parse_gmu_svg(svg_file: str) -> Tuple[Tuple[int, int], List[List[np.ndarray]
             if not d:
                 continue
             ps: SvgPath = parse_path(d)
-            cps: List[Tuple[float, float]] = []  # Records (x, y) in order: start1 + (c1, c2, pt)*N
+            cps: list[tuple[float, float]] = (
+                []
+            )  # Records (x, y) in order: start1 + (c1, c2, pt)*N
             for seg in ps:
                 if isinstance(seg, Move):
                     # End the previous path
                     if len(cps) > 1:
                         seg_num = (len(cps) - 1) // 3
-                        strokes = [np.array(cps[i * 3: i * 3 + 4], dtype=float) for i in range(seg_num)]
+                        strokes = [
+                            np.array(cps[i * 3 : i * 3 + 4], dtype=float)
+                            for i in range(seg_num)
+                        ]
                         path_list.append(strokes)
                         total_segment_num += seg_num
                     cps = [(seg.start.real, seg.start.imag)]
@@ -102,14 +105,16 @@ def parse_gmu_svg(svg_file: str) -> Tuple[Tuple[int, int], List[List[np.ndarray]
             # Finalize the last path
             if len(cps) > 1:
                 seg_num = (len(cps) - 1) // 3
-                strokes = [np.array(cps[i * 3: i * 3 + 4], dtype=float) for i in range(seg_num)]
+                strokes = [
+                    np.array(cps[i * 3 : i * 3 + 4], dtype=float)
+                    for i in range(seg_num)
+                ]
                 path_list.append(strokes)
                 total_segment_num += seg_num
 
     return (width, height), path_list, total_segment_num
 
 
-# ---------- Dataset ----------
 class GMUSketchCleanup(SketchDataset):
     """GMU Rough Sketch Cleanup dataset (SVG parsing version).
 
@@ -128,27 +133,25 @@ class GMUSketchCleanup(SketchDataset):
     """
 
     # Replace this value with the actual directory MD5 (MD5 of the Benchmark_Dataset directory or the entire root after download and extraction).
-    md5_sum: str = "bf7febe1aa3c9fc358b174b4fa3f8a2e"
+    md5_sum: str = "73d5321708ec65b9c9ac9f9614813af2"
 
     # Only `id` is mandatory; add columns as needed.
     metadata = ["id", "split", "file_path"]
 
     def __init__(
-            self,
-            root: Optional[str | PathLibPath] = None,
-            load_all: bool = False,
-            cislab_source: bool = False,
+        self,
+        root: str | PathLibPath | None = None,
+        load_all: bool = False,
+        cislab_source: bool = False,
     ):
         super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
-    # ---------- Integrity Check ----------
     def _check_integrity(self) -> bool:
         """Checks the integrity of the cached dataset by comparing MD5 checksums."""
         print(f"Checking integrity of cached {self.__class__.__name__} dataset...")
         current_md5 = dir_md5(self.root)
         return current_md5 == self.md5_sum
 
-    # ---------- Download ----------
     def _download(self):
         """Downloads and extracts the GMU-Sketch-Cleanup dataset.
 
@@ -160,42 +163,40 @@ class GMUSketchCleanup(SketchDataset):
         os.makedirs(self.root, exist_ok=True)
 
         if self.cislab_source:
-            url = f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/Benchmark_Dataset.zip"
+            url = (
+                f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/Benchmark_Dataset.zip"
+            )
         else:
+            ssl._create_default_https_context = ssl._create_unverified_context
             url = "https://cragl.cs.gmu.edu/sketchbench/Benchmark_Dataset.zip"
 
         zip_fp = os.path.join(self.root, "Benchmark_Dataset.zip")
 
         download_with_tqdm(url, file_path=zip_fp, desc="Downloading GMU-Sketch-Cleanup")
 
-        # Extract the zip file
-        with zipfile.ZipFile(zip_fp, "r") as zf:
-            zf.extractall(self.root)
-        # Delete the source zip file after extraction to avoid affecting the directory MD5
-        os.remove(zip_fp)
-
+        extract_files(zip_fp, self.root)
         print("MD5 Checksum:", dir_md5(self.root))
 
-    # ---------- Metadata Caching ----------
     def _load_items_metadata(self):
         """Loads or generates metadata for the dataset."""
         meta_path = os.path.join(self.root, ".metadata.parquet")
         bench_root = os.path.join(self.root, "Benchmark_Dataset")
 
-        if not os.path.isdir(bench_root):
-            # Trigger download if the directory does not exist
-            self._download()
-
         if not os.path.exists(meta_path):
             rows = []
 
-            # GT (SVG)
-            gt_svg = sorted(glob.glob(os.path.join(bench_root, "GT", "**", "*.svg"), recursive=True))
+            gt_svg = sorted(
+                glob.glob(os.path.join(bench_root, "GT", "**", "*.svg"), recursive=True)
+            )
             for fp in gt_svg:
                 rows.append({"split": "GT", "file_path": fp})
 
-            # Rough (SVG)
-            rough_svg = sorted(glob.glob(os.path.join(bench_root, "Rough", "SVG", "**", "*.svg"), recursive=True))
+            rough_svg = sorted(
+                glob.glob(
+                    os.path.join(bench_root, "Rough", "SVG", "**", "*.svg"),
+                    recursive=True,
+                )
+            )
             for fp in rough_svg:
                 rows.append({"split": "Rough", "file_path": fp})
 
@@ -213,16 +214,13 @@ class GMUSketchCleanup(SketchDataset):
                 return self._load_items_metadata()
             self.items_metadata = items_metadata
 
-        # Initialize raw_data (cache parsed SVG results)
         self.raw_data = [None] * len(self.items_metadata)
 
-    # ---------- Preloading ----------
     def _load_all(self):
         """Preloads all items into memory."""
         for i in range(len(self.items_metadata)):
             self.raw_data[i] = self._load_one(i)
 
-    # ---------- Single Item ----------
     def __getitem__(self, idx: int) -> Sketch:
         """Retrieves a single item by index.
 
@@ -256,17 +254,19 @@ class GMUSketchCleanup(SketchDataset):
             paths.append(Path(curves=curves))
         return Sketch(paths=paths)
 
-    # ---------- Additional Representation ----------
     def extra_repr(self) -> str:
         """Returns additional string representation of the dataset."""
         n = len(self.items_metadata)
-        splits = self.items_metadata["split"].value_counts().to_dict() if "split" in self.items_metadata.columns else {}
+        splits = (
+            self.items_metadata["split"].value_counts().to_dict()
+            if "split" in self.items_metadata.columns
+            else {}
+        )
         parts = [f"Items: {n}"]
         if splits:
             parts.append("Splits: " + ", ".join(f"{k}={v}" for k, v in splits.items()))
         return " | ".join(parts)
 
-    # ---------- Actual Disk Loading ----------
     def _load_one(self, idx: int):
         """Loads a single item from disk.
 
@@ -283,7 +283,6 @@ class GMUSketchCleanup(SketchDataset):
         return parse_gmu_svg(fp)
 
 
-# ---------- Test Entry ----------
 if __name__ == "__main__":
     import psutil
     from rich.console import Console
@@ -307,12 +306,6 @@ if __name__ == "__main__":
 
     # 2) Test preloading all items at once
     with tempfile.TemporaryDirectory() as tmpdir:
-        import ssl
-        import urllib
-
-        ssl._create_default_https_context = ssl._create_unverified_context
-        urllib.request.urlopen("https://cragl.cs.gmu.edu/sketchbench/Benchmark_Dataset.zip")
-
         console.print("[green]2) Load All[/green]")
         ds = GMUSketchCleanup(root=tmpdir, cislab_source=False, load_all=True)
         console.print(ds)

@@ -259,8 +259,7 @@ class PhotoSketching(SketchDataset):
             items_metadata = pd.read_pickle(metadata_file)
             if not set(items_metadata.columns.tolist()) == set(self.metadata):
                 os.remove(metadata_file)
-                self._load_items_metadata()
-                return
+                return self._load_items_metadata()
             self.items_metadata = items_metadata
 
         self.raw_data = [None] * len(self.items_metadata)

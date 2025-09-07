@@ -1,3 +1,4 @@
+from .tu_berlin import TUBerlin
 from .quickdraw import QuickDraw
 from .sketchy import Sketchy
 from .hzy_sketch import hzySketch
@@ -6,8 +7,10 @@ from .controlsketch import ControlSketch
 from .opensketch import OpenSketch
 from .sketchx_pris import SketchXPRIS
 from .photosketching import PhotoSketching
+from .gmu_sketch_cleanup import GMUSketchCleanup
 
 __all__ = [
+    "TUBerlin",
     "QuickDraw", 
     "hzySketch", 
     "TracingVsFreehand", 
@@ -16,4 +19,5 @@ __all__ = [
     "SketchXPRIS",
     "Sketchy",
     "PhotoSketching",
+    "GMUSketchCleanup"
 ]

@@ -144,7 +144,7 @@ class TracingVsFreehand(SketchDataset):
             )
             if not set(items_metadata.columns.tolist()) == set(self.metadata):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
-                self._load_items_metadata()
+                return self._load_items_metadata()
             self.items_metadata = items_metadata
         else:
             print("Metadata cache not found. Scanning files...")
@@ -191,8 +191,6 @@ class TracingVsFreehand(SketchDataset):
 
     def _load_all(self):
         """Loads all sketch data into memory if `load_all` is True."""
-        if not self.load_all:
-            return
 
         print("Loading all SVG data into memory...")
         for idx, row in tqdm(self.items_metadata.iterrows(), total=len(self)):

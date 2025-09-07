@@ -220,7 +220,7 @@ class QuickDraw(SketchDataset):
             )
             if not set(items_metadata.columns.tolist()) == set(self.metadata):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
-                self._load_items_metadata()
+                return self._load_items_metadata()
             self.items_metadata = items_metadata
             self._all_categories = sorted(
                 self.items_metadata["category"].unique().tolist()

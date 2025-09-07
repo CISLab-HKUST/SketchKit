@@ -315,7 +315,7 @@ class Sketchy(SketchDataset):
             )
             if not set(items_metadata.columns.tolist()) == set(self.metadata):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
-                self._load_items_metadata()
+                return self._load_items_metadata()
             self.items_metadata = items_metadata
 
         self.raw_data = [None] * len(self.items_metadata)

@@ -239,6 +239,6 @@ class GMUSketchCleanup:
                 p3 = Vertex(seg[3][0], seg[3][1])
                 c1 = Point(seg[1][0], seg[1][1])
                 c2 = Point(seg[2][0], seg[2][1])
-                strokes.append(Stroke(p0, p3, c1, c2))
-            paths.append(Path(strokes=strokes))
+                strokes.append(Curve(p0, p3, c1, c2))
+            paths.append(Path(curves=strokes))
         return Sketch(paths=paths)

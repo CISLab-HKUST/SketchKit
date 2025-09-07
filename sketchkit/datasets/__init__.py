@@ -1,4 +1,5 @@
 from .quickdraw import QuickDraw
+from .sketchy import Sketchy
 from .hzy_sketch import hzySketch
 from .tracing_vs_freehand import TracingVsFreehand
 from .controlsketch import ControlSketch
@@ -10,6 +11,7 @@ __all__ = [
     "hzySketch", 
     "TracingVsFreehand", 
     "ControlSketch", 
-    "OpenSketch"
-    "SketchXPRIS"
+    "OpenSketch",
+    "SketchXPRIS",
+    "Sketchy"
 ]

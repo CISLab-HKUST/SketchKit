@@ -1,4 +1,5 @@
 import os
+
 import wget
 import hashlib
 from tqdm import tqdm
@@ -85,15 +86,18 @@ def dir_md5(path, ignore_hidden=True):
         str: The MD5 hash as a hexadecimal string.
     """
     md5 = hashlib.md5()
+    all_files = []
     for root, _, files in os.walk(path):
-        # print(len(files))
-        for f in sorted(files):
+        for f in files:
             if ignore_hidden and f.startswith("."):
                 continue
             filepath = os.path.join(root, f)
-            with open(filepath, "rb") as fh:
-                for chunk in iter(lambda: fh.read(8192), b""):
-                    md5.update(chunk)
+            all_files.append(os.path.relpath(filepath, path))  # normalize
+
+    for filepath in sorted(all_files):  # ensure global ordering
+        with open(os.path.join(path, filepath), "rb") as fh:
+            for chunk in iter(lambda: fh.read(8192), b""):
+                md5.update(chunk)
     return md5.hexdigest()
 
 

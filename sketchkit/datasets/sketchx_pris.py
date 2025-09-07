@@ -77,7 +77,7 @@ class SketchXPRIS(SketchDataset):
     """
 
     # MD5 Sum of the whole dir, you can set a list for zip files
-    md5_sum = "694f0b8eb9d54e8b539c431e618d21f9"
+    md5_sum = "67ac28f552b857fc84de4f60775a13a0"
     # Metadata columns for each items
     metadata = ["id", "sub_id", "category"]
 

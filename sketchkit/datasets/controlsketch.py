@@ -121,7 +121,7 @@ class ControlSketch(SketchDataset):
         - Paper: "SwiftSketch: A Diffusion Model for Image-to-Vector Sketch Generation" by E Arar, 2025
     """
 
-    md5_sum = "05f38b94a8025007b40f77f95270a7a6"
+    md5_sum = "c45dad0c08988df3d4036e85e5363e8a"
     metadata = ["id", "sub_id", "category", "split", "filepath"]
 
     def __init__(
@@ -198,6 +198,8 @@ class ControlSketch(SketchDataset):
             print("Extraction finished.")
         except Exception as e:
             raise e
+        
+        print("MD5 Checksum:", dir_md5(self.root))
 
     def _load_items_metadata(self):
         """Build metadata index for dataset items.

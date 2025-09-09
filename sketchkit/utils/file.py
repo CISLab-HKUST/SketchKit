@@ -8,7 +8,7 @@ import gdown
 CISLAB_CDN = "https://cislab.hkust-gz.edu.cn/projects/sketchkit"
 
 
-def download_with_tqdm(
+def download_with_wget(
     url: str, file_path: str, overwrite=True, pg_bar=True, desc=None
 ):
     """Downloads a file from a URL with a progress bar using tqdm.

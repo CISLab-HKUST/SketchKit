@@ -27,7 +27,7 @@ COLORS_CREATURE = {'initial':np.array([45, 169, 145])/255., 'eye':np.array([243,
 
 def download_creative_sketch(
     output_folder, 
-    remove_sourcefile: bool = True,
+    remove_sourcefile: bool = False,
     expected_md5: str | None = None,
     gdrive_id: str = "1Dstn3Cv2yAnxt1JXC0zPa1VPVDSz9gc-",
     filename: str = "creative_sketch.zip",
@@ -74,9 +74,6 @@ def download_creative_sketch(
             output_dir=os.path.join(output_folder, "creative_sketches"),
             remove_sourcefile=remove_sourcefile,
         )
-        # extract_files(file_name=os.path.join(output_folder, "sketches_png.zip"),
-        #               output_folder=os.path.join(output_folder, "tu_berlin"),
-        #               remove_sourcefile=remove_sourcefile)
     except Exception as e:
         print(e)
         return
@@ -106,8 +103,6 @@ class CreativeSketch(SketchDataset):
         root: str | PathLibPath | None = None,
         load_all: bool = False,
         cislab_source: bool = False,
-        split: str = "all",  # "bird" or "creature" or "all"
-        only_good: bool = True,
     ):
         """Initialize the Creative Sketch dataset.
 
@@ -118,11 +113,7 @@ class CreativeSketch(SketchDataset):
                 If False, loads data on-demand. Defaults to False.
             cislab_source (bool): If True, downloads from CISLAB CDN mirror.
                 If False, downloads from original Google storage. Defaults to False.
-            split: Creative Sketch dataset has "bird" and "creature" two different subdatasets, use "all" to load both.
-            only_good: Whether to only use the good samples.
         """
-        self.split = split
-        self.only_good = only_good
         super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
@@ -132,6 +123,13 @@ class CreativeSketch(SketchDataset):
             bool: True if the dataset integrity is verified, False otherwise.
         """
         print(f"Checking integrity of cached {self.__class__.__name__} dataset...")
+        # zip文件md5检查
+        # 检查zip文件是否存在
+        if not os.path.exists(os.path.join(self.root, "creative_sketch.zip")):
+            return False
+        # 检查zip文件md5
+        if file_md5(os.path.join(self.root, "creative_sketch.zip")) != self.md5_sum:
+            return False
         # 检查数据集文件夹是否存在
         if not os.path.exists(os.path.join(self.root, "creative_sketches")):
             return False
@@ -151,7 +149,7 @@ class CreativeSketch(SketchDataset):
         # 复用现有的下载函数
         download_creative_sketch(
             output_folder=self.root,
-            remove_sourcefile=True,
+            remove_sourcefile=False,
             expected_md5=self.md5_sum,
             gdrive_id="1Dstn3Cv2yAnxt1JXC0zPa1VPVDSz9gc-",
             filename="creative_sketch.zip",
@@ -172,41 +170,35 @@ class CreativeSketch(SketchDataset):
             bird_json_base = json.loads(open(bird_json_path).read())
             creature_json_base = json.loads(open(creature_json_path).read())
             
-            # 根据split和only_good参数筛选数据
+            # 加载所有数据的元数据，不进行筛选
             items_metadata = pd.DataFrame(columns=["category", "split", "id", "is_good"])
             cnt = 0
             
             # 处理鸟类数据
-            if self.split in ["all", "bird"]:
-                for sketch in tqdm(bird_json_base, desc="Loading bird metadata"):
-                    if self.only_good and not sketch["good_sample"]:
-                        continue
-                    new_row = {
-                        "category": "bird",
-                        "split": "bird",
-                        "id": cnt,
-                        "is_good": sketch["good_sample"]
-                    }
-                    items_metadata = pd.concat(
-                        [items_metadata, pd.DataFrame([new_row])], ignore_index=True
-                    )
-                    cnt += 1
+            for sketch in tqdm(bird_json_base, desc="Loading bird metadata"):
+                new_row = {
+                    "category": "bird",
+                    "split": "bird",
+                    "id": cnt,
+                    "is_good": sketch["good_sample"]
+                }
+                items_metadata = pd.concat(
+                    [items_metadata, pd.DataFrame([new_row])], ignore_index=True
+                )
+                cnt += 1
             
             # 处理生物数据
-            if self.split in ["all", "creature"]:
-                for sketch in tqdm(creature_json_base, desc="Loading creature metadata"):
-                    if self.only_good and not sketch["good_sample"]:
-                        continue
-                    new_row = {
-                        "category": "creature",
-                        "split": "creature",
-                        "id": cnt,
-                        "is_good": sketch["good_sample"]
-                    }
-                    items_metadata = pd.concat(
-                        [items_metadata, pd.DataFrame([new_row])], ignore_index=True
-                    )
-                    cnt += 1
+            for sketch in tqdm(creature_json_base, desc="Loading creature metadata"):
+                new_row = {
+                    "category": "creature",
+                    "split": "creature",
+                    "id": cnt,
+                    "is_good": sketch["good_sample"]
+                }
+                items_metadata = pd.concat(
+                    [items_metadata, pd.DataFrame([new_row])], ignore_index=True
+                )
+                cnt += 1
             
             self.items_metadata = items_metadata
             self.items_metadata.to_parquet(
@@ -246,15 +238,9 @@ class CreativeSketch(SketchDataset):
         
         for idx, row in self.items_metadata.iterrows():
             if row["category"] == "bird":
-                # 跳过不好的样本（如果only_good=True）
-                while self.only_good and not self.bird_json_base[bird_idx]["good_sample"]:
-                    bird_idx += 1
                 self.id_to_sketch_map[idx] = ("bird", bird_idx)
                 bird_idx += 1
             else:  # category == "creature"
-                # 跳过不好的样本（如果only_good=True）
-                while self.only_good and not self.creature_json_base[creature_idx]["good_sample"]:
-                    creature_idx += 1
                 self.id_to_sketch_map[idx] = ("creature", creature_idx)
                 creature_idx += 1
 
@@ -340,54 +326,63 @@ class CreativeSketch(SketchDataset):
         """
         num_birds = len(self.items_metadata[self.items_metadata["category"] == "bird"])
         num_creatures = len(self.items_metadata[self.items_metadata["category"] == "creature"])
+        num_good = len(self.items_metadata[self.items_metadata["is_good"] == True])
         
         return (
-            f"Split: {self.split}\n" \
-            f"Only good samples: {self.only_good}\n" \
+            f"Total samples: {len(self)}\n" \
             f"Bird samples: {num_birds}\n" \
             f"Creature samples: {num_creatures}\n" \
-            f"Total samples: {len(self)}"
+            f"Good samples: {num_good}" \
+            f"Bad samples: {len(self) - num_good}"
         )
 
 
 if __name__ == "__main__":
     # Default Load
     dataset = CreativeSketch()
-
-    # # Load all data to memory at once
-    # dataset = CreativeSketch(load_all=True)
     
-    # # Load only bird sketches
-    # dataset = CreativeSketch(split="bird")
-    
-    # # Load all sketches including bad samples
-    # dataset = CreativeSketch(only_good=False)
+    print(f"Dataset summary:\n{dataset.extra_repr()}")
 
-    # Search items using metadata
-    from PIL import Image
-    from sketchkit.renderer.cairo_renderer import CairoRenderer
-
-    birds = dataset.items_metadata[dataset.items_metadata["category"] == "bird"]
+    # 示例：通过items_metadata选择数据
+    # 1. 选择鸟类数据
+    bird_indices = dataset.items_metadata[dataset.items_metadata["category"] == "bird"].index
+    print(f"Number of bird sketches: {len(bird_indices)}")
     
-    if len(birds) > 0:
-        # Load a bird sketch
-        bird_sketch = dataset[birds.index[0]]
+    # 2. 选择生物数据
+    creature_indices = dataset.items_metadata[dataset.items_metadata["category"] == "creature"].index
+    print(f"Number of creature sketches: {len(creature_indices)}")
+    
+    # 3. 选择好的样本
+    good_indices = dataset.items_metadata[dataset.items_metadata["is_good"] == True].index
+    print(f"Number of good sketches: {len(good_indices)}")
+    
+    # 4. 组合筛选：鸟类的好样本
+    good_bird_indices = dataset.items_metadata[
+        (dataset.items_metadata["category"] == "bird") & 
+        (dataset.items_metadata["is_good"] == True)
+    ].index
+    print(f"Number of good bird sketches: {len(good_bird_indices)}")
+    
+    # 加载一个鸟类的好样本
+    if len(good_bird_indices) > 0:
+        bird_sketch = dataset[good_bird_indices[0]]
         print(f"Loaded bird sketch with {len(bird_sketch.paths)} paths")
     
-    creatures = dataset.items_metadata[dataset.items_metadata["category"] == "creature"]
-    
-    if len(creatures) > 0:
-        # Load a creature sketch
-        creature_sketch = dataset[creatures.index[0]]
+    # 加载一个生物的样本
+    if len(creature_indices) > 0:
+        creature_sketch = dataset[creature_indices[0]]
         print(f"Loaded creature sketch with {len(creature_sketch.paths)} paths")
     
-    print(f"Dataset summary: {len(dataset)} sketches total")
-
-    # 渲染
+    # 渲染示例
+    from PIL import Image
+    from sketchkit.renderer.cairo_renderer import CairoRenderer
+    
     renderer = CairoRenderer(800, (1, 1, 1))
-    raster_image = renderer.render(bird_sketch)
-    outpath = "test.png"
-    if outpath is not None:
-        raster_image_png = Image.fromarray(raster_image, "RGB")
-        raster_image_png.save(outpath, "PNG")
+    if 'bird_sketch' in locals():
+        raster_image = renderer.render(bird_sketch)
+        outpath = "test.png"
+        if outpath is not None:
+            raster_image_png = Image.fromarray(raster_image, "RGB")
+            raster_image_png.save(outpath, "PNG")
+            print(f"Sketch saved to {outpath}")
 

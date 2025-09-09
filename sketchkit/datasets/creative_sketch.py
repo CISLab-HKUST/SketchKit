@@ -1,4 +1,5 @@
 import os
+import shutil
 import gdown
 import traceback
 import json
@@ -24,61 +25,6 @@ COLORS_CREATURE = {'initial':np.array([45, 169, 145])/255., 'eye':np.array([243,
 			'head':np.array([241, 197, 17])/255., 'horns':np.array([51, 205, 117])/255., 'legs':np.array([232, 135, 50])/255., 
 			'nose':np.array([233, 90, 75])/255., 'paws':np.array([160, 98, 186])/255., 'tail':np.array([58, 78, 99])/255., 
 			'wings':np.array([198, 203, 207])/255., 'details':np.array([171, 190, 191])/255.}
-
-def download_creative_sketch(
-    output_folder, 
-    remove_sourcefile: bool = False,
-    expected_md5: str | None = None,
-    gdrive_id: str = "1Dstn3Cv2yAnxt1JXC0zPa1VPVDSz9gc-",
-    filename: str = "creative_sketch.zip",
-):
-    """ Download dataset and extract it.
-    Args:
-        output_folder: The folder to download the dataset.
-        remove_sourcefile: Whether to remove the source file after extraction.
-        expected_md5: The expected MD5 checksum of the downloaded file.
-        gdrive_id: The Google Drive ID of the dataset.
-        filename: The name of the downloaded file.
-    
-    Returns:
-        None
-    """
-
-    os.makedirs(output_folder, exist_ok=True)
-    archive_path = os.path.join(output_folder, filename)
-
-    try:
-        print("Using gdown for Google Drive download...")
-        # Prefer gdown when available, it handles confirm tokens and cookies internally.
-        gdown.download(id=gdrive_id, output=archive_path, quiet=False)
-        print("\nDownload finished!")
-    except Exception as e:
-        traceback.print_exc()
-        print("Download failed.")
-        return
-
-    # Optional MD5 check
-    if expected_md5 is not None:
-        print("Verifying MD5 checksum...")
-        md5_val = file_md5(archive_path)
-        assert md5_val == expected_md5, f"MD5 mismatch: {md5_val} != {expected_md5}"
-        print("MD5 checksum passed!")
-    else:
-        print(file_md5(archive_path))
-
-    print("Extracting archive...")
-
-    try:
-        extract_files(
-            file_path=os.path.join(output_folder, filename),
-            output_dir=os.path.join(output_folder, "creative_sketches"),
-            remove_sourcefile=remove_sourcefile,
-        )
-    except Exception as e:
-        print(e)
-        return
-
-    print("Creative Sketch is extracted!")
 
 
 
@@ -126,16 +72,15 @@ class CreativeSketch(SketchDataset):
         # zip文件md5检查
         # 检查zip文件是否存在
         if not os.path.exists(os.path.join(self.root, "creative_sketch.zip")):
+            print(f"creative_sketch.zip not found in {os.path.join(self.root, "creative_sketch.zip")}.")
             return False
         # 检查zip文件md5
         if file_md5(os.path.join(self.root, "creative_sketch.zip")) != self.md5_sum:
-            return False
-        # 检查数据集文件夹是否存在
-        if not os.path.exists(os.path.join(self.root, "creative_sketches")):
+            print(f"creative_sketch.zip md5 check failed.")
             return False
         # 检查必要的JSON文件是否存在
-        bird_json_path = os.path.join(self.root, "creative_sketches", "raw_data_clean/creative_birds_json.txt")
-        creature_json_path = os.path.join(self.root, "creative_sketches", "raw_data_clean/creative_creatures_json.txt")
+        bird_json_path = os.path.join(self.root, "raw_data_clean/creative_birds_json.txt")
+        creature_json_path = os.path.join(self.root, "raw_data_clean/creative_creatures_json.txt")
         return os.path.exists(bird_json_path) and os.path.exists(creature_json_path)
 
     def _download(self):
@@ -146,14 +91,36 @@ class CreativeSketch(SketchDataset):
         Raises:
             Exception: If download fails for any reason.
         """
-        # 复用现有的下载函数
-        download_creative_sketch(
-            output_folder=self.root,
-            remove_sourcefile=False,
-            expected_md5=self.md5_sum,
-            gdrive_id="1Dstn3Cv2yAnxt1JXC0zPa1VPVDSz9gc-",
-            filename="creative_sketch.zip",
-        )
+        if os.path.exists(self.root):
+            shutil.rmtree(self.root)
+        os.makedirs(self.root, exist_ok=True)
+
+        svg_zip_path = os.path.join(self.root, "creative_sketch.zip")
+        try:
+            if self.cislab_source:
+                url = (
+                    f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/"
+                    + "sketches_svg.zip"
+                )
+                download_with_tqdm(url, file_path=svg_zip_path)
+            else:
+                download_with_gdown(
+                    output_folder=self.root,
+                    gdrive_id="1Dstn3Cv2yAnxt1JXC0zPa1VPVDSz9gc-",
+                    filename="creative_sketch.zip",
+                )
+        except Exception as e:
+            raise e
+        
+        try:
+            extract_files(
+                file_path=svg_zip_path,
+                output_dir=self.root,
+                remove_sourcefile=False,
+            )
+        except Exception as e:
+            raise e
+
 
     def _load_items_metadata(self):
         """Load and cache metadata for all items in the dataset.
@@ -164,8 +131,8 @@ class CreativeSketch(SketchDataset):
         """
         if not os.path.exists(os.path.join(self.root, ".metadata.parquet")):
             # 读取原始数据文件
-            bird_json_path = os.path.join(self.root, "creative_sketches", "raw_data_clean/creative_birds_json.txt")
-            creature_json_path = os.path.join(self.root, "creative_sketches", "raw_data_clean/creative_creatures_json.txt")
+            bird_json_path = os.path.join(self.root, "raw_data_clean/creative_birds_json.txt")
+            creature_json_path = os.path.join(self.root, "raw_data_clean/creative_creatures_json.txt")
             
             bird_json_base = json.loads(open(bird_json_path).read())
             creature_json_base = json.loads(open(creature_json_path).read())
@@ -225,8 +192,8 @@ class CreativeSketch(SketchDataset):
         This method reads the bird and creature JSON files and stores
         the data in self.bird_json_base and self.creature_json_base.
         """
-        bird_json_path = os.path.join(self.root, "creative_sketches", "raw_data_clean/creative_birds_json.txt")
-        creature_json_path = os.path.join(self.root, "creative_sketches", "raw_data_clean/creative_creatures_json.txt")
+        bird_json_path = os.path.join(self.root, "raw_data_clean/creative_birds_json.txt")
+        creature_json_path = os.path.join(self.root, "raw_data_clean/creative_creatures_json.txt")
         
         self.bird_json_base = json.loads(open(bird_json_path).read())
         self.creature_json_base = json.loads(open(creature_json_path).read())

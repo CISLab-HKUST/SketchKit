@@ -1,191 +1,373 @@
 import os
-import gdown
-import traceback
+import shutil
+
 import json
 import numpy as np
-from sketchkit.core import Sketch
-from sketchkit.utils.general_utils import line_to_cubic
+from pathlib import Path as PathLibPath
+import pandas as pd
+from tqdm import tqdm
 
-from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
-from sketchkit.utils.general_utils.md5sum import *
-from sketchkit.utils.general_utils.md5sum_table import *
-from sketchkit.utils.general_utils.extract_files import *
-from sketchkit.core import Sketch
+from sketchkit.core.sketch import Sketch, Path
+from sketchkit.utils.dataset import SketchDataset
+from sketchkit.utils.transform import line_to_cubic
+from sketchkit.utils.file import (
+    download_with_gdown,
+    download_with_wget,
+    extract_files,
+    file_md5,
+    CISLAB_CDN,
+)
 
-COLORS_BIRD = {'initial':np.array([45, 169, 145])/255., 'eye':np.array([243, 156, 18])/255., 'none':np.array([149, 165, 166])/255., 
-			'beak':np.array([211, 84, 0])/255., 'body':np.array([41, 128, 185])/255., 'details':np.array([171, 190, 191])/255.,
-			'head':np.array([192, 57, 43])/255., 'legs':np.array([142, 68, 173])/255., 'mouth':np.array([39, 174, 96])/255., 
-			'tail':np.array([69, 85, 101])/255., 'wings':np.array([127, 140, 141])/255.}
+COLORS_BIRD = {
+    "initial": np.array([45, 169, 145]) / 255.0,
+    "eye": np.array([243, 156, 18]) / 255.0,
+    "none": np.array([149, 165, 166]) / 255.0,
+    "beak": np.array([211, 84, 0]) / 255.0,
+    "body": np.array([41, 128, 185]) / 255.0,
+    "details": np.array([171, 190, 191]) / 255.0,
+    "head": np.array([192, 57, 43]) / 255.0,
+    "legs": np.array([142, 68, 173]) / 255.0,
+    "mouth": np.array([39, 174, 96]) / 255.0,
+    "tail": np.array([69, 85, 101]) / 255.0,
+    "wings": np.array([127, 140, 141]) / 255.0,
+}
 
-COLORS_CREATURE = {'initial':np.array([45, 169, 145])/255., 'eye':np.array([243, 156, 18])/255., 'none':np.array([149, 165, 166])/255., 
-			'arms':np.array([211, 84, 0])/255., 'beak':np.array([41, 128, 185])/255., 'mouth':np.array([54, 153, 219])/255.,
-			'body':np.array([192, 57, 43])/255., 'ears':np.array([142, 68, 173])/255., 'feet':np.array([39, 174, 96])/255., 
-			'fin':np.array([69, 85, 101])/255., 'hair':np.array([127, 140, 141])/255., 'hands':np.array([45, 63, 81])/255.,
-			'head':np.array([241, 197, 17])/255., 'horns':np.array([51, 205, 117])/255., 'legs':np.array([232, 135, 50])/255., 
-			'nose':np.array([233, 90, 75])/255., 'paws':np.array([160, 98, 186])/255., 'tail':np.array([58, 78, 99])/255., 
-			'wings':np.array([198, 203, 207])/255., 'details':np.array([171, 190, 191])/255.}
+COLORS_CREATURE = {
+    "initial": np.array([45, 169, 145]) / 255.0,
+    "eye": np.array([243, 156, 18]) / 255.0,
+    "none": np.array([149, 165, 166]) / 255.0,
+    "arms": np.array([211, 84, 0]) / 255.0,
+    "beak": np.array([41, 128, 185]) / 255.0,
+    "mouth": np.array([54, 153, 219]) / 255.0,
+    "body": np.array([192, 57, 43]) / 255.0,
+    "ears": np.array([142, 68, 173]) / 255.0,
+    "feet": np.array([39, 174, 96]) / 255.0,
+    "fin": np.array([69, 85, 101]) / 255.0,
+    "hair": np.array([127, 140, 141]) / 255.0,
+    "hands": np.array([45, 63, 81]) / 255.0,
+    "head": np.array([241, 197, 17]) / 255.0,
+    "horns": np.array([51, 205, 117]) / 255.0,
+    "legs": np.array([232, 135, 50]) / 255.0,
+    "nose": np.array([233, 90, 75]) / 255.0,
+    "paws": np.array([160, 98, 186]) / 255.0,
+    "tail": np.array([58, 78, 99]) / 255.0,
+    "wings": np.array([198, 203, 207]) / 255.0,
+    "details": np.array([171, 190, 191]) / 255.0,
+}
 
-def download_creative_sketch(
-    output_folder, 
-    remove_sourcefile: bool = True,
-    expected_md5: str | None = None,
-    gdrive_id: str = "1Dstn3Cv2yAnxt1JXC0zPa1VPVDSz9gc-",
-    filename: str = "creative_sketch.zip",
-):
-    """ Download dataset and extract it.
-    Args:
-        output_folder: The folder to download the dataset.
-        remove_sourcefile: Whether to remove the source file after extraction.
-        expected_md5: The expected MD5 checksum of the downloaded file.
-        gdrive_id: The Google Drive ID of the dataset.
-        filename: The name of the downloaded file.
-    
-    Returns:
-        None
+
+class CreativeSketch(SketchDataset):
+    """The Creative Sketch dataset contains vector sketches of birds and creatures with detailed part annotations.
+
+    Attributes:
+        md5_sum (str): MD5 checksum for dataset integrity verification.
+
+    References:
+        - Original dataset: https://songweige.github.io/projects/creative_sketech_generation/home.html
     """
 
-    os.makedirs(output_folder, exist_ok=True)
-    archive_path = os.path.join(output_folder, filename)
+    # MD5 Sum of the dataset
+    md5_sum = "84c57a01499321bd6080b1f76754d709"
 
-    try:
-        print("Using gdown for Google Drive download...")
-        # Prefer gdown when available, it handles confirm tokens and cookies internally.
-        gdown.download(id=gdrive_id, output=archive_path, quiet=False)
-        print("\nDownload finished!")
-    except Exception as e:
-        traceback.print_exc()
-        print("Download failed.")
-        return
-
-    # Optional MD5 check
-    if expected_md5 is not None:
-        print("Verifying MD5 checksum...")
-        md5_val = calculate_md5(archive_path)
-        assert md5_val == expected_md5, f"MD5 mismatch: {md5_val} != {expected_md5}"
-        print("MD5 checksum passed!")
-
-    print("Extracting archive...")
-
-    try:
-        extract_files(
-            file_name=os.path.join(output_folder, filename),
-            output_folder=os.path.join(output_folder, "creative_sketches"),
-            remove_sourcefile=remove_sourcefile,
-        )
-        # extract_files(file_name=os.path.join(output_folder, "sketches_png.zip"),
-        #               output_folder=os.path.join(output_folder, "tu_berlin"),
-        #               remove_sourcefile=remove_sourcefile)
-    except Exception as e:
-        print(e)
-        return
-
-    print("Creative Sketch is extracted!")
-
-
-
-class CreativeSketch:
-    """ The Creative Sketch dataset (https://songweige.github.io/projects/creative_sketech_generation/home.html).
-    Args:
-        json_base: The directory of the raw data in Creative Sketch dataset
-        sketch_label: The label of the sketch, "bird" or "creature"
-    """
+    # Metadata columns for each item
+    metadata = ["id", "category", "sub_id", "is_good"]
 
     def __init__(
         self,
-        data_base: str = ".cache/sketchkit/datasets",
-        file_id: str = "1Dstn3Cv2yAnxt1JXC0zPa1VPVDSz9gc-",
-        archive_name: str = "creative_sketch.zip",
-        md5: str | None = None,
-        remove_sourcefile: bool = True,
-        split: str = "all", # "bird" or "creature" or "all"
-        only_good: bool = True,
+        root: str | PathLibPath | None = None,
+        load_all: bool = False,
+        cislab_source: bool = False,
     ):
-        """ Initialize the Creative Sketch dataset.
+        """Initialize the Creative Sketch dataset.
+
         Args:
-            data_base: The folder to download the dataset.
-            file_id: The Google Drive ID of the dataset.
-            archive_name: The name of the downloaded file.
-            md5: The expected MD5 checksum of the downloaded file.
-            remove_sourcefile: Whether to remove the source file after extraction.
-            split: Creative Sketch dataset has "bird" and "creature" two different subdatasets, use "all" to load both.
-            only_good: Whether to only use the good samples.
+            root (str | PathLibPath | None): Root directory to store/load the dataset.
+                If None, uses the default dataset directory.
+            load_all (bool): If True, loads all data into memory for faster access.
+                If False, loads data on-demand. Defaults to False.
+            cislab_source (bool): If True, downloads from CISLAB CDN mirror.
+                If False, downloads from original Google storage. Defaults to False.
+        """
+        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
+
+    def _check_integrity(self) -> bool:
+        """Check the integrity of the cached dataset.
+
+        Returns:
+            bool: True if the dataset integrity is verified, False otherwise.
+        """
+        print(f"Checking integrity of cached {self.__class__.__name__} dataset...")
+
+        if not os.path.exists(os.path.join(self.root, "creative_sketch.zip")):
+            print(
+                f"creative_sketch.zip not found in {os.path.join(self.root, "creative_sketch.zip")}."
+            )
+            return False
+
+        if file_md5(os.path.join(self.root, "creative_sketch.zip")) != self.md5_sum:
+            print(f"creative_sketch.zip md5 check failed.")
+            return False
+
+        bird_json_path = os.path.join(
+            self.root, "raw_data_clean/creative_birds_json.txt"
+        )
+        creature_json_path = os.path.join(
+            self.root, "raw_data_clean/creative_creatures_json.txt"
+        )
+        return os.path.exists(bird_json_path) and os.path.exists(creature_json_path)
+
+    def _download(self):
+        """Download the Creative Sketch dataset.
+
+        Downloads the dataset from Google Drive and extracts it to the root directory.
+
+        Raises:
+            Exception: If download fails for any reason.
+        """
+        if os.path.exists(self.root):
+            shutil.rmtree(self.root)
+        os.makedirs(self.root, exist_ok=True)
+
+        svg_zip_path = os.path.join(self.root, "creative_sketch.zip")
+        try:
+            if self.cislab_source:
+                url = (
+                    f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/"
+                    + "sketches_svg.zip"
+                )
+                download_with_wget(url, file_path=svg_zip_path)
+            else:
+                download_with_gdown(
+                    output_folder=self.root,
+                    gdrive_id="1Dstn3Cv2yAnxt1JXC0zPa1VPVDSz9gc-",
+                    filename="creative_sketch.zip",
+                )
+        except Exception as e:
+            raise e
+
+        try:
+            extract_files(
+                file_path=svg_zip_path,
+                output_dir=self.root,
+                remove_sourcefile=False,
+            )
+        except Exception as e:
+            raise e
+
+    def _load_items_metadata(self):
+        """Load and cache metadata for all items in the dataset.
+
+        Creates a parquet file containing metadata for all sketches including
+        category, sub_id, global ID, and whether the sample is good.
+        If metadata cache exists, loads from the cached file.
         """
 
-        data_root = os.path.join(os.environ.get("HOME"), data_base)
-        os.makedirs(data_root, exist_ok=True)
+        bird_json_path = os.path.join(
+            self.root, "raw_data_clean/creative_birds_json.txt"
+        )
+        creature_json_path = os.path.join(
+            self.root, "raw_data_clean/creative_creatures_json.txt"
+        )
+        self.bird_json_base = json.loads(open(bird_json_path).read())
+        self.creature_json_base = json.loads(open(creature_json_path).read())
 
-        print("Downloading {} Database...".format(file_id))
-        if not os.path.exists(os.path.join(data_root, "creative_sketches")):
-            download_creative_sketch(
-                output_folder=data_root,
-                remove_sourcefile=remove_sourcefile,
-                expected_md5=md5,
-                gdrive_id=file_id,
-                filename=archive_name,
+        if not os.path.exists(os.path.join(self.root, ".metadata.parquet")):
+            items_metadata = pd.DataFrame(
+                columns=["id", "category", "sub_id", "is_good"]
+            )
+            cnt = 0
+
+            for sub_id, sketch in tqdm(
+                enumerate(self.bird_json_base),
+                total=len(self.bird_json_base),
+                desc="Loading bird metadata",
+            ):
+                new_row = {
+                    "id": cnt,
+                    "category": "bird",
+                    "sub_id": sub_id,
+                    "is_good": sketch["good_sample"],
+                }
+                items_metadata = pd.concat(
+                    [items_metadata, pd.DataFrame([new_row])], ignore_index=True
+                )
+                cnt += 1
+
+            for sub_id, sketch in tqdm(
+                enumerate(self.creature_json_base),
+                total=len(self.creature_json_base),
+                desc="Loading creature metadata",
+            ):
+                new_row = {
+                    "id": cnt,
+                    "category": "creature",
+                    "sub_id": sub_id,
+                    "is_good": sketch["good_sample"],
+                }
+                items_metadata = pd.concat(
+                    [items_metadata, pd.DataFrame([new_row])], ignore_index=True
+                )
+                cnt += 1
+
+            self.items_metadata = items_metadata
+            self.items_metadata.to_parquet(
+                os.path.join(self.root, ".metadata.parquet"), compression="zstd"
             )
         else:
-            print("Creative Sketch Database already exists.")
+            items_metadata = pd.read_parquet(
+                os.path.join(self.root, ".metadata.parquet")
+            )
+            if not set(items_metadata.columns.tolist()) == set(self.metadata):
+                os.remove(os.path.join(self.root, ".metadata.parquet"))
+                self._load_items_metadata()
+                return
+            self.items_metadata = items_metadata
 
-        bird_json_path = os.path.join(data_root, "creative_sketches", "raw_data_clean/creative_birds_json.txt")
-        creature_json_path = os.path.join(data_root, "creative_sketches", "raw_data_clean/creative_creatures_json.txt")
-        # self.json_base = json.loads(open(os.path.join(data_root, "creative_sketches")).read())
-        print("Loading Creative Sketch Database...")
-        if split == "bird":
-            bird_json_base = json.loads(open(bird_json_path).read())
-            self.json_base = [sketch for sketch in bird_json_base if sketch["good_sample"]] if only_good else bird_json_base
-            self.sketch_label = ["bird"] * len(self.json_base)
-        elif split == "creature":
-            creature_json_base = json.loads(open(creature_json_path).read())
-            self.json_base = [sketch for sketch in creature_json_base if sketch["good_sample"]] if only_good else creature_json_base
-            self.sketch_label = ["creature"] * len(self.json_base)
-        elif split == "all":
-            bird_json_base = json.loads(open(bird_json_path).read())
-            bird_json_base = [sketch for sketch in bird_json_base if sketch["good_sample"]] if only_good else bird_json_base
-            creature_json_base = json.loads(open(creature_json_path).read())
-            creature_json_base = [sketch for sketch in creature_json_base if sketch["good_sample"]] if only_good else creature_json_base
-            self.json_base = bird_json_base + creature_json_base
-            self.sketch_label = ["bird"] * len(bird_json_base) + ["creature"] * len(creature_json_base)
-        else:
-            raise Exception('Unknown split:', split)
-        print("Done!")
+        self.raw_data = [None] * len(self.items_metadata)
 
-    def __len__(self):
-        return len(self.json_base)
+    def _load_all(self):
+        """Load all sketch data into memory if load_all is enabled.
 
-    def __getitem__(self, item):
+        Loads all sketch data from the JSON files into memory for faster access.
+        Only loads if self.load_all is True.
+        """
+        for idx in tqdm(
+            range(len(self.items_metadata)),
+            desc="Loading all Creative Sketch data to memory",
+        ):
+            if self.raw_data[idx] is None:
+                self.raw_data[idx] = self._load_sketch_data(idx)
 
-        single_sketch_json = self.json_base[item]  # (N_point, 3)
-        label = self.sketch_label[item]
+    def _load_sketch_data(self, idx):
+        """Load a single sketch data by index.
 
-        if label == "bird":
+        Args:
+            idx (int): Index of the sketch to load.
+
+        Returns:
+            list: List of paths for the sketch.
+        """
+        category, orig_idx = self.items_metadata.iloc[idx][["category", "sub_id"]]
+        if category == "bird":
+            single_sketch_json = self.bird_json_base[orig_idx]
             colors = COLORS_BIRD
-        elif label == "creature":
-            colors = COLORS_CREATURE
         else:
-            raise Exception('Unknown label:', label)
+            single_sketch_json = self.creature_json_base[orig_idx]
+            colors = COLORS_CREATURE
 
         path_list = []
-        for j, step in enumerate(single_sketch_json['all_strokes']):
+        for j, step in enumerate(single_sketch_json["all_strokes"]):
             stroke_label = single_sketch_json["partsUsed"][j]
             stroke_color = colors[stroke_label]
 
             strokes = []
             for stroke in step:
-                if len(stroke) == 0: # skip the empty stroke
+                if len(stroke) == 0:  # skip the empty stroke
                     continue
                 for seg in stroke:
                     p_start = [seg[0], seg[1]]
                     p_end = [seg[2], seg[3]]
                     line = np.stack([p_start, p_end], axis=0)
                     cubic = line_to_cubic(line)
-                    # v_start = Vertex(p_start[0], p_start[1], color=stroke_color)
-                    # v_end = Vertex(p_end[0], p_end[1], color=stroke_color)
-                    # v_ctrl1 = Point(cubic[1][0], cubic[1][1])
-                    # v_ctrl2 = Point(cubic[2][0], cubic[2][1])
+                    cubic._set_vertices_attribute("color", stroke_color)
                     strokes.append(cubic)
-            path_list.append(Path(strokes))
-        # path_list: list of (N_strokes, 4, 2)
+            path_list.append(Path(curves=strokes))
+        return Sketch(path_list)
 
-        sketch = Sketch(paths=path_list)
-        return sketch
+    def __getitem__(self, idx: int) -> Sketch:
+        """Get a sketch by index.
 
+        If a sketch not in memory, load it from disk.
+
+        Args:
+            idx (int): Index of the sketch to retrieve.
+
+        Returns:
+            Sketch: A Sketch object containing the drawing data as paths.
+
+        Raises:
+            IndexError: If index is out of range.
+        """
+        if idx < 0 or idx >= len(self):
+            raise IndexError("Index out of range")
+
+        if self.raw_data[idx] is None:
+            self.raw_data[idx] = self._load_sketch_data(idx)
+
+        return self.raw_data[idx]
+
+    def extra_repr(self) -> str:
+        """Return extra information for the string representation.
+
+        Returns:
+            str: Additional information to include in __repr__.
+        """
+        num_birds = len(self.items_metadata[self.items_metadata["category"] == "bird"])
+        num_creatures = len(
+            self.items_metadata[self.items_metadata["category"] == "creature"]
+        )
+        num_good = len(self.items_metadata[self.items_metadata["is_good"] == True])
+
+        return (
+            f"Total samples: {len(self)}\n"
+            f"Bird samples: {num_birds}\n"
+            f"Creature samples: {num_creatures}\n"
+            f"Good samples: {num_good}"
+            f"Bad samples: {len(self) - num_good}"
+        )
+
+
+if __name__ == "__main__":
+    # Default Load
+    dataset = CreativeSketch()
+
+    print(f"Dataset summary:\n{dataset.extra_repr()}")
+
+    # 示例：通过items_metadata选择数据
+    # 1. 选择鸟类数据
+    bird_indices = dataset.items_metadata[
+        dataset.items_metadata["category"] == "bird"
+    ].index
+    print(f"Number of bird sketches: {len(bird_indices)}")
+
+    # 2. 选择生物数据
+    creature_indices = dataset.items_metadata[
+        dataset.items_metadata["category"] == "creature"
+    ].index
+    print(f"Number of creature sketches: {len(creature_indices)}")
+
+    # 3. 选择好的样本
+    good_indices = dataset.items_metadata[
+        dataset.items_metadata["is_good"] == True
+    ].index
+    print(f"Number of good sketches: {len(good_indices)}")
+
+    # 4. 组合筛选：鸟类的好样本
+    good_bird_indices = dataset.items_metadata[
+        (dataset.items_metadata["category"] == "bird")
+        & (dataset.items_metadata["is_good"] == True)
+    ].index
+    print(f"Number of good bird sketches: {len(good_bird_indices)}")
+
+    # 加载一个鸟类的好样本
+    if len(good_bird_indices) > 0:
+        bird_sketch = dataset[good_bird_indices[0]]
+        print(f"Loaded bird sketch with {len(bird_sketch.paths)} paths")
+
+    # 加载一个生物的样本
+    if len(creature_indices) > 0:
+        creature_sketch = dataset[creature_indices[0]]
+        print(f"Loaded creature sketch with {len(creature_sketch.paths)} paths")
+
+    # 渲染示例
+    from PIL import Image
+    from sketchkit.renderer.cairo_renderer import CairoRenderer
+
+    renderer = CairoRenderer(800, (1, 1, 1))
+    if "bird_sketch" in locals():
+        raster_image = renderer.render(bird_sketch)
+        outpath = "test.png"
+        if outpath is not None:
+            raster_image_png = Image.fromarray(raster_image, "RGB")
+            raster_image_png.save(outpath, "PNG")
+            print(f"Sketch saved to {outpath}")

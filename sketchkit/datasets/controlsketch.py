@@ -13,7 +13,7 @@ from svg.path import parse_path, path
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.transform import line_to_cubic
-from sketchkit.utils.file import extract_files, download_with_tqdm, dir_md5, CISLAB_CDN
+from sketchkit.utils.file import extract_files, download_with_wget, dir_md5, CISLAB_CDN
 
 
 _INVALID = {"rect", "circle", "ellipse", "line", "polyline", "polygon"}
@@ -175,7 +175,7 @@ class ControlSketch(SketchDataset):
             try:
                 url = f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/{zip_name}"
                 print(f"Downloading ControlSketch from CISLAB CDN: {url}")
-                download_with_tqdm(url, file_path=zip_path, pg_bar=True)
+                download_with_wget(url, file_path=zip_path, pg_bar=True)
             except Exception:
                 print(
                     "CISLAB mirror unavailable. Falling back to Google Drive (gdown)."

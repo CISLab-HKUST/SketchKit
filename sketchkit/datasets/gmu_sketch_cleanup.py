@@ -11,7 +11,7 @@ from svg.path import parse_path, Path as SvgPath, Move, CubicBezier, Line, Arc
 
 from sketchkit.core.sketch import Curve, Vertex, Point, Sketch, Path
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_tqdm, dir_md5, CISLAB_CDN, extract_files
+from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
 
 INVALID_SVG_SHAPES = {"rect", "circle", "ellipse", "line", "polyline", "polygon"}
 
@@ -172,7 +172,7 @@ class GMUSketchCleanup(SketchDataset):
 
         zip_fp = os.path.join(self.root, "Benchmark_Dataset.zip")
 
-        download_with_tqdm(url, file_path=zip_fp, desc="Downloading GMU-Sketch-Cleanup")
+        download_with_wget(url, file_path=zip_fp, desc="Downloading GMU-Sketch-Cleanup")
 
         extract_files(zip_fp, self.root)
         print("MD5 Checksum:", dir_md5(self.root))

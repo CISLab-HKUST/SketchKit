@@ -10,7 +10,7 @@ from svg.path import parse_path, path
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_tqdm, dir_md5, CISLAB_CDN, extract_files
+from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
 from sketchkit.utils.transform import line_to_cubic
 
 
@@ -235,7 +235,7 @@ class Sketchy(SketchDataset):
             if self.cislab_source:
                 cislab_url = f"{CISLAB_CDN}/datasets/Sketchy/{self.filename}"
                 print(f"Attempting download from CISLAB: {cislab_url}")
-                download_with_tqdm(
+                download_with_wget(
                     cislab_url, archive_path, desc="Downloading from CISLAB CDN"
                 )
                 print("CISLAB download completed successfully!")

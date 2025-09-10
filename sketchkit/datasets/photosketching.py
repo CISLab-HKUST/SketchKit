@@ -10,7 +10,7 @@ from tqdm import tqdm
 from sketchkit.core import Sketch
 from sketchkit.core.sketch import Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_tqdm, dir_md5, extract_files, CISLAB_CDN
+from sketchkit.utils.file import download_with_wget, dir_md5, extract_files, CISLAB_CDN
 
 
 # SVG parsing constants and functions
@@ -196,7 +196,7 @@ class PhotoSketching(SketchDataset):
             if self.cislab_source:
                 # Use fixed mirror folder name "PhotoSketching"
                 url = f"{CISLAB_CDN}/datasets/PhotoSketching/all-in-one.zip"
-                download_with_tqdm(
+                download_with_wget(
                     url, archive_path, desc="Downloading PhotoSketching dataset"
                 )
             else:

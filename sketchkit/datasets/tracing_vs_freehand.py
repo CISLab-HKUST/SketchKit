@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_tqdm, dir_md5, CISLAB_CDN, extract_files
+from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
 
 
 def _parse_svg_to_sketch(svg_path: str) -> Sketch:
@@ -119,7 +119,7 @@ class TracingVsFreehand(SketchDataset):
         zip_path = os.path.join(self.root, "sketch.zip")
 
         try:
-            download_with_tqdm(self.URL, zip_path, desc="Downloading dataset")
+            download_with_wget(self.URL, zip_path, desc="Downloading dataset")
         except Exception as e:
             raise RuntimeError(f"Download failed: {e}")
 

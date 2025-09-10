@@ -7,7 +7,7 @@ import pandas as pd
 from sketchkit.core.sketch import Sketch, Path
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.transform import line_to_cubic
-from sketchkit.utils.file import dir_md5, CISLAB_CDN, download_with_tqdm, extract_files
+from sketchkit.utils.file import dir_md5, CISLAB_CDN, download_with_wget, extract_files
 
 
 def parse_stroke3_format(stroke_data):
@@ -188,7 +188,7 @@ class SketchXPRIS(SketchDataset):
         # Download zip
         if not os.path.exists(zip_path):
             print("Downloading SketchX-PRIS Dataset...")
-            download_with_tqdm(
+            download_with_wget(
                 url=url,
                 file_path=zip_path,
                 overwrite=True,

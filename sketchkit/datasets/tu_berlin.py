@@ -15,7 +15,7 @@ import pandas as pd
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import (
-    download_with_tqdm,
+    download_with_wget,
     CISLAB_CDN,
     extract_files,
     file_md5,
@@ -209,7 +209,7 @@ class TUBerlin(SketchDataset):
                 )
             else:
                 url = "http://cybertron.cg.tu-berlin.de/eitz/projects/classifysketch/sketches_svg.zip"
-            download_with_tqdm(url, file_path=svg_zip_path)
+            download_with_wget(url, file_path=svg_zip_path)
         except Exception as e:
             raise e
 

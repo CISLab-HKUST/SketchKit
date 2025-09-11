@@ -12,6 +12,7 @@ from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_tqdm, dir_md5, CISLAB_CDN, extract_files
 
+
 def load_differsketching_json(json_path: str) -> Sketch:
     """Load a JSON sketch and convert it to a `Sketch` instance.
 
@@ -75,7 +76,6 @@ class DifferSketching(SketchDataset):
         root: str | PathLibPath | None = None,
         load_all: bool = False,
         cislab_source: bool = False,
-        allowed_types: tuple[str, ...] | None = None,
     ):
         """Initialize the DifferSketching dataset.
 
@@ -86,11 +86,7 @@ class DifferSketching(SketchDataset):
                 If False, loads data on-demand. Defaults to False.
             cislab_source (bool): If True, downloads from CISLAB CDN mirror.
                 If False, downloads from Google Drive. Defaults to False.
-            allowed_types (tuple[str, ...] | None): Filter by drawing types 
-                (e.g., ("original", "global", "stroke", "reg")). If None, 
-                includes all types. Defaults to None.
         """
-        self.allowed_types = allowed_types
         super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
@@ -158,8 +154,6 @@ class DifferSketching(SketchDataset):
             for json_dir in base.rglob("*_json"):
                 dir_name = json_dir.name
                 type_name = dir_name[:-5] if dir_name.endswith("_json") else dir_name
-                if self.allowed_types is not None and type_name not in self.allowed_types:
-                    continue
                 category = json_dir.parent.name
                 for json_file in json_dir.glob("*.json"):
                     records.append({
@@ -252,154 +246,6 @@ class DifferSketching(SketchDataset):
         types = self.items_metadata["type"].nunique()
         return f"Categories: {categories}, Types: {types}, Total: {len(self.items_metadata)} samples"
 
-def download_differsketching(output_folder):
-    """Download and extract the DifferSketching dataset.
-
-    Args:
-        output_folder (str): Directory to store the downloaded archive and
-            extracted dataset.
-
-    Returns:
-        str: Absolute path to the extracted dataset directory.
-
-    Notes:
-        This function uses a Google Drive export URL. For large files,
-        token-confirmation may be required and could fail in some environments.
-        Consider replacing with `gdown` if robustness is required.
-    """
-    os.makedirs(output_folder, exist_ok=True)
-
-    url = "https://drive.google.com/uc?id=1A_3RVc8Y4YdI7nhyM7tb-q7dQw4zTcCO&export=download"
-    zip_path = os.path.join(output_folder, "differsketching.zip")
-    extracted_folder = os.path.join(output_folder, "differsketching")
-
-    if os.path.exists(extracted_folder):
-        print("Differsketching already exists and is extracted. Skipping download and extraction.")
-        return extracted_folder
-
-    if not os.path.exists(zip_path):
-        print("Downloading Differsketching dataset...")
-        response = requests.get(url, stream=True)
-        total_size = int(response.headers.get('content-length', 0))
-        with open(zip_path, "wb") as f, tqdm(
-            desc="Downloading",
-            total=total_size,
-            unit="B",
-            unit_scale=True,
-            unit_divisor=1024,
-        ) as bar:
-            for chunk in response.iter_content(chunk_size=1024):
-                if chunk:
-                    f.write(chunk)
-                    bar.update(len(chunk))
-    else:
-        print("zip already exists. Skipping download.")
-
-    print("Extracting...")
-    with zipfile.ZipFile(zip_path, "r") as zip_ref:
-        zip_ref.extractall(extracted_folder)
-
-    print("Extracting done.！")
-    return extracted_folder
-
-
-def load_differsketching_json(json_path):
-    """Load a JSON sketch and convert it to a `Sketch` instance.
-
-    Args:
-        json_path (str): Path to a DifferSketching JSON file.
-
-    Returns:
-        Sketch: A `Sketch` object representing the vector sketch.
-
-    Raises:
-        ValueError: If the JSON file content is malformed.
-        OSError: If the file cannot be opened or read.
-    """
-    with open(json_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    strokes = data["strokes"]
-    paths = []
-
-    for stroke in strokes:
-        points = stroke["path"]               # [[x,y], [x,y], ...]
-        pressures = stroke.get("pressure", [None] * len(points))
-        thickness = stroke.get("width", None)
-
-        curves = []
-        for i in range(len(points) - 1):
-            x0, y0 = points[i]
-            x1, y1 = points[i + 1]
-
-            p0 = pressures[i] if pressures else None
-            p1 = pressures[i + 1] if pressures else None
-
-            v_start = Vertex(x0, y0, pressure=p0, thickness=thickness)
-            v_end   = Vertex(x1, y1, pressure=p1, thickness=thickness)
-
-
-            ctrl1 = Point(2/3*x0 + 1/3*x1, 2/3*y0 + 1/3*y1)
-            ctrl2 = Point(1/3*x0 + 2/3*x1, 1/3*y0 + 2/3*y1)
-
-            curve = Curve(v_start, v_end, ctrl1, ctrl2)
-            curves.append(curve)
-
-        if curves:
-            path = Path(curves=curves)
-            paths.append(path)
-
-    return Sketch(paths=paths)
-
-def convert_differsketching(base_folder):
-    """Convert all JSON sketches under a base folder into `Sketch` objects.
-
-    This function scans recursively for directories matching the pattern
-    "*_json" and converts any "*.json" files within to `Sketch` objects.
-
-    Args:
-        base_folder (str): Base directory that contains per-category
-            subdirectories ending with "_json".
-
-    Returns:
-        list[Sketch]: A list of converted `Sketch` objects. Each `Sketch`
-            instance will have extra attributes:
-            - `category`: Category name from parent folder (e.g., `Animal_Head`).
-            - `type`: Type name from the `*_json` folder (e.g., `original`,
-              `global`, `stroke`, `reg`).
-
-    Notes:
-        This is a utility/convenience function intended mainly for batch
-        conversion and debugging. For production usage, consider wrapping
-        the dataset in a class that conforms to `SketchDataset`.
-    """
-    all_sketches = []
-    base = PathLibPath(base_folder)
-
-    for json_dir in base.rglob("*_json"):
-        # Dataset layout:
-        # [Category]/[Type]_json/*.json
-        # - category should be the name of the parent directory
-        # - type is derived from the json_dir name without the `_json` suffix
-        dir_name = json_dir.name
-        type_name = dir_name[:-5] if dir_name.endswith("_json") else dir_name
-        category = json_dir.parent.name
-
-        for json_file in json_dir.glob("*.json"):
-            try:
-                sketch = load_differsketching_json(json_file)
-                # Attach category and type attributes to Sketch
-                try:
-                    setattr(sketch, "category", category)
-                    setattr(sketch, "type", type_name)
-                except Exception:
-                    pass
-                print(f"Converted: {json_file} → {sketch.path_num} paths, {sketch.curve_num} curves, category={category}, type={type_name}")
-                all_sketches.append(sketch)
-            except Exception as e:
-                print(f"Failed to convert {json_file}: {e}")
-
-    return all_sketches
 
 if __name__ == "__main__":
     # Default Load
@@ -410,25 +256,19 @@ if __name__ == "__main__":
     #
     # # Download from CISLAB CDN
     # dataset = DifferSketching(cislab_source=True)
-    #
-    # # Filter by drawing types
-    # dataset = DifferSketching(allowed_types=("original", "global"))
 
-    # Search items using metadata
+    # Search items using metadata - filter by drawing types
     objects = dataset.items_metadata[
         (dataset.items_metadata["category"] == "Animal_Head")
-        & (dataset.items_metadata["type"] == "original")
+        & (dataset.items_metadata["type"].isin(["original", "global"]))
     ]
 
     # Load sketches
     sketches = [dataset[row.id] for _, row in objects[:5].iterrows()]
-
-    from PIL import Image
-    from sketchkit.renderer.cairo_renderer import CairoRenderer
-
-    renderer = CairoRenderer(800, (1, 1, 1))
-    raster_image = renderer.render(sketches[0])
-    outpath = "test.png"
-    if outpath is not None:
-        raster_image_png = Image.fromarray(raster_image, "RGB")
-        raster_image_png.save(outpath, "PNG")
+    
+    print(f"Successfully loaded {len(sketches)} sketches")
+    if len(sketches) > 0:
+        print(f"First sketch: {sketches[0].path_num} paths, {sketches[0].curve_num} curves")
+        print(f"Category: {getattr(sketches[0], 'category', 'N/A')}")
+        print(f"Type: {getattr(sketches[0], 'type', 'N/A')}")
+    #     raster_image_png.save(outpath, "PNG")

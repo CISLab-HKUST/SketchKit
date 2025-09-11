@@ -6,7 +6,7 @@ import json
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_tqdm, dir_md5, CISLAB_CDN, extract_files
+from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
 from pathlib import Path as PathLibPath
 from sketchkit.core import Sketch
 
@@ -30,7 +30,7 @@ def download_and_extract_data(
                 "https://cislab.hkust-gz.edu.cn/demos/aisketch/data/"
                 + f"{dataset_filename}"
             )
-        download_with_tqdm(
+        download_with_wget(
             url,
             os.path.join(output_folder, dataset_filename),
         )

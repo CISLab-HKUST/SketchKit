@@ -7,7 +7,7 @@ import pandas as pd
 from sketchkit.core.sketch import Sketch, Path
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.transform import line_to_cubic
-from sketchkit.utils.file import dir_md5, CISLAB_CDN, download_with_tqdm, extract_files
+from sketchkit.utils.file import dir_md5, CISLAB_CDN, download_with_wget, extract_files
 
 
 def parse_stroke3_format(stroke_data):
@@ -77,7 +77,7 @@ class SketchXPRIS(SketchDataset):
     """
 
     # MD5 Sum of the whole dir, you can set a list for zip files
-    md5_sum = "694f0b8eb9d54e8b539c431e618d21f9"
+    md5_sum = "67ac28f552b857fc84de4f60775a13a0"
     # Metadata columns for each items
     metadata = ["id", "sub_id", "category"]
 
@@ -153,7 +153,7 @@ class SketchXPRIS(SketchDataset):
             )
             if not set(items_metadata.columns.tolist()) == set(self.metadata):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
-                self._load_items_metadata()
+                return self._load_items_metadata()
             self.items_metadata = items_metadata
             self._all_categories = sorted(
                 self.items_metadata["category"].unique().tolist()
@@ -188,7 +188,7 @@ class SketchXPRIS(SketchDataset):
         # Download zip
         if not os.path.exists(zip_path):
             print("Downloading SketchX-PRIS Dataset...")
-            download_with_tqdm(
+            download_with_wget(
                 url=url,
                 file_path=zip_path,
                 overwrite=True,

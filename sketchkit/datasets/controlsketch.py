@@ -13,7 +13,7 @@ from svg.path import parse_path, path
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.transform import line_to_cubic
-from sketchkit.utils.file import extract_files, download_with_tqdm, dir_md5, CISLAB_CDN
+from sketchkit.utils.file import extract_files, download_with_wget, dir_md5, CISLAB_CDN
 
 
 _INVALID = {"rect", "circle", "ellipse", "line", "polyline", "polygon"}
@@ -121,7 +121,7 @@ class ControlSketch(SketchDataset):
         - Paper: "SwiftSketch: A Diffusion Model for Image-to-Vector Sketch Generation" by E Arar, 2025
     """
 
-    md5_sum = "05f38b94a8025007b40f77f95270a7a6"
+    md5_sum = "c45dad0c08988df3d4036e85e5363e8a"
     metadata = ["id", "sub_id", "category", "split", "filepath"]
 
     def __init__(
@@ -175,7 +175,7 @@ class ControlSketch(SketchDataset):
             try:
                 url = f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/{zip_name}"
                 print(f"Downloading ControlSketch from CISLAB CDN: {url}")
-                download_with_tqdm(url, file_path=zip_path, pg_bar=True)
+                download_with_wget(url, file_path=zip_path, pg_bar=True)
             except Exception:
                 print(
                     "CISLAB mirror unavailable. Falling back to Google Drive (gdown)."
@@ -198,6 +198,8 @@ class ControlSketch(SketchDataset):
             print("Extraction finished.")
         except Exception as e:
             raise e
+        
+        print("MD5 Checksum:", dir_md5(self.root))
 
     def _load_items_metadata(self):
         """Build metadata index for dataset items.

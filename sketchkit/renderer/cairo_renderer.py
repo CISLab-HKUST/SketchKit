@@ -24,7 +24,7 @@ class CairoRenderer:
         self.canvas_size = canvas_size
         self.canvas_color = canvas_color
 
-    def render(self, sketch: Sketch, fit_canvas: bool = False):
+    def render(self, sketch: Sketch, width: int = 3, fit_canvas: bool = False):
         """
         Renders the given sketch onto a canvas using Cairo's drawing functions.
 
@@ -33,7 +33,8 @@ class CairoRenderer:
 
         Args:
             sketch (Sketch): A Sketch object containing paths and strokes to be rendered.
-            fit_canvas (bool): Whether to scale and center the sketch to fit the canvas. Default is False.
+            width (int, optional): The width of the lines used to draw the sketch. Default is 3.
+            fit_canvas (bool, optional): Whether to scale and center the sketch to fit the canvas. Default is False.
 
         Returns:
             np.ndarray: A 3-channel image (height x width x 3) representing the rendered sketch, as a NumPy array.
@@ -47,7 +48,7 @@ class CairoRenderer:
         ctx.set_line_cap(cairo.LINE_CAP_ROUND)
         ctx.set_line_join(cairo.LINE_JOIN_ROUND)
         ctx.set_source_rgb(*self.canvas_color)
-        ctx.set_line_width(3)
+        ctx.set_line_width(width)
         ctx.paint()
 
         # 适配画布

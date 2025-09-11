@@ -1,16 +1,19 @@
 import os
 import shutil
+
 import json
-import requests
-import zipfile
-from tqdm import tqdm
 from pathlib import Path as PathLibPath
 import pandas as pd
-import gdown
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_tqdm, dir_md5, CISLAB_CDN, extract_files
+from sketchkit.utils.file import (
+    download_with_wget,
+    download_with_gdown,
+    dir_md5,
+    CISLAB_CDN,
+    extract_files,
+)
 
 
 def load_differsketching_json(json_path: str) -> Sketch:
@@ -44,8 +47,8 @@ def load_differsketching_json(json_path: str) -> Sketch:
             v_start = Vertex(x0, y0, pressure=p0, thickness=thickness)
             v_end = Vertex(x1, y1, pressure=p1, thickness=thickness)
 
-            ctrl1 = Point(2/3*x0 + 1/3*x1, 2/3*y0 + 1/3*y1)
-            ctrl2 = Point(1/3*x0 + 2/3*x1, 1/3*y0 + 2/3*y1)
+            ctrl1 = Point(2 / 3 * x0 + 1 / 3 * x1, 2 / 3 * y0 + 1 / 3 * y1)
+            ctrl2 = Point(1 / 3 * x0 + 2 / 3 * x1, 1 / 3 * y0 + 2 / 3 * y1)
 
             curve = Curve(v_start, v_end, ctrl1, ctrl2)
             curves.append(curve)
@@ -60,7 +63,7 @@ def load_differsketching_json(json_path: str) -> Sketch:
 class DifferSketching(SketchDataset):
     """The DifferSketching dataset contains vector sketches with pressure and timing data.
 
-    This dataset includes multiple drawing types (original, global, stroke, reg) 
+    This dataset includes multiple drawing types (original, global, stroke, reg)
     across various categories, with each sketch containing stroke sequences with
     pressure and timing information.
 
@@ -68,7 +71,7 @@ class DifferSketching(SketchDataset):
         md5_sum (str): MD5 checksum for dataset integrity verification.
     """
 
-    md5_sum = "97bea7240fa9d74716730f50406f9ba8"
+    md5_sum = "ab0d9202dbaca58339b0b8ae6c1be0f3"
     metadata = ["id", "file_path", "category", "type"]
 
     def __init__(
@@ -96,10 +99,7 @@ class DifferSketching(SketchDataset):
             bool: True if the dataset integrity is verified, False otherwise.
         """
         print(f"Checking integrity of cached {self.__class__.__name__} dataset...")
-        src_dir = self._detect_src_dir()
-        if src_dir is None:
-            return False
-        current_md5 = dir_md5(src_dir)
+        current_md5 = dir_md5(self.root)
         return current_md5 == self.md5_sum
 
     def _download(self):
@@ -119,9 +119,13 @@ class DifferSketching(SketchDataset):
         try:
             if self.cislab_source:
                 url = f"{CISLAB_CDN}/datasets/DifferSketching/differsketching.zip"
-                download_with_tqdm(url, archive_path)
+                download_with_wget(url, archive_path)
             else:
-                gdown.download(id="1A_3RVc8Y4YdI7nhyM7tb-q7dQw4zTcCO", output=archive_path, quiet=False)
+                download_with_gdown(
+                    self.root,
+                    "1A_3RVc8Y4YdI7nhyM7tb-q7dQw4zTcCO",
+                    "differsketching.zip",
+                )
         except Exception as e:
             raise e
 
@@ -130,11 +134,13 @@ class DifferSketching(SketchDataset):
         except Exception as e:
             raise e
 
+        print("MD5 Checksum:", dir_md5(self.root))
+
     def _load_items_metadata(self):
         """Load and cache metadata for all items in the dataset.
 
         Creates a parquet file containing metadata for all sketches including
-        category, type, file path, and global ID. If metadata cache exists, 
+        category, type, file path, and global ID. If metadata cache exists,
         loads from the cached file.
 
         The metadata DataFrame contains columns:
@@ -144,35 +150,37 @@ class DifferSketching(SketchDataset):
         - type: Drawing type (original, global, stroke, reg)
         """
         if not os.path.exists(os.path.join(self.root, ".metadata.parquet")):
-            src_dir = self._detect_src_dir()
-            if src_dir is None:
-                raise RuntimeError("Unable to locate dataset directory after extraction.")
-
             records = []
             cnt = 0
-            base = PathLibPath(src_dir)
+            base = PathLibPath(self.root, "DifferSketching_Dataset")
             for json_dir in base.rglob("*_json"):
                 dir_name = json_dir.name
                 type_name = dir_name[:-5] if dir_name.endswith("_json") else dir_name
                 category = json_dir.parent.name
                 for json_file in json_dir.glob("*.json"):
-                    records.append({
-                        "id": cnt,
-                        "file_path": str(json_file),
-                        "category": category,
-                        "type": type_name,
-                    })
+                    records.append(
+                        {
+                            "id": cnt,
+                            "file_path": str(json_file),
+                            "category": category,
+                            "type": type_name,
+                        }
+                    )
                     cnt += 1
 
             if len(records) == 0:
-                raise RuntimeError("No JSON files found. Please ensure dataset is downloaded correctly.")
+                raise RuntimeError(
+                    "No JSON files found. Please ensure dataset is downloaded correctly."
+                )
 
             self.items_metadata = pd.DataFrame(records, columns=self.metadata)
             self.items_metadata.to_parquet(
                 os.path.join(self.root, ".metadata.parquet"), compression="zstd"
             )
         else:
-            items_metadata = pd.read_parquet(os.path.join(self.root, ".metadata.parquet"))
+            items_metadata = pd.read_parquet(
+                os.path.join(self.root, ".metadata.parquet")
+            )
             if not set(items_metadata.columns.tolist()) == set(self.metadata):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
                 self._load_items_metadata()
@@ -191,8 +199,6 @@ class DifferSketching(SketchDataset):
         """Load a single sketch by index."""
         row = self.items_metadata.iloc[idx]
         sketch = load_differsketching_json(row["file_path"])
-        setattr(sketch, "category", row.get("category", None))
-        setattr(sketch, "type", row.get("type", None))
         return sketch
 
     def __getitem__(self, idx: int) -> Sketch:
@@ -214,30 +220,6 @@ class DifferSketching(SketchDataset):
             self.raw_data[idx] = self._load_sketch(idx)
         return self.raw_data[idx]
 
-    def _detect_src_dir(self) -> str | None:
-        """Detect actual extracted dataset directory under root.
-
-        Returns:
-            str | None: Path to directory that contains *_json subfolders with JSON files.
-        """
-        # Preferred conventional folder name
-        preferred = os.path.join(self.root, "differsketching")
-        if os.path.isdir(preferred):
-            return preferred
-        # Otherwise scan immediate subdirectories
-        candidates = [os.path.join(self.root, d) for d in os.listdir(self.root) if os.path.isdir(os.path.join(self.root, d))]
-        # Include root itself in case archive extracted files directly
-        candidates.append(self.root)
-        for c in candidates:
-            try:
-                base = PathLibPath(c)
-                for json_dir in base.rglob("*_json"):
-                    if any(p.suffix.lower() == ".json" for p in json_dir.glob("*.json")):
-                        return c
-            except Exception:
-                continue
-        return None
-
     def extra_repr(self) -> str:
         """Return extra information for the string representation."""
         if len(self.items_metadata) == 0:
@@ -257,18 +239,23 @@ if __name__ == "__main__":
     # # Download from CISLAB CDN
     # dataset = DifferSketching(cislab_source=True)
 
+    print(dataset)
+
     # Search items using metadata - filter by drawing types
     objects = dataset.items_metadata[
         (dataset.items_metadata["category"] == "Animal_Head")
         & (dataset.items_metadata["type"].isin(["original", "global"]))
     ]
-
+    print(objects)
     # Load sketches
     sketches = [dataset[row.id] for _, row in objects[:5].iterrows()]
-    
-    print(f"Successfully loaded {len(sketches)} sketches")
-    if len(sketches) > 0:
-        print(f"First sketch: {sketches[0].path_num} paths, {sketches[0].curve_num} curves")
-        print(f"Category: {getattr(sketches[0], 'category', 'N/A')}")
-        print(f"Type: {getattr(sketches[0], 'type', 'N/A')}")
-    #     raster_image_png.save(outpath, "PNG")
+
+    from PIL import Image
+    from sketchkit.renderer.cairo_renderer import CairoRenderer
+
+    renderer = CairoRenderer(800, (1, 1, 1))
+    raster_image = renderer.render(sketches[2])
+    outpath = "test.png"
+    if outpath is not None:
+        raster_image_png = Image.fromarray(raster_image, "RGB")
+        raster_image_png.save(outpath, "PNG")

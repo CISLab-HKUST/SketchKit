@@ -11,7 +11,7 @@ from pathlib import Path as PathLibPath
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import (
-    download_with_tqdm,
+    download_with_wget,
     CISLAB_CDN,
     extract_files,
     file_md5,
@@ -176,7 +176,7 @@ class OpenSketch(SketchDataset):
             url = (
                 f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/" + "sketches_svg.zip"
             )
-            download_with_tqdm(
+            download_with_wget(
                 url,
                 file_path=svg_zip_path,
                 pg_bar=True,
@@ -236,7 +236,7 @@ class OpenSketch(SketchDataset):
             )
             if not set(items_metadata.columns.tolist()) == set(self.metadata):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
-                self._load_items_metadata()
+                return self._load_items_metadata()
             self.items_metadata = items_metadata
         self.raw_data = [None] * len(self.items_metadata)  # type: list[list | None]
 

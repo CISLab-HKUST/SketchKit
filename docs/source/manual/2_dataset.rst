@@ -59,6 +59,13 @@ Available Datasets
     hzySketch
     QuickDraw
     ControlSketch
+    TUBerlin
+    TracingVsFreehand
+    OpenSketch
+    SketchXPRIS
+    Sketchy
+    PhotoSketching
+    GMUSketchCleanup
 
 
 Utility Scripts

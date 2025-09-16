@@ -440,3 +440,51 @@ class Sketch:
         """
         opacity_value = np.float32(value) if value is not None else None
         self._set_paths_attribute("opacity", opacity_value)
+
+    def to_svg(self, filename: str = None) -> str:
+        """Convert the sketch to an SVG string.
+
+        Returns:
+            str: SVG representation of the sketch.
+        """
+        svg_header = (
+            '<?xml version="1.0"?>\n'
+            '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="512" height="512">\n'
+            '<defs/>\n'
+            '<g>\n'
+        )
+        svg_footer = (
+            '</g>\n'
+            '</svg>\n'
+        )
+        svg_paths = []
+
+        for path in self.paths:
+            for curve in path.curves:
+                if not isinstance(curve, Curve):
+                    raise ValueError("All strokes must be of type `Curve`.")
+
+                p0, p1, p2, p3 = curve.p_start, curve.p_crtl1, curve.p_crtl2, curve.p_end
+                color = curve.color[0] if curve.color[0] is not None else (0, 0, 0)
+                color_hex = (
+                    f'#{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}'
+                )
+                thickness = curve.thickness[0] if curve.thickness[0] is not None else 1.0
+                opacity = curve.opacity[0] if curve.opacity[0] is not None else 1.0
+
+                path_d = (
+                    f'M {p0.x} {p0.y} '
+                    f'C {p1.x} {p1.y}, {p2.x} {p2.y}, {p3.x} {p3.y}'
+                )
+                svg_path = (
+                    f'<path d="{path_d}" '
+                    f'stroke="{color_hex}" stroke-width="{thickness}" '
+                    f'fill="none" stroke-opacity="{opacity}"/>\n'
+                )
+                svg_paths.append(svg_path)
+
+        final_str = svg_header + ''.join(svg_paths) + svg_footer
+        if filename:
+            with open(filename, 'w') as f:
+                f.write(final_str)
+        return final_str

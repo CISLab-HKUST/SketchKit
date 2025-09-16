@@ -1,8 +1,6 @@
-from __future__ import annotations
-
-import tarfile
+import os
+import shutil
 from pathlib import Path
-from typing import List
 
 import numpy as np
 import pandas as pd
@@ -10,7 +8,7 @@ from tqdm import tqdm
 
 from sketchkit.core.sketch import Sketch, Path as SKPath, Curve
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN
+from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
 from sketchkit.utils.transform import line_to_cubic
 
 
@@ -30,10 +28,10 @@ class FSCOCO(SketchDataset):
     metadata = ["id", "shard", "path"]
 
     def __init__(
-            self,
-            root: str | Path | None = None,
-            load_all: bool = False,
-            cislab_source: bool = False,
+        self,
+        root: str | Path | None = None,
+        load_all: bool = False,
+        cislab_source: bool = False,
     ):
         """
         Initializes the FSCOCO dataset loader.
@@ -57,9 +55,7 @@ class FSCOCO(SketchDataset):
         if not data_dir.exists():
             return False
         current_md5 = dir_md5(root / "fscoco")
-        if self.md5_sum:
-            return current_md5 == self.md5_sum
-        return True
+        return current_md5 == self.md5_sum
 
     def _download(self):
         """
@@ -67,30 +63,28 @@ class FSCOCO(SketchDataset):
 
         The dataset is downloaded from either the CISLAB mirror or the official source.
         """
-        root = Path(self.root)
-        root.mkdir(parents=True, exist_ok=True)
 
-        if self._check_integrity():
-            print(f"[FS-COCO] Found existing dataset at: {root}")
-            return
+        if os.path.exists(self.root):
+            shutil.rmtree(self.root)
+        os.makedirs(self.root, exist_ok=True)
+
+        root = Path(self.root)
 
         archive = root / "fscoco.tar.gz"
-        extracted_dir = root / "fscoco"
 
-        url = f"{CISLAB_CDN}/datasets/FSCOCO/fscoco.tar.gz" if self.cislab_source else "http://cvssp.org/data/fscoco/fscoco.tar.gz"
+        url = (
+            f"{CISLAB_CDN}/datasets/FSCOCO/fscoco.tar.gz"
+            if self.cislab_source
+            else "http://cvssp.org/data/fscoco/fscoco.tar.gz"
+        )
 
         print(f"[FS-COCO] Downloading from: {url}")
-        download_with_wget(url, file_path=str(archive), desc="Downloading FS-COCO", pg_bar=True)
+        download_with_wget(
+            url, file_path=str(archive), desc="Downloading FS-COCO", pg_bar=True
+        )
 
         print("[FS-COCO] Extracting...")
-        extracted_dir.mkdir(parents=True, exist_ok=True)
-        with tarfile.open(archive, "r:gz") as tar:
-            tar.extractall(root)
-
-        try:
-            archive.unlink()
-        except Exception:
-            pass
+        extract_files(archive, root, remove_sourcefile=True)
 
         try:
             print("[FS-COCO] Directory MD5:", dir_md5(root))
@@ -120,21 +114,20 @@ class FSCOCO(SketchDataset):
             else:
                 meta_path.unlink(missing_ok=True)
 
-        if not data_dir.exists():
-            raise FileNotFoundError(f"[FS-COCO] Not found: {data_dir}. Did download fail?")
-
-        rows: List[dict] = []
+        rows: list[dict] = []
         idx = 0
         for shard in range(1, 101):
             sub = data_dir / f"{shard}"
             if not sub.exists():
                 continue
             for npy_file in sorted(sub.glob("*.npy")):
-                rows.append({
-                    "id": idx,
-                    "shard": shard,
-                    "path": str(npy_file.relative_to(self.root)),
-                })
+                rows.append(
+                    {
+                        "id": idx,
+                        "shard": shard,
+                        "path": str(npy_file.relative_to(self.root)),
+                    }
+                )
                 idx += 1
 
         df = pd.DataFrame(rows, columns=self.metadata)
@@ -250,7 +243,7 @@ if __name__ == "__main__":
     # 1) Default download (CISLAB) to a temporary directory
     with tempfile.TemporaryDirectory() as tmpdir:
         console.print("[green]1) Load from CISLAB CDN (if available)[/green]")
-        ds = FSCOCO(root=tmpdir, cislab_source=True, load_all=False)
+        ds = FSCOCO(cislab_source=True, load_all=True)
         console.print(ds)
         mem = psutil.Process().memory_info().rss / 1024 / 1024
         console.print(f"Memory: {mem:.2f} MB")

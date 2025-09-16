@@ -1,4 +1,5 @@
 import numpy as np
+from sketchkit.utils.geometry import points_collinear, bezier_lengths
 
 
 class Point:
@@ -189,6 +190,47 @@ class Curve:
         opacity_value = np.float32(value) if value is not None else None
         self._set_vertices_attribute("opacity", opacity_value)
 
+    def is_line(self) -> bool:
+        """Check if the curve is a line.
+
+        Returns:
+            bool: True if the curve is a line, False otherwise.
+        """
+        p1 = np.array([self.p_start.x, self.p_start.y])
+        p2 = np.array([self.p_crtl1.x, self.p_crtl1.y])
+        p3 = np.array([self.p_crtl2.x, self.p_crtl2.y])
+        p4 = np.array([self.p_end.x, self.p_end.y])
+        
+        if not points_collinear(p1, p2, p3):
+            return False
+        
+        return points_collinear(p1, p2, p4)
+
+    @property
+    def points(self) -> np.ndarray:
+        """Get the points of the curve.
+
+        Returns:
+            np.ndarray: Array of points (shape: [4, 2]).
+        """
+        return np.array([
+            [self.p_start.x, self.p_start.y],
+            [self.p_crtl1.x, self.p_crtl1.y],
+            [self.p_crtl2.x, self.p_crtl2.y],
+            [self.p_end.x, self.p_end.y],
+        ])
+
+    def length(self) -> float:
+        """Calculate the length of the curve.
+
+        Returns:
+            float: Length of the curve.
+        """
+        
+        # 将p1,p2,p3,p4整合成[1,4,2]
+        points = self.points.reshape(1, 4, 2)
+        return bezier_lengths(points)
+
 
 class Path:
     """Collection of curves.
@@ -311,6 +353,23 @@ class Path:
         opacity_value = np.float32(value) if value is not None else None
         self._set_curves_attribute("opacity", opacity_value)
 
+    def curve_lengths(self):
+        """Calculate the length of each curve in the path.
+
+        Returns:
+            float: Total length of the path.
+        """
+        points = np.array([curve.points for curve in self.curves])
+        lengths = bezier_lengths(points)
+        return lengths
+
+    def total_length(self):
+        """Calculate the total length of all curves in the path.
+
+        Returns:
+            float: Total length of the path.
+        """
+        return sum(self.curve_lengths())
 
 class Sketch:
     """Sketch composed of multiple paths.
@@ -447,17 +506,11 @@ class Sketch:
         Returns:
             str: SVG representation of the sketch.
         """
-        svg_header = (
-            '<?xml version="1.0"?>\n'
-            '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="512" height="512">\n'
-            '<defs/>\n'
-            '<g>\n'
-        )
-        svg_footer = (
-            '</g>\n'
-            '</svg>\n'
-        )
-        svg_paths = []
+        svg_parts = []
+        svg_parts.append('<?xml version="1.0"?>')
+        svg_parts.append('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="512" height="512">')
+        svg_parts.append('<defs/>')
+        svg_parts.append('<g>')
 
         for path in self.paths:
             for curve in path.curves:
@@ -466,24 +519,17 @@ class Sketch:
 
                 p0, p1, p2, p3 = curve.p_start, curve.p_crtl1, curve.p_crtl2, curve.p_end
                 color = curve.color[0] if curve.color[0] is not None else (0, 0, 0)
-                color_hex = (
-                    f'#{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}'
-                )
+                color_hex = f'#{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}'
                 thickness = curve.thickness[0] if curve.thickness[0] is not None else 1.0
                 opacity = curve.opacity[0] if curve.opacity[0] is not None else 1.0
 
-                path_d = (
-                    f'M {p0.x} {p0.y} '
-                    f'C {p1.x} {p1.y}, {p2.x} {p2.y}, {p3.x} {p3.y}'
-                )
-                svg_path = (
-                    f'<path d="{path_d}" '
-                    f'stroke="{color_hex}" stroke-width="{thickness}" '
-                    f'fill="none" stroke-opacity="{opacity}"/>\n'
-                )
-                svg_paths.append(svg_path)
+                path_d = f'M {p0.x} {p0.y} C {p1.x} {p1.y}, {p2.x} {p2.y}, {p3.x} {p3.y}'
+                svg_parts.append(f'<path d="{path_d}" stroke="{color_hex}" stroke-width="{thickness}" fill="none" stroke-opacity="{opacity}"/>')
 
-        final_str = svg_header + ''.join(svg_paths) + svg_footer
+        svg_parts.append('</g>')
+        svg_parts.append('</svg>')
+        final_str = '\n'.join(svg_parts)
+        
         if filename:
             with open(filename, 'w') as f:
                 f.write(final_str)

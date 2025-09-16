@@ -363,7 +363,7 @@ class Path:
         Returns:
             float: Total length of the path.
         """
-        return sum(self.curve_lengths())
+        return sum(self.curve_lengths())[0]
 
 class Sketch:
     """Sketch composed of multiple paths.

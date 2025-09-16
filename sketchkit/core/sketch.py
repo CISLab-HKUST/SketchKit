@@ -1,5 +1,5 @@
 import numpy as np
-from sketchkit.utils.geometry import points_collinear, bezier_lengths
+from sketchkit.utils.geometry import bezier_lengths, is_line
 
 
 class Point:
@@ -196,15 +196,7 @@ class Curve:
         Returns:
             bool: True if the curve is a line, False otherwise.
         """
-        p1 = np.array([self.p_start.x, self.p_start.y])
-        p2 = np.array([self.p_crtl1.x, self.p_crtl1.y])
-        p3 = np.array([self.p_crtl2.x, self.p_crtl2.y])
-        p4 = np.array([self.p_end.x, self.p_end.y])
-        
-        if not points_collinear(p1, p2, p3):
-            return False
-        
-        return points_collinear(p1, p2, p4)
+        return is_line(self.np_points.reshape(1, 4, 2))[0]
 
     @property
     def np_points(self) -> np.ndarray:
@@ -220,6 +212,7 @@ class Curve:
             [self.p_end.x, self.p_end.y],
         ])
 
+    @property
     def length(self) -> float:
         """Calculate the length of the curve.
 
@@ -229,7 +222,7 @@ class Curve:
         
         # 将p1,p2,p3,p4整合成[1,4,2]
         points = self.np_points.reshape(1, 4, 2)
-        return bezier_lengths(points)
+        return bezier_lengths(points)[0]
 
 
 class Path:
@@ -359,11 +352,12 @@ class Path:
         Returns:
             float: Total length of the path.
         """
-        points = np.array([curve.points for curve in self.curves])
+        points = np.array([curve.np_points for curve in self.curves])
         lengths = bezier_lengths(points)
         return lengths
 
-    def total_length(self):
+    @property
+    def length(self):
         """Calculate the total length of all curves in the path.
 
         Returns:

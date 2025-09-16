@@ -23,6 +23,27 @@ def points_collinear(a, b, c, epsilon=1e-6):
     # Consider floating point precision, check if absolute value is below threshold
     return abs(cross_product) < epsilon
 
+def is_line(x: np.ndarray, epsilon: float = 1e-6):
+    """Check if a Curve is a line.
+
+    Args:
+        x: [N, 4, 2] Control points (P0, P1, P2, P3) as numpy array
+        epsilon (float, optional): Threshold for floating point comparison. Defaults to 1e-6.
+
+    Returns:
+        [N] bool: True if the curve is a line, False otherwise.
+    """
+    ret = []
+    for i in range(x.shape[0]):
+        t1 = points_collinear(x[i, 0], x[i, 1], x[i, 2], epsilon)
+        t2 = points_collinear(x[i, 0], x[i, 1], x[i, 3], epsilon)
+        t3 = points_collinear(x[i, 1], x[i, 2], x[i, 3], epsilon)
+        t4 = points_collinear(x[i, 0], x[i, 2], x[i, 3], epsilon)
+        ret.append(t1 and t2 and t3 and t4)
+
+    return np.array(ret)
+
+
 def bezier_lengths(x: np.ndarray, steps: int = 64) -> np.ndarray:
     """
     Calculate the length of Bézier curves.
@@ -94,7 +115,7 @@ def bezier_lengths(x: np.ndarray, steps: int = 64) -> np.ndarray:
         # Convert back to numpy array before returning
         return lengths.unsqueeze(-1).cpu().numpy()
     else:
-        # print("Using NumPy implementation for bezier_lengths")
+        print("Using NumPy implementation for bezier_lengths")
         # NumPy implementation
         x, w = leggauss(steps)          # 默认区间 [-1,1]
         t = (x + 1) / 2.0           # 映射到 [0,1]

@@ -18,6 +18,8 @@ if __name__ == '__main__':
         raster_image_png.save(outpath, 'PNG')
     for path in sketch.paths:
         print(path.curve_lengths())
+        print([curve.is_line() for curve in path.curves])
+
     curve = sketch.paths[0].curves[0]
     print(curve.is_line())
-    print(curve.points)
+    print(curve.np_points)

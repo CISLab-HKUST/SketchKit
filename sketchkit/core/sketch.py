@@ -207,7 +207,7 @@ class Curve:
         return points_collinear(p1, p2, p4)
 
     @property
-    def points(self) -> np.ndarray:
+    def np_points(self) -> np.ndarray:
         """Get the points of the curve.
 
         Returns:
@@ -228,7 +228,7 @@ class Curve:
         """
         
         # 将p1,p2,p3,p4整合成[1,4,2]
-        points = self.points.reshape(1, 4, 2)
+        points = self.np_points.reshape(1, 4, 2)
         return bezier_lengths(points)
 
 

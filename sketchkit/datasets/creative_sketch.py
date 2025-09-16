@@ -160,7 +160,6 @@ class CreativeSketch(SketchDataset):
         category, sub_id, global ID, and whether the sample is good.
         If metadata cache exists, loads from the cached file.
         """
-        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
         bird_json_path = os.path.join(
             self.root, "raw_data_clean/creative_birds_json.txt"

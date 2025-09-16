@@ -35,7 +35,7 @@ def bezier_lengths(x: np.ndarray, steps: int = 64) -> np.ndarray:
         [N, 1] Lengths of the curves as numpy array
     """
     if has_torch:
-        print("Using PyTorch implementation for bezier_lengths")
+        # print("Using PyTorch implementation for bezier_lengths")
         # PyTorch implementation (convert numpy array to tensor and use GPU if available)
         # Check if GPU is available
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -94,7 +94,7 @@ def bezier_lengths(x: np.ndarray, steps: int = 64) -> np.ndarray:
         # Convert back to numpy array before returning
         return lengths.unsqueeze(-1).cpu().numpy()
     else:
-        print("Using NumPy implementation for bezier_lengths")
+        # print("Using NumPy implementation for bezier_lengths")
         # NumPy implementation
         x, w = leggauss(steps)          # 默认区间 [-1,1]
         t = (x + 1) / 2.0           # 映射到 [0,1]

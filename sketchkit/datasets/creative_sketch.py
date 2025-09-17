@@ -1,6 +1,5 @@
 import os
 import shutil
-
 import json
 import numpy as np
 from pathlib import Path as PathLibPath
@@ -208,7 +207,6 @@ class CreativeSketch(SketchDataset):
                     [items_metadata, pd.DataFrame([new_row])], ignore_index=True
                 )
                 cnt += 1
-
             self.items_metadata = items_metadata
             self.items_metadata.to_parquet(
                 os.path.join(self.root, ".metadata.parquet"), compression="zstd"
@@ -254,7 +252,6 @@ class CreativeSketch(SketchDataset):
         else:
             single_sketch_json = self.creature_json_base[orig_idx]
             colors = COLORS_CREATURE
-
         path_list = []
         for j, step in enumerate(single_sketch_json["all_strokes"]):
             stroke_label = single_sketch_json["partsUsed"][j]

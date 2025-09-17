@@ -1,27 +1,36 @@
 # Get Started
 
-## Installation
+## How to install Sketchkit
 
-Generally, get into `SketchKit` dir, activate your virtual env and run `pip install .`.
+### Install anaconda
 
-### Conda
+Anaconda is a free, open-source distribution of Python and R designed for data science, machine learning, and scientific computing. It includes many popular libraries and tools, and comes with the Conda package manager to easily manage environments and deployments.
+
+Download the Anaconda installer that matches your operating system from the Tsinghua mirror.
+
+For example, my operating system is Windows, so I click **Anaconda3-2025.06-1-Windows-x86_64.exe** to download the installer.
+
+**Important:** During installation, check the box **"Add Anaconda to my PATH environment variable"** so you can use the `conda` command directly in the terminal.
+
+After installation, open terminal, type `conda --version`, if you see the version information of Anaconda, then it is installed successfully.
+
+### Install Sketchkit
+
+Extract `SketchKit.zip` to `SketchKit` folder
+
+Open Powershell/Terminal in `SketchKit` folder
+
+Type follow command:
 
 ```bash
 conda create -n sketchkit python==3.12
 conda activate sketchkit
-cd SketchKit
 pip install .
 ```
+After installation, you can import `sketchkit` in your python program.
 
-### uv
-
-```bash
-uv sync
-uv pip install .
-source .venv/bin/activate
-```
-
-## Load dataset
+### Example
+#### Load dataset
 
 ```python
 from sketchkit.datasets import QuickDraw
@@ -45,7 +54,7 @@ cats = dataset.items_metadata[
 cats_sketch = [dataset[row.id] for _, row in cats[:100].iterrows()]
 ```
 
-## Render the sketch
+#### Render the sketch
 
 ```python
 from PIL import Image
@@ -60,3 +69,4 @@ outpath = "opensketch-test.png"
 raster_image_png = Image.fromarray(raster_image, "RGB")
 raster_image_png.save(outpath, "PNG")
 ```
+

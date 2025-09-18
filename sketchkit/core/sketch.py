@@ -242,6 +242,18 @@ class Curve:
         """
         path = svgpathtools.parse_path(self.to_svg_path())
         return path.length()
+    
+    def point(self, t: float) -> np.ndarray:
+        """Get a point on the curve at parameter t.
+
+        Args:
+            t (float): Parameter value between 0 and 1.
+
+        Returns:
+            np.ndarray: Point on the curve at parameter t.
+        """
+        svg_path = svgpathtools.parse_path(self.to_svg_path())
+        return np.array([svg_path.point(t).real, svg_path.point(t).imag], dtype=np.float32)
 
 
 class Path:
@@ -399,6 +411,57 @@ class Path:
             float: Total length of the path in SVG path units.
         """
         return sum(self.svg_curve_lengths())
+    
+    def point(self, t: float) -> np.ndarray:
+        """Get a point on the curve at parameter t.
+
+        Args:
+            t (float): Parameter value between 0 and 1.
+
+        Returns:
+            np.ndarray: Point on the curve at parameter t.
+        """
+        assert 0.0 <= t <= 1.0, "t must be in [0, 1]"
+        lengths = self.svg_curve_lengths()
+        pre_sum_lengths = np.cumsum(lengths)
+        total_length = pre_sum_lengths[-1]
+        target_length = t * total_length
+        curve_index = np.searchsorted(pre_sum_lengths, target_length, side='right')
+        if curve_index == 0:
+            t_on_curve = target_length / lengths[0]
+            return self.curves[0].point(t_on_curve)
+        else:
+            t_on_curve = (target_length - pre_sum_lengths[curve_index - 1]) / lengths[curve_index]
+            return self.curves[curve_index].point(t_on_curve)
+        
+    def points(self, ts: np.ndarray) -> np.ndarray:
+        """Get points on the path at parameters ts.
+
+        Args:
+            ts (np.ndarray): Array of parameter values between 0 and 1.
+
+        Returns:
+            np.ndarray: Array of points on the path at parameters ts.
+        """
+        assert np.all((0.0 <= ts) & (ts <= 1.0)), "All t values must be in [0, 1]"
+        lengths = self.svg_curve_lengths()
+        pre_sum_lengths = np.cumsum(lengths)
+        total_length = pre_sum_lengths[-1]
+        target_lengths = ts * total_length
+        curve_indices = np.searchsorted(pre_sum_lengths, target_lengths, side='right')
+        points = np.zeros((len(ts), 2), dtype=np.float32)
+        for i, curve_index in enumerate(curve_indices):
+            if curve_index == 0:
+                t_on_curve = target_lengths[i] / lengths[0]
+                points[i] = self.curves[0].point(t_on_curve)
+            elif curve_index < len(self.curves):
+                t_on_curve = (target_lengths[i] - pre_sum_lengths[curve_index - 1]) / lengths[curve_index]
+                points[i] = self.curves[curve_index].point(t_on_curve)
+            else:
+                points[i] = self.curves[-1].point(t_on_curve)
+        return points
+
+
 
 class Sketch:
     """Sketch composed of multiple paths.

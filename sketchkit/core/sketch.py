@@ -494,37 +494,91 @@ class Sketch:
         opacity_value = np.float32(value) if value is not None else None
         self._set_paths_attribute("opacity", opacity_value)
 
-    def to_svg(self, filename: str = None) -> str:
-        """Convert the sketch to an SVG string.
+    def to_svg(self, size: int = 512, filename: str = None, fit_size: bool = False) -> str:
+            """Convert the sketch to an SVG string.
 
-        Returns:
-            str: SVG representation of the sketch.
-        """
-        svg_parts = []
-        svg_parts.append('<?xml version="1.0"?>')
-        svg_parts.append('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="512" height="512">')
-        svg_parts.append('<defs/>')
-        svg_parts.append('<g>')
+            Args:
+                size: Size of the SVG canvas (width and height in pixels).
+                filename: Optional filename to save the SVG.
+                fit_size: If True, scale and center the sketch while preserving aspect ratio.
 
-        for path in self.paths:
-            for curve in path.curves:
-                if not isinstance(curve, Curve):
-                    raise ValueError("All strokes must be of type `Curve`.")
+            Returns:
+                str: SVG representation of the sketch.
+            """
+            svg_parts = []
+            svg_parts.append('<?xml version="1.0"?>')
+            svg_parts.append(f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{size}" height="{size}">')
+            svg_parts.append('<defs/>')
+            svg_parts.append('<g>')
 
-                p0, p1, p2, p3 = curve.p_start, curve.p_crtl1, curve.p_crtl2, curve.p_end
-                color = curve.color[0] if curve.color[0] is not None else (0, 0, 0)
-                color_hex = f'#{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}'
-                thickness = curve.thickness[0] if curve.thickness[0] is not None else 1.0
-                opacity = curve.opacity[0] if curve.opacity[0] is not None else 1.0
+            # 计算缩放和偏移参数
+            scale = 1.0
+            offset_x = 0.0
+            offset_y = 0.0
+            
+            if fit_size:
+                # 收集所有点以确定边界
+                all_points = []
+                for path in self.paths:
+                    for curve in path.curves:
+                        if not isinstance(curve, Curve):
+                            raise ValueError("All strokes must be of type `Curve`.")
+                        
+                        p0, p1, p2, p3 = curve.p_start, curve.p_crtl1, curve.p_crtl2, curve.p_end
+                        all_points.append([p0.x, p0.y])
+                        all_points.append([p1.x, p1.y])
+                        all_points.append([p2.x, p2.y])
+                        all_points.append([p3.x, p3.y])
+                
+                if all_points:
+                    # 计算边界
+                    points_array = np.array(all_points)
+                    min_x, min_y = np.min(points_array, axis=0)
+                    max_x, max_y = np.max(points_array, axis=0)
+                    
+                    # 计算大小和中心
+                    width = max_x - min_x
+                    height = max_y - min_y
+                    center_x = (min_x + max_x) / 2
+                    center_y = (min_y + max_y) / 2
+                    
+                    # 计算缩放因子以适应画布并留出边距
+                    padding = 0.05  # 5%边距
+                    scale = min((size * (1 - padding * 2)) / width, (size * (1 - padding * 2)) / height)
+                    
+                    # 计算平移以居中草图
+                    offset_x = size / 2 - center_x * scale
+                    offset_y = size / 2 - center_y * scale
 
-                path_d = f'M {p0.x} {p0.y} C {p1.x} {p1.y}, {p2.x} {p2.y}, {p3.x} {p3.y}'
-                svg_parts.append(f'<path d="{path_d}" stroke="{color_hex}" stroke-width="{thickness}" fill="none" stroke-opacity="{opacity}"/>')
+            for path in self.paths:
+                for curve in path.curves:
+                    if not isinstance(curve, Curve):
+                        raise ValueError("All strokes must be of type `Curve`.")
 
-        svg_parts.append('</g>')
-        svg_parts.append('</svg>')
-        final_str = '\n'.join(svg_parts)
-        
-        if filename:
-            with open(filename, 'w') as f:
-                f.write(final_str)
-        return final_str
+                    p0, p1, p2, p3 = curve.p_start, curve.p_crtl1, curve.p_crtl2, curve.p_end
+                    color = curve.color[0] if curve.color[0] is not None else (0, 0, 0)
+                    color_hex = f'#{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}'
+                    thickness = curve.thickness[0] if curve.thickness[0] is not None else 1.0
+                    opacity = curve.opacity[0] if curve.opacity[0] is not None else 1.0
+
+                    # 直接应用缩放和偏移到每个点的坐标
+                    x0 = p0.x * scale + offset_x
+                    y0 = p0.y * scale + offset_y
+                    x1 = p1.x * scale + offset_x
+                    y1 = p1.y * scale + offset_y
+                    x2 = p2.x * scale + offset_x
+                    y2 = p2.y * scale + offset_y
+                    x3 = p3.x * scale + offset_x
+                    y3 = p3.y * scale + offset_y
+
+                    path_d = f'M {x0} {y0} C {x1} {y1}, {x2} {y2}, {x3} {y3}'
+                    svg_parts.append(f'<path d="{path_d}" stroke="{color_hex}" stroke-width="{thickness}" fill="none" stroke-opacity="{opacity}"/>')
+
+            svg_parts.append('</g>')
+            svg_parts.append('</svg>')
+            final_str = '\n'.join(svg_parts)
+            
+            if filename:
+                with open(filename, 'w') as f:
+                    f.write(final_str)
+            return final_str

@@ -1,5 +1,6 @@
 import numpy as np
 from sketchkit.utils.geometry import bezier_lengths, is_line
+import svgpathtools
 
 
 class Point:
@@ -212,6 +213,15 @@ class Curve:
             [self.p_end.x, self.p_end.y],
         ])
 
+    def to_svg_path(self) -> str:
+        """Convert the curve to an SVG path string.
+
+        Returns:
+            str: SVG path representation of the curve.
+        """
+        p0, p1, p2, p3 = self.p_start, self.p_crtl1, self.p_crtl2, self.p_end
+        return f'M {p0.x} {p0.y} C {p1.x} {p1.y}, {p2.x} {p2.y}, {p3.x} {p3.y}'
+
     @property
     def length(self) -> float:
         """Calculate the length of the curve.
@@ -223,6 +233,15 @@ class Curve:
         # 将p1,p2,p3,p4整合成[1,4,2]
         points = self.np_points.reshape(1, 4, 2)
         return bezier_lengths(points)[0]
+    
+    def svg_length(self) -> float:
+        """Calculate the length of the curve in SVG path units.
+
+        Returns:
+            float: Length of the curve in SVG path units.
+        """
+        path = svgpathtools.parse_path(self.to_svg_path())
+        return path.length()
 
 
 class Path:
@@ -364,6 +383,22 @@ class Path:
             float: Total length of the path.
         """
         return sum(self.curve_lengths())[0]
+    
+    def svg_curve_lengths(self) -> list[float]:
+        """Calculate the lengths of each curve in SVG path units.
+
+        Returns:
+            np.ndarray: Array of lengths for each curve in SVG path units.
+        """
+        return np.array([curve.svg_length() for curve in self.curves])
+
+    def svg_length(self) -> float:
+        """Calculate the total length of all curves in the path in SVG path units.
+
+        Returns:
+            float: Total length of the path in SVG path units.
+        """
+        return sum(self.svg_curve_lengths())
 
 class Sketch:
     """Sketch composed of multiple paths.

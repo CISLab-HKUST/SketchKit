@@ -243,17 +243,18 @@ class Curve:
         path = svgpathtools.parse_path(self.to_svg_path())
         return path.length()
     
-    def point(self, t: float) -> np.ndarray:
-        """Get a point on the curve at parameter t.
+    
+    def get_division_points(self, ts: np.ndarray) -> np.ndarray:
+        """Get points on the curve at specified parameter values.
 
         Args:
-            t (float): Parameter value between 0 and 1.
+            ts (np.ndarray): Array of parameter values between 0 and 1.
 
         Returns:
-            np.ndarray: Point on the curve at parameter t.
+            np.ndarray: Array of points on the curve at the specified parameter values.
         """
         svg_path = svgpathtools.parse_path(self.to_svg_path())
-        return np.array([svg_path.point(t).real, svg_path.point(t).imag], dtype=np.float32)
+        return np.array([[svg_path.point(t).real, svg_path.point(t).imag] for t in ts], dtype=np.float32)
 
 
 class Path:
@@ -412,29 +413,7 @@ class Path:
         """
         return sum(self.svg_curve_lengths())
     
-    def point(self, t: float) -> np.ndarray:
-        """Get a point on the curve at parameter t.
-
-        Args:
-            t (float): Parameter value between 0 and 1.
-
-        Returns:
-            np.ndarray: Point on the curve at parameter t.
-        """
-        assert 0.0 <= t <= 1.0, "t must be in [0, 1]"
-        lengths = self.svg_curve_lengths()
-        pre_sum_lengths = np.cumsum(lengths)
-        total_length = pre_sum_lengths[-1]
-        target_length = t * total_length
-        curve_index = np.searchsorted(pre_sum_lengths, target_length, side='right')
-        if curve_index == 0:
-            t_on_curve = target_length / lengths[0]
-            return self.curves[0].point(t_on_curve)
-        else:
-            t_on_curve = (target_length - pre_sum_lengths[curve_index - 1]) / lengths[curve_index]
-            return self.curves[curve_index].point(t_on_curve)
-        
-    def points(self, ts: np.ndarray) -> np.ndarray:
+    def get_division_points(self, ts: np.ndarray) -> np.ndarray:
         """Get points on the path at parameters ts.
 
         Args:

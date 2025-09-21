@@ -153,6 +153,43 @@ class CairoRenderer:
         background=(0,0,0,0),  # RGBA or RGB
         antialias=True,
     ):
+        """
+        Render a texture along a cubic Bézier curve by stamping a resampled tile 
+        along the curve path.
+
+        Parameters
+        ----------
+        texture_img : PIL.Image
+            Input texture image. It will be converted to RGBA if needed.
+        control_points : list of tuple
+            Four control points [(x0, y0), (x1, y1), (x2, y2), (x3, y3)] 
+            defining a cubic Bézier curve.
+        canvas : PIL.Image
+            Target canvas image onto which the textured curve is rendered.
+        stroke_width : int, optional
+            Width of the rendered stroke in pixels. Default is 3.
+        spacing : float, optional
+            Factor controlling spacing between texture tiles along the curve.
+            - <1 → overlap  
+            - =1 → touching (butting)  
+            - >1 → gaps  
+            Default is 0.001.
+        samples : int, optional
+            Number of samples along the curve used for arc-length approximation. 
+            Higher values yield smoother placement. Default is 1000.
+        background : tuple, optional
+            Background color for the canvas in RGB or RGBA. Default is transparent (0,0,0,0).
+        antialias : bool, optional
+            Whether to use bicubic resampling (True) or nearest-neighbor (False). 
+            Default is True.
+
+        Returns
+        -------
+        PIL.Image
+            The updated canvas with the textured Bézier stroke rendered on top.
+
+        """
+        
         assert len(control_points) == 4, "Provide 4 control points for a cubic Bézier."
         p0,p1,p2,p3 = control_points
         scale = 1.0
@@ -228,6 +265,35 @@ class CairoRenderer:
 
     def render_with_texture(self, sketch: Sketch, width: int = 4, texture: str = None, samples = 1000, spacing=0.2, antialias=True):
         
+        """
+        Render a full sketch composed of Bézier curves using a given texture.
+
+        Parameters
+        ----------
+        sketch : Sketch
+            A Sketch object containing one or more paths, each with curves. 
+            Curves must be instances of `Curve` with four Bézier control points 
+            (start, control1, control2, end).
+        width : int, optional
+            Stroke width in pixels. Default is 4.
+        texture : str, optional
+            Path to the texture image file used for rendering strokes.
+        samples : int, optional
+            Number of curve samples for arc-length approximation. Default is 1000.
+        spacing : float, optional
+            Tile spacing factor passed to `render_texture_along_bezier`. 
+            Default is 0.2.
+        antialias : bool, optional
+            Whether to enable bicubic resampling for smoother rendering. 
+            Default is True.
+
+        Returns
+        -------
+        PIL.Image
+            A canvas image of size `(self.canvas_size, self.canvas_size)` with 
+            all sketch paths rendered using the texture.
+
+        """
         # Prepare texture: ensure RGBA and orient width=along-path, height=thickness
         tex = Image.open(texture)
         mode = "RGBA"

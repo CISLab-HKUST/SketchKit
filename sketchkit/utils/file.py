@@ -1,13 +1,15 @@
 import os
+
 import wget
 import hashlib
 from tqdm import tqdm
 from pyunpack import Archive
+import gdown
 
 CISLAB_CDN = "https://cislab.hkust-gz.edu.cn/projects/sketchkit"
 
 
-def download_with_tqdm(
+def download_with_wget(
     url: str, file_path: str, overwrite=True, pg_bar=True, desc=None
 ):
     """Downloads a file from a URL with a progress bar using tqdm.
@@ -45,6 +47,35 @@ def download_with_tqdm(
     else:
         wget.download(url, out=file_path, bar=None)
 
+def download_with_gdown(
+    output_folder, 
+    gdrive_id: str,
+    filename: str,
+):
+    """ Download dataset from google drive.
+    Args:
+        output_folder: The folder to download the dataset.
+        gdrive_id: The Google Drive ID of the dataset.
+        filename: The name of the downloaded file.
+    
+    Returns:
+        None
+    """
+
+    os.makedirs(output_folder, exist_ok=True)
+    archive_path = os.path.join(output_folder, filename)
+    if os.path.exists(archive_path):
+        os.remove(archive_path)
+
+    try:
+        print("Using gdown for Google Drive download...")
+        # Prefer gdown when available, it handles confirm tokens and cookies internally.
+        gdown.download(id=gdrive_id, output=archive_path, quiet=False)
+        print("\nDownload finished!")
+    except Exception as e:
+        traceback.print_exc()
+        print("Download failed.")
+        return
 
 def extract_files(file_path, output_dir, remove_sourcefile=True):
     """Extracts files from an archive to a specified folder.
@@ -85,15 +116,18 @@ def dir_md5(path, ignore_hidden=True):
         str: The MD5 hash as a hexadecimal string.
     """
     md5 = hashlib.md5()
+    all_files = []
     for root, _, files in os.walk(path):
-        # print(len(files))
-        for f in sorted(files):
+        for f in files:
             if ignore_hidden and f.startswith("."):
                 continue
             filepath = os.path.join(root, f)
-            with open(filepath, "rb") as fh:
-                for chunk in iter(lambda: fh.read(8192), b""):
-                    md5.update(chunk)
+            all_files.append(os.path.relpath(filepath, path))  # normalize
+
+    for filepath in sorted(all_files):  # ensure global ordering
+        with open(os.path.join(path, filepath), "rb") as fh:
+            for chunk in iter(lambda: fh.read(8192), b""):
+                md5.update(chunk)
     return md5.hexdigest()
 
 

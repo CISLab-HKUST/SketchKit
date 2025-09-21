@@ -2,13 +2,13 @@ import numpy as np
 from sketchkit.core.sketch import Path, Curve, Vertex, Point
 
 
-def line_to_cubic(line):
+def line_to_cubic(line) -> Curve:
     """
     Args:
         line: In shape (2, 2), including two points.
 
     Returns:
-        cubic: In shape (4, 2), including a starting point, two control points, and an end point.
+        cubic: Curve object.
 
     """
     ps, pe = line[0], line[1]

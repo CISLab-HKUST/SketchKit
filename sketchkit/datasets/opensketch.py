@@ -1,10 +1,7 @@
 import os
-import shutil
-import wget
-import zipfile
+
 import xml.etree.ElementTree as ET
 from svg.path import parse_path, path
-import numpy as np
 import traceback
 import gdown
 from tqdm import tqdm
@@ -14,13 +11,12 @@ from pathlib import Path as PathLibPath
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import (
-    download_with_tqdm,
+    download_with_wget,
     CISLAB_CDN,
     extract_files,
     file_md5,
 )
 
-# https://drive.google.com/file/d/1wZf3lkqSsqYTIdGqT0wrdryCcfl4f731/view?usp=sharing
 
 def parse_single_path(path_str: str) -> list[tuple[float, float]] | None:
     """Parses an SVG path 'd' attribute string into Bézier control points.
@@ -44,15 +40,19 @@ def parse_single_path(path_str: str) -> list[tuple[float, float]] | None:
             control_points_list.append((start.real, start.imag))
         elif path_type == path.CubicBezier:
             c1, c2, end = path_item.control1, path_item.control2, path_item.end
-            control_points_list.extend([(c1.real, c1.imag), (c2.real, c2.imag), (end.real, end.imag)])
+            control_points_list.extend(
+                [(c1.real, c1.imag), (c2.real, c2.imag), (end.real, end.imag)]
+            )
         elif path_type == path.Line:
             start, end = path_item.start, path_item.end
             # Convert line to an equivalent cubic Bézier curve
-            c1_x = (start.real * 2/3 + end.real * 1/3)
-            c1_y = (start.imag * 2/3 + end.imag * 1/3)
-            c2_x = (start.real * 1/3 + end.real * 2/3)
-            c2_y = (start.imag * 1/3 + end.imag * 2/3)
-            control_points_list.extend([(c1_x, c1_y), (c2_x, c2_y), (end.real, end.imag)])
+            c1_x = start.real * 2 / 3 + end.real * 1 / 3
+            c1_y = start.imag * 2 / 3 + end.imag * 1 / 3
+            c2_x = start.real * 1 / 3 + end.real * 2 / 3
+            c2_y = start.imag * 1 / 3 + end.imag * 2 / 3
+            control_points_list.extend(
+                [(c1_x, c1_y), (c2_x, c2_y), (end.real, end.imag)]
+            )
         elif path_type == path.Arc:
             raise NotImplementedError("Arc path segments are not supported.")
         else:
@@ -81,17 +81,17 @@ def parse_svg(svg_file: str) -> list[list[list[tuple[float, float]]]]:
     try:
         tree = ET.parse(svg_file)
         root = tree.getroot()
-        namespaces = {'svg': 'http://www.w3.org/2000/svg'}
+        namespaces = {"svg": "http://www.w3.org/2000/svg"}
 
         view_box = root.get("viewBox")
         view_x, view_y, view_width, view_height = view_box.split(",")
         assert int(view_x) == 0 and int(view_y) == 0
         sketch_width = int(view_width) - int(view_x)
         sketch_height = int(view_height) - int(view_y)
-        
+
         path_list = []
-        for elem in root.findall('svg:path', namespaces):
-            path_d = elem.attrib.get('d', '')
+        for elem in root.findall("svg:path", namespaces):
+            path_d = elem.attrib.get("d", "")
             if not path_d:
                 continue
             control_points = parse_single_path(path_d)
@@ -102,7 +102,7 @@ def parse_svg(svg_file: str) -> list[list[list[tuple[float, float]]]]:
                     p_start = control_points[i * 3]
                     p_ctrl1 = control_points[i * 3 + 1]
                     p_ctrl2 = control_points[i * 3 + 2]
-                    p_end   = control_points[i * 3 + 3]
+                    p_end = control_points[i * 3 + 3]
                     curve_list.append([p_start, p_ctrl1, p_ctrl2, p_end])
                 path_list.append(curve_list)
         assert len(path_list) > 0
@@ -127,7 +127,8 @@ class OpenSketch(SketchDataset):
 
     gdrive_id = "1wZf3lkqSsqYTIdGqT0wrdryCcfl4f731"
 
-    
+    metadata = ["id", "file_name"]
+
     def __init__(
         self,
         root: str | PathLibPath | None = None,
@@ -169,17 +170,16 @@ class OpenSketch(SketchDataset):
         print("Downloading OpenSketch Database...")
 
         svg_zip_path = os.path.join(self.root, "sketches_svg.zip")
-        
+
         if self.cislab_source:
             print("Using CISLAB CDN for download...")
             url = (
-                f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/"
-                + "sketches_svg.zip"
+                f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/" + "sketches_svg.zip"
             )
-            download_with_tqdm(
+            download_with_wget(
                 url,
                 file_path=svg_zip_path,
-                pg_bar=False,
+                pg_bar=True,
             )
         else:
             try:
@@ -199,7 +199,7 @@ class OpenSketch(SketchDataset):
             )
         except Exception as e:
             raise e
-        
+
     def _load_items_metadata(self):
         """Load and cache metadata for all items in the dataset.
 
@@ -213,31 +213,18 @@ class OpenSketch(SketchDataset):
         - id: Global unique identifier across all sketches
         """
         if not os.path.exists(os.path.join(self.root, ".metadata.parquet")):
-            svg_base = os.path.join(self.root, "opensketch_svgs")
-            all_categories = ['svg']
-            self._all_categories = sorted(all_categories)
-
-            items_metadata = pd.DataFrame(columns=["category", "split", "id"])
-            cnt = 0
-            for category in tqdm(self._all_categories, desc="Caching metadata"):
-                class_base = os.path.join(self.root, "opensketch_svgs")
-                file_names = os.listdir(class_base)
-                file_ids = [fid[:-4] for fid in file_names]
-                file_ids.sort()
-
-                split = "None"
-
-                new_rows = [
-                    {
-                        "category": category,
-                        "split": split,
-                        "id": id
-                    }
-                    for id in file_ids
-                ]
-                cnt += len(file_ids)
+            items_metadata = pd.DataFrame(columns=self.metadata)
+            class_base = os.path.join(self.root, "opensketch_svgs")
+            file_names = os.listdir(class_base)
+            for id, file_name in tqdm(
+                enumerate(sorted(file_names)),
+                desc="Caching metadata",
+                total=len(file_names),
+            ):
+                file_name = file_name[:-4]  # remove .svg
+                new_row = [{"id": id, "file_name": file_name}]
                 items_metadata = pd.concat(
-                    [items_metadata, pd.DataFrame(new_rows)], ignore_index=True
+                    [items_metadata, pd.DataFrame(new_row)], ignore_index=True
                 )
             self.items_metadata = items_metadata
             self.items_metadata.to_parquet(
@@ -247,13 +234,10 @@ class OpenSketch(SketchDataset):
             items_metadata = pd.read_parquet(
                 os.path.join(self.root, ".metadata.parquet")
             )
-            if not set(items_metadata.columns.tolist()) == set(self.items_metadata):
+            if not set(items_metadata.columns.tolist()) == set(self.metadata):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
-                self._load_items_metadata()
+                return self._load_items_metadata()
             self.items_metadata = items_metadata
-            self._all_categories = sorted(
-                self.items_metadata["category"].unique().tolist()
-            )
         self.raw_data = [None] * len(self.items_metadata)  # type: list[list | None]
 
     def _load_all(self):
@@ -262,19 +246,16 @@ class OpenSketch(SketchDataset):
         Concatenates all sketch data from all categories and splits into a single
         numpy array for faster access. Only loads if self.load_all is True.
         """
-        cnt = 0
-        for category in tqdm(self._all_categories, desc="Loading all data to memory"):
-            class_base = os.path.join(self.root, "opensketch_svgs")
-            file_names = os.listdir(class_base)
-            file_ids = [fid[:-4] for fid in file_names]
-            file_ids.sort()
-
-            for file_id in file_ids:
-                svg_path = os.path.join(class_base, str(file_id) + ".svg")
-                _, path_list = parse_svg(svg_path)
-                # path_list: list of (N_curves, 4, 2)
-                self.raw_data[cnt] = path_list
-                cnt += 1
+        class_base = os.path.join(self.root, "opensketch_svgs")
+        for _, row in tqdm(
+            self.items_metadata.iterrows(),
+            desc="Loading all data to memory",
+            total=len(self.items_metadata),
+        ):
+            svg_path = os.path.join(class_base, str(row["file_name"]) + ".svg")
+            _, path_list = parse_svg(svg_path)
+            # path_list: list of (N_curves, 4, 2)
+            self.raw_data[row["id"]] = path_list
 
     def __getitem__(self, idx: int) -> Sketch:
         """Get a sketch by index.
@@ -296,7 +277,9 @@ class OpenSketch(SketchDataset):
         if self.raw_data[idx] is None:
             item_metadata = self.items_metadata.iloc[idx]
             class_base = os.path.join(self.root, "opensketch_svgs")
-            svg_path = os.path.join(class_base, str(item_metadata["id"]) + ".svg")
+            svg_path = os.path.join(
+                class_base, str(item_metadata["file_name"]) + ".svg"
+            )
             _, path_list = parse_svg(svg_path)
             self.raw_data[idx] = path_list
 
@@ -316,30 +299,24 @@ class OpenSketch(SketchDataset):
         sketch = Sketch(paths=paths)
         return sketch
 
+
 if __name__ == "__main__":
     # Default Load
-    dataset = OpenSketch()
+    # dataset = OpenSketch()
 
     # # Load all data to memory at once
     # dataset = OpenSketch(load_all=True)
-    
-    # Download from CISLAB CDN
-    dataset = OpenSketch(cislab_source=True)
 
-    # Search items using metadata
-    objects = dataset.items_metadata[
-        (dataset.items_metadata["category"] == "svg")
-        & (dataset.items_metadata["split"] == "None")
-    ]
+    # Download from CISLAB CDN
+    dataset = OpenSketch(cislab_source=True, load_all=True)
 
     # Load sketches
-    sketches = [dataset[id] for id, _ in objects[:5].iterrows()]
 
     from PIL import Image
     from sketchkit.renderer.cairo_renderer import CairoRenderer
 
     renderer = CairoRenderer(800, (1, 1, 1))
-    raster_image = renderer.render(sketches[1], random_color=False)
+    raster_image = renderer.render(dataset[100])
     outpath = "opensketch-test.png"
     if outpath is not None:
         raster_image_png = Image.fromarray(raster_image, "RGB")

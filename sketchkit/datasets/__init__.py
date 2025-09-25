@@ -8,6 +8,8 @@ from .opensketch import OpenSketch
 from .sketchx_pris import SketchXPRIS
 from .photosketching import PhotoSketching
 from .gmu_sketch_cleanup import GMUSketchCleanup
+from .differsketching import DifferSketching
+from .fscoco import FSCOCO
 
 __all__ = [
     "TUBerlin",
@@ -19,5 +21,7 @@ __all__ = [
     "SketchXPRIS",
     "Sketchy",
     "PhotoSketching",
-    "GMUSketchCleanup"
+    "GMUSketchCleanup", 
+    "DifferSketching", 
+    "FSCOCO"
 ]

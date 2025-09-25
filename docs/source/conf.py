@@ -15,16 +15,24 @@ project = "SketchKit"
 copyright = "2025, CIS Lab"
 author = "CIS Lab"
 
+version = '0.0'
+release = '0.0.0'
+smv_branch_whitelist = r'.*'
+smv_tag_whitelist = r'^$'
+smv_outputdir_format = '{ref.name}'
+smv_latest_version = 'main'
+
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.apidoc",
+
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",  # for Google/NumPy style docstrings
     "sphinx.ext.viewcode",
     "myst_parser",
+    "sphinx_multiversion",
 ]
 autosummary_generate = True
 primary_domain = 'py'
@@ -45,7 +53,7 @@ apidoc_modules = [
     }
 ]
 
-autodoc_mock_imports = ["gdown", "svg", "ndjson"]
+autodoc_mock_imports = ["gdown", "svg", "ndjson", "svgpathtools"]
 
 templates_path = ["_templates"]
 exclude_patterns = []

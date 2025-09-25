@@ -1,0 +1,17 @@
+{% extends "!base.html" %}
+
+{% block theme_switch %}
+  {{ super() }}
+  {% if versions %}
+    <div class="version-switcher" style="margin-left: 1rem;">
+      <label for="version-select">Version:</label>
+      <select id="version-select" onchange="location = this.value;">
+        {% for v in versions %}
+          <option value="{{ v.url }}" {% if v.name == current_version.name %}selected{% endif %}>
+            {{ v.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+  {% endif %}
+{% endblock %}

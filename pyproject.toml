@@ -28,7 +28,9 @@ test = [
 ]
 doc = [
     "furo>=2025.7.19",
+    "sphinx_rtd_theme>=3.0.2", 
     "myst-parser>=4.0.1",
     "sphinx>=8.2.3",
     "sphinxcontrib-napoleon>=0.7",
+    "sphinx-multiversion>=0.2.4",
 ]

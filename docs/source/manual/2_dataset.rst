@@ -19,7 +19,7 @@ which contains useful information for searching and filtering sketches.
     - ``split``: dataset split (e.g., "train", "test", "val"), available in some datasets
 
 Key concepts of dataset parameters
----------------------------
+----------------------------------
 **root**: ``Datatype: str``, ``Default: "~/.cache/sketchkit/datasets"`` 
 
     | Directory where the dataset is stored or downloaded. 
@@ -72,7 +72,7 @@ Key concepts of dataset parameters
     - ``cislab_source`` is applicable to most mainstream dataset.  
 
 Loading a dataset
---------------
+-----------------
 
 .. code-block:: python
 
@@ -87,7 +87,7 @@ Loading a dataset
 
 
 Searching sketches by metadata
---------------
+------------------------------
 
 .. code-block:: python
 
@@ -104,7 +104,7 @@ Searching sketches by metadata
 
 
 Available Datasets
---------------
+------------------
 
 The following are the built-in sketch datasets currently available in SketchKit:
 
@@ -122,14 +122,5 @@ The following are the built-in sketch datasets currently available in SketchKit:
     Sketchy
     PhotoSketching
     GMUSketchCleanup
-
-
-Utility Scripts
---------------
-
-.. autosummary::
-    :toctree: generated/
-    :template: module.rst
-
-    sketchkit.datasets.fscoco
-    sketchkit.datasets.differsketching
+    DifferSketching
+    FSCOCO

@@ -19,5 +19,5 @@ manual/*
 :glob:
 :maxdepth: 2
 
-api/sketchkit
+api/modules
 ```

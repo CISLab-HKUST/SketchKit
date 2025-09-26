@@ -75,7 +75,7 @@ class TracingVsFreehand(SketchDataset):
         URL (str): Download URL for the dataset zip file.
     """
 
-    md5_sum = "cdf5ce49867d96e1bd0bc0c7198fb95b"
+    md5_sum = "d069ddc535281d50e271ee0bcbcd091e"
     URL = f"{CISLAB_CDN}/datasets/TracingVsFreehand/sketch.zip"
     metadata = ["id", "file_path", "sketch_type", "category", "file_id"]
 

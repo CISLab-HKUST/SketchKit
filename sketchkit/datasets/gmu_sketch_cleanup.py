@@ -138,13 +138,13 @@ class GMUSketchCleanup(SketchDataset):
     # Only `id` is mandatory; add columns as needed.
     metadata = ["id", "split", "file_path"]
 
-    def __init__(
-        self,
-        root: str | PathLibPath | None = None,
-        load_all: bool = False,
-        cislab_source: bool = False,
-    ):
-        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
+    # def __init__(
+    #     self,
+    #     root: str | PathLibPath | None = None,
+    #     load_all: bool = False,
+    #     cislab_source: bool = False,
+    # ):
+    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Checks the integrity of the cached dataset by comparing MD5 checksums."""

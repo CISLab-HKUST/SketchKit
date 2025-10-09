@@ -27,22 +27,22 @@ class FSCOCO(SketchDataset):
     md5_sum: str = "5e5c08c2e6877b164b5d04f3ce8b9f89"
     metadata = ["id", "shard", "file_path"]
 
-    def __init__(
-            self,
-            root: str | PathLibPath | None = None,
-            load_all: bool = False,
-            cislab_source: bool = False,
-    ):
-        """Initialize the FSCOCO dataset.
+    # def __init__(
+    #         self,
+    #         root: str | PathLibPath | None = None,
+    #         load_all: bool = False,
+    #         cislab_source: bool = False,
+    # ):
+    #     """Initialize the FSCOCO dataset.
 
-        Args:
-            root: Root directory of the dataset. The dataset will be extracted
-                under `<root>/fscoco/`. If None, the parent class default is used.
-            load_all: If True, preload all `.npy` files into memory.
-            cislab_source: If True, download from the CISLAB mirror; otherwise
-                use the official source.
-        """
-        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
+    #     Args:
+    #         root: Root directory of the dataset. The dataset will be extracted
+    #             under `<root>/fscoco/`. If None, the parent class default is used.
+    #         load_all: If True, preload all `.npy` files into memory.
+    #         cislab_source: If True, download from the CISLAB mirror; otherwise
+    #             use the official source.
+    #     """
+    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check on-disk dataset integrity.

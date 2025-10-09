@@ -81,13 +81,13 @@ class SketchXPRIS(SketchDataset):
     # Metadata columns for each items
     metadata = ["id", "sub_id", "category"]
 
-    def __init__(
-        self,
-        data_root: str | None = None,
-        load_all: bool = False,
-        cislab_source: bool = False,
-    ):
-        super().__init__(data_root, load_all=load_all, cislab_source=cislab_source)
+    # def __init__(
+    #     self,
+    #     data_root: str | None = None,
+    #     load_all: bool = False,
+    #     cislab_source: bool = False,
+    # ):
+    #     super().__init__(data_root, load_all=load_all, cislab_source=cislab_source)
 
     def _load_items_metadata(self):
         """Load and cache metadata for all items in the dataset.

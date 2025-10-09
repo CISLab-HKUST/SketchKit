@@ -32,6 +32,7 @@ class SketchDataset(ABC, Sequence):
         root: str | PathLibPath | None = None,
         load_all: bool = False,
         cislab_source: bool = False,
+        skip_integrity_check: bool = False,
     ):
         """
         Initialize the dataset.
@@ -64,14 +65,16 @@ class SketchDataset(ABC, Sequence):
         self.load_all = load_all
         self.cislab_source = cislab_source
         self.raw_data = None
+        self.skip_integrity_check = skip_integrity_check
 
-        if not self._check_integrity():
-            print(
-                f"Cache not found or corrupted. Start downloading the dataset to {self.root}."
-            )
-            self._download()
+        if not self.skip_integrity_check:
             if not self._check_integrity():
-                raise RuntimeError("Dataset not found or corrupted.")
+                print(
+                    f"Cache not found or corrupted. Start downloading the dataset to {self.root}."
+                )
+                self._download()
+                if not self._check_integrity():
+                    raise RuntimeError("Dataset not found or corrupted.")
         self._load_items_metadata()
         if self.load_all:
             self._load_all()

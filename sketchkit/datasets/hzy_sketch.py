@@ -124,23 +124,23 @@ class hzySketch(SketchDataset):
 
     md5_sum = "bb0d0fdc6eefa2e2ab41f990cc8cd5f4"
 
-    def __init__(
-        self,
-        root: str | PathLibPath | None = None,
-        load_all: bool = False,
-        cislab_source: bool = False,
-    ):
-        """Initializes the hzy dataset loader.
+    # def __init__(
+    #     self,
+    #     root: str | PathLibPath | None = None,
+    #     load_all: bool = False,
+    #     cislab_source: bool = False,
+    # ):
+    #     """Initializes the hzy dataset loader.
 
-        Checks if the dataset exists locally. If not, it triggers the download
-        and extraction process. It then scans the SVG directories to populate a
-        list of all available sketch file paths.
+    #     Checks if the dataset exists locally. If not, it triggers the download
+    #     and extraction process. It then scans the SVG directories to populate a
+    #     list of all available sketch file paths.
 
-        Args:
-            data_base: The base directory for storing all datasets.
-                Defaults to '~/.cache/sketchkit/datasets'.
-        """
-        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
+    #     Args:
+    #         data_base: The base directory for storing all datasets.
+    #             Defaults to '~/.cache/sketchkit/datasets'.
+    #     """
+    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.

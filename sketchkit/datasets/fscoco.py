@@ -1,7 +1,6 @@
 import os
 import shutil
 from pathlib import Path as PathLibPath
-from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -194,10 +193,10 @@ class FSCOCO(SketchDataset):
             raise ValueError("FS-COCO npy must be (N,3)")
 
         penup = {1, 2}
-        paths: List[Path] = []
-        points: List[Tuple[float, float]] = []
+        paths: list[Path] = []
+        points: list[tuple[float, float]] = []
 
-        def flush_current_stroke(pts: List[Tuple[float, float]]):
+        def flush_current_stroke(pts: list[tuple[float, float]]):
             """Convert the current stroke points into a `Path` and append it.
 
             Args:
@@ -205,7 +204,7 @@ class FSCOCO(SketchDataset):
             """
             if len(pts) <= 1:
                 return
-            curves: List[Curve] = []
+            curves: list[Curve] = []
             for i in range(len(pts) - 1):
                 # Map each polyline edge to a cubic Bézier curve.
                 line = np.array([pts[i], pts[i + 1]], dtype=float)

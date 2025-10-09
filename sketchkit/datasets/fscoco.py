@@ -1,56 +1,58 @@
 import os
 import shutil
-from pathlib import Path
+from pathlib import Path as PathLibPath
 
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from sketchkit.core.sketch import Sketch, Path as SKPath, Curve
+from sketchkit.core.sketch import Sketch, Path, Curve
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
 from sketchkit.utils.transform import line_to_cubic
 
 
 class FSCOCO(SketchDataset):
-    """
-    FS-COCO dataset loader for vector sketches stored in .npy format.
+    """FS-COCO dataset loader for vector sketches stored in `.npy` format.
 
-    This class provides functionality to download, verify, and load the FS-COCO dataset.
-    The dataset consists of vector sketches, which are converted into cubic Bezier curves.
+    This dataset class can download, verify, index, and load FS-COCO vector
+    sketches. Each sketch is represented as polyline points and converted to
+    cubic Bézier curves.
 
     Attributes:
         md5_sum (str): MD5 checksum for verifying dataset integrity.
-        metadata (list): List of metadata columns for the dataset.
+        metadata (list[str]): Column names used in the metadata table.
     """
 
     md5_sum: str = "5e5c08c2e6877b164b5d04f3ce8b9f89"
-    metadata = ["id", "shard", "path"]
+    metadata = ["id", "shard", "file_path"]
 
     def __init__(
-        self,
-        root: str | Path | None = None,
-        load_all: bool = False,
-        cislab_source: bool = False,
+            self,
+            root: str | PathLibPath | None = None,
+            load_all: bool = False,
+            cislab_source: bool = False,
     ):
-        """
-        Initializes the FSCOCO dataset loader.
+        """Initialize the FSCOCO dataset.
 
         Args:
-            root (str | Path | None): Root directory for the dataset. The dataset will be extracted under `fscoco/`.
-            load_all (bool): Whether to preload all .npy files into memory. Defaults to False.
-            cislab_source (bool): If True, use the CISLAB mirror for downloading. Otherwise, use the official source.
+            root: Root directory of the dataset. The dataset will be extracted
+                under `<root>/fscoco/`. If None, the parent class default is used.
+            load_all: If True, preload all `.npy` files into memory.
+            cislab_source: If True, download from the CISLAB mirror; otherwise
+                use the official source.
         """
         super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
-        """
-        Checks the integrity of the dataset directory.
+        """Check on-disk dataset integrity.
 
         Returns:
-            bool: True if the dataset is complete, False otherwise.
+            bool: True if the dataset directory exists and its MD5 matches
+            the expected checksum; False otherwise.
         """
-        root = Path(self.root)
+        print(f"Checking integrity of cached {self.__class__.__name__} dataset...")
+        root = PathLibPath(self.root)
         data_dir = root / "fscoco" / "vector_sketches"
         if not data_dir.exists():
             return False
@@ -58,19 +60,14 @@ class FSCOCO(SketchDataset):
         return current_md5 == self.md5_sum
 
     def _download(self):
-        """
-        Downloads and extracts the FS-COCO dataset if integrity checks fail.
+        """Download and extract FS-COCO if the integrity check fails.
 
-        The dataset is downloaded from either the CISLAB mirror or the official source.
+        The archive is fetched from the CISLAB mirror or the official host,
+        extracted into `self.root`, and a checksum is printed for verification.
         """
-
         if os.path.exists(self.root):
             shutil.rmtree(self.root)
         os.makedirs(self.root, exist_ok=True)
-
-        root = Path(self.root)
-
-        archive = root / "fscoco.tar.gz"
 
         url = (
             f"{CISLAB_CDN}/datasets/FSCOCO/fscoco.tar.gz"
@@ -79,31 +76,27 @@ class FSCOCO(SketchDataset):
         )
 
         print(f"[FS-COCO] Downloading from: {url}")
-        download_with_wget(
-            url, file_path=str(archive), desc="Downloading FS-COCO", pg_bar=True
-        )
+
+        archive = os.path.join(self.root, "fscoco.tar.gz")
+        download_with_wget(url, file_path=archive, desc="Downloading FS-COCO")
 
         print("[FS-COCO] Extracting...")
-        extract_files(archive, root, remove_sourcefile=True)
+        extract_files(archive, self.root)
 
-        try:
-            print("[FS-COCO] Directory MD5:", dir_md5(root))
-        except Exception:
-            pass
+        print("MD5 Checksum of FS-COCO:", dir_md5(self.root))
 
     def _load_items_metadata(self):
-        """
-        Loads metadata for the dataset by scanning the directory structure.
+        """Build or load the items metadata table.
 
-        Metadata includes:
-        - id: A globally unique identifier for each sketch.
-        - shard: The shard number (1 to 100).
-        - path: The relative path to the .npy file.
+        Scans the dataset directory to create a table with the following columns:
+        - `id`: A globally unique integer identifier for each sketch.
+        - `shard`: The shard index (1..100).
+        - `file_path`: Relative path to the `.npy` file (relative to `self.root`).
 
-        Metadata is cached in `.metadata.parquet` for faster subsequent loads.
+        The table is cached in `.metadata.parquet` for faster subsequent loads.
         """
-        meta_path = Path(self.root) / ".metadata.parquet"
-        data_dir = Path(self.root) / "fscoco" / "vector_sketches"
+        meta_path = PathLibPath(self.root) / ".metadata.parquet"
+        data_dir = PathLibPath(self.root) / "fscoco" / "vector_sketches"
 
         if meta_path.exists():
             df = pd.read_parquet(meta_path)
@@ -125,7 +118,7 @@ class FSCOCO(SketchDataset):
                     {
                         "id": idx,
                         "shard": shard,
-                        "path": str(npy_file.relative_to(self.root)),
+                        "file_path": str(npy_file.relative_to(self.root)),
                     }
                 )
                 idx += 1
@@ -136,95 +129,118 @@ class FSCOCO(SketchDataset):
         self.raw_data = [None] * len(self.items_metadata)
 
     def _load_all(self):
-        """
-        Preloads all .npy files into memory.
+        """Preload all `.npy` arrays into memory.
 
-        This method is optional and is typically used when `load_all` is set to True.
+        This is useful when `load_all=True` is requested and you want to avoid
+        disk I/O during iteration.
         """
         for i in tqdm(range(len(self.items_metadata)), desc="Loading all FS-COCO"):
             self.raw_data[i] = self._load_single_array(i)
 
     def __getitem__(self, idx: int) -> Sketch:
-        """
-        Retrieves a single sketch by index.
+        """Get a single sketch by index.
 
         Args:
-            idx (int): Index of the sketch to retrieve.
+            idx: Index of the sketch to retrieve.
 
         Returns:
-            Sketch: The sketch object corresponding to the given index.
+            Sketch: A `Sketch` object built from the underlying array.
 
         Raises:
-            IndexError: If the index is out of range.
+            IndexError: If `idx` is out of bounds.
         """
         if idx < 0 or idx >= len(self):
             raise IndexError("Index out of range")
 
         if self.raw_data[idx] is None:
             self.raw_data[idx] = self._load_single_array(idx)
-
         return self._array_to_sketch(self.raw_data[idx])
 
     def _load_single_array(self, idx: int) -> np.ndarray:
-        """
-        Loads a single .npy file into memory.
+        """Load a single `.npy` array for the given index.
 
         Args:
-            idx (int): Index of the .npy file to load.
+            idx: Row index in the metadata table.
 
         Returns:
-            np.ndarray: The loaded array.
+            np.ndarray: Array of shape `(N, 3)` containing `[x, y, flag]`.
         """
-        rel = self.items_metadata.iloc[idx]["path"]
-        path = Path(self.root) / rel
-        return np.load(str(path))  # (N,3) = x,y,flag
+        rel = self.items_metadata.iloc[idx]["file_path"]
+        path = PathLibPath(self.root) / rel
+        return np.load(str(path))
 
     @staticmethod
     def _array_to_sketch(data: np.ndarray) -> Sketch:
-        """
-        Converts an array of points into a Sketch object.
+        """Convert a `(N, 3)` array to a `Sketch` with multiple `Path`s.
+
+        Each continuous stroke (sequence of points until a pen-up/end flag) is
+        converted into one `Path`. Adjacent point pairs are mapped to cubic
+        Bézier `Curve`s using `line_to_cubic`.
 
         Args:
-            data (np.ndarray): Array of shape (N, 3), where each row is (x, y, flag).
+            data: Array of shape `(N, 3)` with columns `[x, y, flag]`. Flag
+                meanings (common convention): `0`=pen-down/continue, `1`=pen-up,
+                `2`=end-of-drawing.
 
         Returns:
-            Sketch: The converted sketch object.
+            Sketch: A sketch composed of zero or more paths.
 
         Raises:
-            ValueError: If the input array is not of shape (N, 3).
+            ValueError: If `data` is not a 2D array with exactly 3 columns.
         """
+        # Validate shape early to produce clear errors.
         if data.ndim != 2 or data.shape[1] != 3:
             raise ValueError("FS-COCO npy must be (N,3)")
 
         penup = {1, 2}
+        paths: list[Path] = []
         points: list[tuple[float, float]] = []
-        curves: list[Curve] = []
 
-        def _append_curve(p0: tuple[float, float], p1: tuple[float, float]):
-            line = np.array([p0, p1], dtype=float)  # (2,2)
-            cubic = line_to_cubic(line)  # Returns a Curve object
-            curves.append(cubic)
+        def flush_current_stroke(pts: list[tuple[float, float]]):
+            """Convert the current stroke points into a `Path` and append it.
 
+            Args:
+                pts: The accumulated points (x, y) belonging to one stroke.
+            """
+            if len(pts) <= 1:
+                return
+            curves: list[Curve] = []
+            for i in range(len(pts) - 1):
+                # Map each polyline edge to a cubic Bézier curve.
+                line = np.array([pts[i], pts[i + 1]], dtype=float)
+                cubic = line_to_cubic(line)
+                curves.append(cubic)
+            if curves:
+                paths.append(Path(curves=curves))
+
+        # Accumulate points for a stroke; on pen-up/end, finalize the current path.
         for x, y, f in data:
             points.append((float(x), float(y)))
-            if int(f) in penup:
-                if len(points) > 1:
-                    for i in range(len(points) - 1):
-                        _append_curve(points[i], points[i + 1])
+            f = int(f)
+
+            if f == 0:
+                continue
+
+            if f == 1:  # pen-up: end current stroke and continue parsing
+                flush_current_stroke(points)
                 points = []
+                continue
 
-        if len(points) > 1:
-            for i in range(len(points) - 1):
-                _append_curve(points[i], points[i + 1])
+            if f == 2:  # end-of-drawing: end current stroke and stop parsing
+                flush_current_stroke(points)
+                points = []
+                break
 
-        return Sketch(paths=[SKPath(curves=curves)]) if curves else Sketch(paths=[])
+        # If the last stroke does not end with a pen-up flag, flush it here.
+        flush_current_stroke(points)
+
+        return Sketch(paths=paths)
 
     def extra_repr(self) -> str:
-        """
-        Returns a string representation of the dataset for debugging.
+        """Return a short human-readable summary for debugging.
 
         Returns:
-            str: A string summarizing the dataset.
+            str: Summary string containing file count and shard coverage.
         """
         total = len(self.items_metadata) if hasattr(self, "items_metadata") else 0
         shards = sorted(self.items_metadata["shard"].unique().tolist()) if total else []
@@ -240,10 +256,10 @@ if __name__ == "__main__":
     console = Console()
     console.print("FSCOCO Dataset Test", style="bold blue")
 
-    # 1) Default download (CISLAB) to a temporary directory
+    # 1) Default download (CISLAB) to a temporary directory.
     with tempfile.TemporaryDirectory() as tmpdir:
         console.print("[green]1) Load from CISLAB CDN (if available)[/green]")
-        ds = FSCOCO(cislab_source=True, load_all=True)
+        ds = FSCOCO(root=tmpdir, cislab_source=True, load_all=True)
         console.print(ds)
         mem = psutil.Process().memory_info().rss / 1024 / 1024
         console.print(f"Memory: {mem:.2f} MB")
@@ -252,7 +268,7 @@ if __name__ == "__main__":
         _ = [ds[i] for i in range(n)]
         console.print(f"Loaded {n} samples in {time.time() - t0:.3f}s")
 
-    # 2) Test preloading all items at once
+    # 2) Test preloading all items at once.
     # with tempfile.TemporaryDirectory() as tmpdir:
     #     console.print("[green]2) Load All[/green]")
     #     ds = FSCOCO(root=tmpdir, cislab_source=False, load_all=True)

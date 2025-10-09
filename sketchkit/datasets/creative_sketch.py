@@ -271,7 +271,7 @@ class CreativeSketch(SketchDataset):
             path_list.append(Path(curves=strokes))
         return Sketch(path_list)
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Get a sketch by index.
 
         If a sketch not in memory, load it from disk.

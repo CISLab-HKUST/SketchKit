@@ -128,7 +128,7 @@ class GMUSketchCleanup(SketchDataset):
 
     - Only the `id` column is mandatory; additional columns like `split` (GT/Rough)
       and `file_path` (SVG path) are optional.
-    - __getitem__: Reads from raw_data; if missing, parses the SVG from disk and caches it.
+    - _get_single: Reads from raw_data; if missing, parses the SVG from disk and caches it.
     - Supports downloading from the official website or CISLAB mirror.
     """
 
@@ -221,7 +221,7 @@ class GMUSketchCleanup(SketchDataset):
         for i in range(len(self.items_metadata)):
             self.raw_data[i] = self._load_one(i)
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Retrieves a single item by index.
 
         Args:

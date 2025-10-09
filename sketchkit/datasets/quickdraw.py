@@ -57,8 +57,7 @@ def parse_stroke3_format(stroke_data):
             cubic = line_to_cubic(line)  # (4, 2)
             stroke_list.append(cubic)
             total_segment_num += 1
-        else:
-            # path_list.append(np.stack(stroke_list, axis=0))
+        elif stroke_list != []:
             path_list.append(Path(stroke_list))
             stroke_list = []
     return path_list, total_segment_num
@@ -241,7 +240,7 @@ class QuickDraw(SketchDataset):
                 self.raw_data[cnt : cnt + data[split].shape[0]] = data[split].tolist()
                 cnt += data[split].shape[0]
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Get a sketch by index.
 
         If a sketch not in memory, load all sketches in the same category from disk.

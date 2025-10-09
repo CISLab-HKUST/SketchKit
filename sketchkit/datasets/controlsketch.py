@@ -277,7 +277,7 @@ class ControlSketch(SketchDataset):
             fp = self.items_metadata.iloc[idx]["filepath"]
             self.raw_data[idx] = parse_svg(fp)
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Get one sketch by index.
 
         Args:

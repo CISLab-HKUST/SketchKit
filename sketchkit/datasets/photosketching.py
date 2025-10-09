@@ -323,7 +323,7 @@ class PhotoSketching(SketchDataset):
         except Exception as e:
             raise Exception(f"Failed to parse SVG file {sketch_svg_path}: {str(e)}")
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Get a sketch by index."""
         if idx < 0 or idx >= len(self):
             raise IndexError("Index out of range")

@@ -137,7 +137,7 @@ class FSCOCO(SketchDataset):
         for i in tqdm(range(len(self.items_metadata)), desc="Loading all FS-COCO"):
             self.raw_data[i] = self._load_single_array(i)
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Get a single sketch by index.
 
         Args:

@@ -1,10 +1,12 @@
-from abc import ABC, abstractmethod
 import os
+from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from pathlib import Path as PathLibPath
 from sketchkit.core.sketch import Sketch
+from typing import overload
 
 
-class SketchDataset(ABC):
+class SketchDataset(ABC, Sequence):
     """Abstract base class for sketch datasets.
 
     This class provides a common interface for all sketch datasets in SketchKit.
@@ -147,8 +149,41 @@ class SketchDataset(ABC):
         """
         return len(self.items_metadata)
 
+    @overload
+    def __getitem__(self, idx: int) -> "Sketch": ...
+    @overload
+    def __getitem__(self, idx: slice) -> list["Sketch"]: ...
+    @overload
+    def __getitem__(self, idx: list[int]) -> list["Sketch"]: ...
+
+    def __getitem__(self, idx):
+        n = len(self)
+
+        if isinstance(idx, int):
+            if idx < 0:
+                idx += n
+            if not (0 <= idx < n):
+                raise IndexError(f"Index {idx} out of range (0-{n-1})")
+            return self._get_single(idx)
+
+        if isinstance(idx, slice):
+            start, stop, step = idx.indices(n)
+            return [self._get_single(i) for i in range(start, stop, step)]
+
+        if isinstance(idx, list):
+            out: list["Sketch"] = []
+            for j in idx:
+                if j < 0:
+                    j += n
+                if not (0 <= j < n):
+                    raise IndexError(f"Index {j} out of range (0-{n-1})")
+                out.append(self._get_single(j))
+            return out
+
+        raise TypeError("Index must be int, slice, or list[int]")
+
     @abstractmethod
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Retrieve a sketch item by index.
 
         Args:

@@ -348,7 +348,7 @@ class Sketchy(SketchDataset):
         sketch = Sketch(paths=paths)
         return sketch
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Load a single sketch as a `Sketch` instance.
 
         Args:

@@ -199,7 +199,7 @@ class hzySketch(SketchDataset):
     def __len__(self) -> int:
         return len(self.raw_data)
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Retrieves a sketch by its index.
 
         Args:

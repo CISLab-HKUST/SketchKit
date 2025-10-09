@@ -258,7 +258,7 @@ class SketchXPRIS(SketchDataset):
                 f"Warning: Some samples were not loaded (missing {len(self.raw_data) - loaded_count} items)"
             )
 
-    def __getitem__(self, idx):
+    def _get_single(self, idx):
         if idx < 0 or idx >= len(self):
             raise IndexError("Index out of range")
         if self.raw_data[idx] is None:

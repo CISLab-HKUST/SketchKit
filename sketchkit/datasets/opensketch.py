@@ -257,7 +257,7 @@ class OpenSketch(SketchDataset):
             # path_list: list of (N_curves, 4, 2)
             self.raw_data[row["id"]] = path_list
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Get a sketch by index.
 
         If a sketch not in memory, load all sketches in the same category from disk.

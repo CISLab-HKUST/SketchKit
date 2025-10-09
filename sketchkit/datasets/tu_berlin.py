@@ -305,7 +305,7 @@ class TUBerlin(SketchDataset):
                 self.raw_data[cnt] = path_list
                 cnt += 1
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Get a sketch by index.
 
         If a sketch not in memory, load all sketches in the same category from disk.

@@ -201,7 +201,7 @@ class DifferSketching(SketchDataset):
         sketch = load_differsketching_json(row["file_path"])
         return sketch
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Get a sketch by index.
 
         Args:

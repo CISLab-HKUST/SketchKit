@@ -201,7 +201,7 @@ class TracingVsFreehand(SketchDataset):
                 print(f"Warning: Could not load {row['file_path']}. Error: {e}")
                 self.raw_data[idx] = Sketch(paths=[])
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Retrieves a single sketch from the dataset by its index.
 
         Args:

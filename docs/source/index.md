@@ -6,6 +6,10 @@
 SketchKit Documentation
 =======================
 
+SketchKit is a toolkit for sketching. This documentation can help you understand the library, its API, and usage examples.
+
+---
+
 ## Manual
 ```{toctree}
 :glob:

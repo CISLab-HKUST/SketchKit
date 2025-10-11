@@ -122,14 +122,5 @@ The following are the built-in sketch datasets currently available in SketchKit:
     Sketchy
     PhotoSketching
     GMUSketchCleanup
-
-
-Utility Scripts
---------------
-
-.. autosummary::
-    :toctree: generated/
-    :template: module.rst
-
-    sketchkit.datasets.fscoco
-    sketchkit.datasets.differsketching
+    FSCOCO
+    DifferSketching

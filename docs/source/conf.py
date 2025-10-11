@@ -15,6 +15,9 @@ project = "SketchKit"
 copyright = "2025, CIS Lab"
 author = "CIS Lab"
 
+# -- Determine current docs version ------------------------------------------
+version = os.environ.get("SKETCHKIT_DOCS_VERSION", "main")
+
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
@@ -56,3 +59,8 @@ exclude_patterns = []
 
 html_theme = "furo"
 html_static_path = ["_static"]
+
+# Make the current version available in templates
+html_context = {
+    "version": version
+}

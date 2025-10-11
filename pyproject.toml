@@ -1,6 +1,6 @@
 [project]
 name = "sketchkit"
-version = "0.1.0"
+version = "0.0.1"
 description = "An universal toolkit for sketching"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -15,8 +15,10 @@ dependencies = [
     "pyunpack>=0.3",
     "rich>=14.1.0",
     "svg-path>=7.0",
+    "svgpathtools>=1.7.1",
+    "torch>=2.8.0",
+    "torchvision>=0.23.0",
     "wget>=3.2",
-    
 ]
 
 [dependency-groups]

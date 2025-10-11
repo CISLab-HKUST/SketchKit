@@ -162,14 +162,14 @@ class PhotoSketching(SketchDataset):
     # Metadata columns for each item
     metadata = ["id", "svg_path", "png_path", "photo_path"]
 
-    def __init__(
-        self,
-        root: str | PathLibPath | None = None,
-        load_all: bool = False,
-        cislab_source: bool = False,
-    ):
-        """Initialize the PhotoSketching dataset."""
-        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
+    # def __init__(
+    #     self,
+    #     root: str | PathLibPath | None = None,
+    #     load_all: bool = False,
+    #     cislab_source: bool = False,
+    # ):
+    #     """Initialize the PhotoSketching dataset."""
+    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum."""
@@ -323,7 +323,7 @@ class PhotoSketching(SketchDataset):
         except Exception as e:
             raise Exception(f"Failed to parse SVG file {sketch_svg_path}: {str(e)}")
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Get a sketch by index."""
         if idx < 0 or idx >= len(self):
             raise IndexError("Index out of range")

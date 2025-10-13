@@ -201,14 +201,14 @@ class Sketchy(SketchDataset):
     gdrive_id: str = "1Qr8HhjRuGqgDONHigGszyHG_awCstivo"
     filename: str = "sketches-06-04.7z"
 
-    def __init__(
-        self,
-        root: str | None = None,
-        load_all: bool = False,
-        cislab_source: bool = False,
-    ):
+    # def __init__(
+    #     self,
+    #     root: str | None = None,
+    #     load_all: bool = False,
+    #     cislab_source: bool = False,
+    # ):
 
-        super().__init__(root=root, load_all=load_all, cislab_source=cislab_source)
+    #     super().__init__(root=root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.
@@ -348,7 +348,7 @@ class Sketchy(SketchDataset):
         sketch = Sketch(paths=paths)
         return sketch
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Load a single sketch as a `Sketch` instance.
 
         Args:

@@ -71,23 +71,23 @@ class CreativeSketch(SketchDataset):
     # Metadata columns for each item
     metadata = ["id", "category", "sub_id", "is_good"]
 
-    def __init__(
-        self,
-        root: str | PathLibPath | None = None,
-        load_all: bool = False,
-        cislab_source: bool = False,
-    ):
-        """Initialize the Creative Sketch dataset.
+    # def __init__(
+    #     self,
+    #     root: str | PathLibPath | None = None,
+    #     load_all: bool = False,
+    #     cislab_source: bool = False,
+    # ):
+    #     """Initialize the Creative Sketch dataset.
 
-        Args:
-            root (str | PathLibPath | None): Root directory to store/load the dataset.
-                If None, uses the default dataset directory.
-            load_all (bool): If True, loads all data into memory for faster access.
-                If False, loads data on-demand. Defaults to False.
-            cislab_source (bool): If True, downloads from CISLAB CDN mirror.
-                If False, downloads from original Google storage. Defaults to False.
-        """
-        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
+    #     Args:
+    #         root (str | PathLibPath | None): Root directory to store/load the dataset.
+    #             If None, uses the default dataset directory.
+    #         load_all (bool): If True, loads all data into memory for faster access.
+    #             If False, loads data on-demand. Defaults to False.
+    #         cislab_source (bool): If True, downloads from CISLAB CDN mirror.
+    #             If False, downloads from original Google storage. Defaults to False.
+    #     """
+    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset.
@@ -271,7 +271,7 @@ class CreativeSketch(SketchDataset):
             path_list.append(Path(curves=strokes))
         return Sketch(path_list)
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Get a sketch by index.
 
         If a sketch not in memory, load it from disk.

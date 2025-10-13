@@ -1,4 +1,4 @@
-from sketchkit.models.vectorization.vectorizer import Vectorizer
+from sketchkit.vectorization import Vectorizer
 
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from sketchkit.models.vectorization.network.keypoint import ResidualModule, ResNextModule
+from sketchkit.vectorization.network.keypoint import ResidualModule, ResNextModule
 
 
 class NDC_resnet_base(nn.Module):

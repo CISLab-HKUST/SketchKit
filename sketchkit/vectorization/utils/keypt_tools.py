@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from sketchkit.models.vectorization.utils.preprocess import get_coords_from_heatmap
+from sketchkit.vectorization.utils.preprocess import get_coords_from_heatmap
 
 
 def to_img_coord(hm, dist = 2, pt_num = 50, thr_rel = 50):

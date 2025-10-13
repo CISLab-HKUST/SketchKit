@@ -24,7 +24,7 @@ from svgpathtools import Path, Line, wsvg
 from PIL import Image
 from multiprocessing import Pool
 
-from sketchkit.models.vectorization.utils.svg_tools import open_svg_flatten, resize_path, get_line_approximation, compute_dist_M
+from sketchkit.vectorization.utils.svg_tools import open_svg_flatten, resize_path, get_line_approximation, compute_dist_M
 import edge_distance_aabb
 from scipy.signal import convolve2d
 from scipy.ndimage import correlate

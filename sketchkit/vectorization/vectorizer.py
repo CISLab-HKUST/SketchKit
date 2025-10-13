@@ -7,12 +7,12 @@ from PIL import Image
 from types import SimpleNamespace
 from svgpathtools import wsvg
 
-from sketchkit.models.vectorization.network.udc import CNN_2d_resnet
-from sketchkit.models.vectorization.network.keypoint import PyramidalNet
+from sketchkit.vectorization.network.udc import CNN_2d_resnet
+from sketchkit.vectorization.network.keypoint import PyramidalNet
 
-from sketchkit.models.vectorization.utils.ndc_tools import refine_topology, lines_to_svg, map_to_lines, pre_to_map, init_base_coord
-from sketchkit.models.vectorization.utils.keypt_tools import plot_udf_coord_numpy, udf_filter
-from sketchkit.models.vectorization.utils.svg_tools import simplify_graph, open_svg_flatten, ramerDouglas
+from sketchkit.vectorization.utils.ndc_tools import refine_topology, lines_to_svg, map_to_lines, pre_to_map, init_base_coord
+from sketchkit.vectorization.utils.keypt_tools import plot_udf_coord_numpy, udf_filter
+from sketchkit.vectorization.utils.svg_tools import simplify_graph, open_svg_flatten, ramerDouglas
 
 
 class Vectorizer:

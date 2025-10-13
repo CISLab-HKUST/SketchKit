@@ -7,12 +7,15 @@ from PIL import Image
 from types import SimpleNamespace
 from svgpathtools import wsvg
 
+from sketchkit.core.sketch import Sketch, Path
+from sketchkit.utils.transform import line_to_cubic
+
 from sketchkit.vectorization.network.udc import CNN_2d_resnet
 from sketchkit.vectorization.network.keypoint import PyramidalNet
 
 from sketchkit.vectorization.utils.ndc_tools import refine_topology, lines_to_svg, map_to_lines, pre_to_map, init_base_coord
 from sketchkit.vectorization.utils.keypt_tools import plot_udf_coord_numpy, udf_filter
-from sketchkit.vectorization.utils.svg_tools import simplify_graph, open_svg_flatten, ramerDouglas
+from sketchkit.vectorization.utils.svg_tools import simplify_graph, open_svg_flatten, ramerDouglas, flatten_paths_to_pts_array
 
 
 class Vectorizer:
@@ -292,6 +295,7 @@ class Vectorizer:
         # also save another version for visulization
         self._vis_stroke(strokes, (h, w), os.path.join(p, name + "_vis.svg"))
         print("Results are saved to dir:", p)
+        return strokes
 
     def _vis_stroke(self, strokes, canvas_size, save_path):
         h, w = canvas_size
@@ -306,6 +310,20 @@ class Vectorizer:
              dimensions=(w, h),
              filename=save_path)
 
+    def _paths_to_Sketch(self, paths):
+        path_list = []  # list of (N_strokes, 4, 2)
+        for path in paths:
+            pts_array = flatten_paths_to_pts_array(path)  # (N, 2)
+            stroke_list = []
+            for i in range(1, len(pts_array)):
+                p_start = pts_array[i - 1]  # (2)
+                p_end = pts_array[i]  # (2)
+                line = np.stack([p_start, p_end], axis=0)  # (2, 2)
+                cubic = line_to_cubic(line)  # (4, 2)
+                stroke_list.append(cubic)
+            path_list.append(Path(stroke_list))
+        return path_list
+
     def run(self, input: str, out_folder: str = "svg"):
         """
         Vectorize the input raster image or images in a folder.
@@ -313,8 +331,12 @@ class Vectorizer:
         Args:
             input (str): a path to an input raster image or a folder with multiple images.
             out_folder (str, optional): an output folder to store the output svg file.
+
+        Returns:
+            sketch_list (list[Sketch] | Sketch): a list of Sketch or a Sketch when there is only one item.
         """
         image_paths = []
+        sketch_list = []
         if os.path.isdir(input):
             for img_name in os.listdir(input):
                 if "png" in img_name or "jpg" in img_name or "bmp" in img_name:
@@ -363,7 +385,7 @@ class Vectorizer:
                 os.path.join(img_base, out_folder, name + "_refine.svg"))
 
             # stroke traversal
-            self._simplify_SVG(
+            paths_poly = self._simplify_SVG(
                 os.path.join(img_base, out_folder, name + "_refine.svg"),
                 keypt_pre_dict,
                 rdp_simplify=self.rdp,
@@ -371,4 +393,12 @@ class Vectorizer:
                 skip_len=self.skip_len)
             os.remove(os.path.join(img_base, out_folder, name + "_refine.svg"))
 
-        # TODO: convert to Sketch format
+            # convert to Sketch format
+            path_list = self._paths_to_Sketch(paths_poly)
+            sketch = Sketch(paths=path_list)
+            sketch_list.append(sketch)
+
+        if len(sketch_list) == 1:
+            return sketch_list[0]
+        else:
+            return sketch_list

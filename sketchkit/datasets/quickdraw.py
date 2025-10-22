@@ -57,8 +57,7 @@ def parse_stroke3_format(stroke_data):
             cubic = line_to_cubic(line)  # (4, 2)
             stroke_list.append(cubic)
             total_segment_num += 1
-        else:
-            # path_list.append(np.stack(stroke_list, axis=0))
+        elif stroke_list != []:
             path_list.append(Path(stroke_list))
             stroke_list = []
     return path_list, total_segment_num
@@ -84,23 +83,23 @@ class QuickDraw(SketchDataset):
     # Metadata columns for each items
     metadata = ["id", "sub_id", "category", "split"]
 
-    def __init__(
-        self,
-        root: str | PathLibPath | None = None,
-        load_all: bool = False,
-        cislab_source: bool = False,
-    ):
-        """Initialize the QuickDraw dataset.
+    # def __init__(
+    #     self,
+    #     root: str | PathLibPath | None = None,
+    #     load_all: bool = False,
+    #     cislab_source: bool = False,
+    # ):
+    #     """Initialize the QuickDraw dataset.
 
-        Args:
-            root (str | PathLibPath | None): Root directory to store/load the dataset.
-                If None, uses the default dataset directory.
-            load_all (bool): If True, loads all data into memory for faster access.
-                If False, loads data on-demand. Defaults to False.
-            cislab_source (bool): If True, downloads from CISLAB CDN mirror.
-                If False, downloads from original Google storage. Defaults to False.
-        """
-        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
+    #     Args:
+    #         root (str | PathLibPath | None): Root directory to store/load the dataset.
+    #             If None, uses the default dataset directory.
+    #         load_all (bool): If True, loads all data into memory for faster access.
+    #             If False, loads data on-demand. Defaults to False.
+    #         cislab_source (bool): If True, downloads from CISLAB CDN mirror.
+    #             If False, downloads from original Google storage. Defaults to False.
+    #     """
+    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.
@@ -241,7 +240,7 @@ class QuickDraw(SketchDataset):
                 self.raw_data[cnt : cnt + data[split].shape[0]] = data[split].tolist()
                 cnt += data[split].shape[0]
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Get a sketch by index.
 
         If a sketch not in memory, load all sketches in the same category from disk.

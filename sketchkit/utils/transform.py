@@ -48,11 +48,18 @@ def convert_to_curve(sketch: Sketch, datasetName: str, maxError=4.0):
     for path in sketch.paths:
         if path.curves is None or len(path.curves) < 1:
             continue
-        print([[[curve.p_start.x, curve.p_start.y], [curve.end.x, curve.end.y]] for curve in path.curves])
-        polyline_path = [[curve.p_start.x, curve.p_start.y] for curve in path.curves]
-        polyline_path.append([path.curves[-1].p_end.x, path.curves[-1].p_end.y])
-        if len(polyline_path) < 4:
-            continue
+        # print([[[curve.p_start.x, curve.p_start.y], [curve.p_end.x, curve.p_end.y]] for curve in path.curves])
+        polyline_path = []
+        for curve in path.curves:
+            if len(polyline_path) == 0:
+                polyline_path.append([curve.p_start.x, curve.p_start.y])
+            elif np.linalg.norm(np.array(polyline_path[-1]) - np.array([curve.p_start.x, curve.p_start.y])) > 1:
+                polyline_path.append([curve.p_start.x, curve.p_start.y])
+        if np.linalg.norm(np.array(polyline_path[-1]) - np.array([path.curves[-1].p_end.x, path.curves[-1].p_end.y])) > 1:
+            polyline_path.append([path.curves[-1].p_end.x, path.curves[-1].p_end.y])
+        print(polyline_path)
+        # if len(polyline_path) < 4:
+        #     continue
         curve_path = fitCurve(np.array(polyline_path), maxError)
         curves = [Curve(
             Vertex(pt[0][0], pt[0][1]),

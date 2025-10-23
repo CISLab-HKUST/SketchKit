@@ -14,138 +14,138 @@ import numpy as np
 Evaluates a cubic Bezier curve at parameter t, returning the point coordinates.
 
 Parameters:
-    ctrlPoly: Array of 4 control points defining the Bezier curve
+    ctrl_poly: Array of 4 control points defining the Bezier curve
     t: Parameter value in the range [0,1]
 
 Returns:
     The point coordinates on the Bezier curve corresponding to parameter t
 """
-def q(ctrlPoly, t):
-    return (1.0-t)**3 * ctrlPoly[0] + 3*(1.0-t)**2 * t * ctrlPoly[1] + 3*(1.0-t)* t**2 * ctrlPoly[2] + t**3 * ctrlPoly[3]
+def q(ctrl_poly, t):
+    return (1.0-t)**3 * ctrl_poly[0] + 3*(1.0-t)**2 * t * ctrl_poly[1] + 3*(1.0-t)* t**2 * ctrl_poly[2] + t**3 * ctrl_poly[3]
 
 
 """
 Evaluates the first derivative of a cubic Bezier curve at parameter t.
 
 Parameters:
-    ctrlPoly: Array of 4 control points defining the Bezier curve
+    ctrl_poly: Array of 4 control points defining the Bezier curve
     t: Parameter value in the range [0,1]
 
 Returns:
     The first derivative (tangent vector) of the Bezier curve at parameter t
 """
-def qprime(ctrlPoly, t):
-    return 3*(1.0-t)**2 * (ctrlPoly[1]-ctrlPoly[0]) + 6*(1.0-t) * t * (ctrlPoly[2]-ctrlPoly[1]) + 3*t**2 * (ctrlPoly[3]-ctrlPoly[2])
+def qprime(ctrl_poly, t):
+    return 3*(1.0-t)**2 * (ctrl_poly[1]-ctrl_poly[0]) + 6*(1.0-t) * t * (ctrl_poly[2]-ctrl_poly[1]) + 3*t**2 * (ctrl_poly[3]-ctrl_poly[2])
 
 
 """
 Evaluates the second derivative of a cubic Bezier curve at parameter t.
 
 Parameters:
-    ctrlPoly: Array of 4 control points defining the Bezier curve
+    ctrl_poly: Array of 4 control points defining the Bezier curve
     t: Parameter value in the range [0,1]
 
 Returns:
     The second derivative of the Bezier curve at parameter t
 """
-def qprimeprime(ctrlPoly, t):
-    return 6*(1.0-t) * (ctrlPoly[2]-2*ctrlPoly[1]+ctrlPoly[0]) + 6*(t) * (ctrlPoly[3]-2*ctrlPoly[2]+ctrlPoly[1])
+def qprimeprime(ctrl_poly, t):
+    return 6*(1.0-t) * (ctrl_poly[2]-2*ctrl_poly[1]+ctrl_poly[0]) + 6*(t) * (ctrl_poly[3]-2*ctrl_poly[2]+ctrl_poly[1])
 
 """
 Main function to fit one or more Bezier curves to a set of points.
 
 Parameters:
     points: Array of points to be fitted
-    maxError: Maximum allowable fitting error
+    max_error: Maximum allowable fitting error
 
 Returns:
     Array of fitted Bezier curves, each represented by 4 control points
 """
-def fitCurve(points, maxError):
+def fit_curve(points, max_error):
     if (len(points) <= 1):
         return []
-    leftTangent = normalize(points[1] - points[0])
-    rightTangent = normalize(points[-2] - points[-1])
-    return fitCubic(points, leftTangent, rightTangent, maxError)
+    left_tangent = normalize(points[1] - points[0])
+    right_tangent = normalize(points[-2] - points[-1])
+    return fit_cubic(points, left_tangent, right_tangent, max_error)
 
 """
-def fitCurveWithMaxSegments(points, maxError, maxSegments):
+def fit_curve_with_max_segments(points, max_error, max_segments):
     if (len(points) <= 1):
         return []
-    leftTangent = normalize(points[1] - points[0])
-    rightTangent = normalize(points[-2] - points[-1])
-    beziers = fitCubic(points, leftTangent, rightTangent, maxError)
-    while len(beziers) > maxSegments:
-        maxError *= 1.5
-        beziers = fitCubic(points, leftTangent, rightTangent, maxError)
+    left_tangent = normalize(points[1] - points[0])
+    right_tangent = normalize(points[-2] - points[-1])
+    beziers = fit_cubic(points, left_tangent, right_tangent, max_error)
+    while len(beziers) > max_segments:
+        max_error *= 1.5
+        beziers = fit_cubic(points, left_tangent, right_tangent, max_error)
     return beziers
 
-def fitOneCubic(all_points, start_index, end_index, leftTangent, rightTangent, error):
+def fit_one_cubic(all_points, start_index, end_index, left_tangent, right_tangent, error):
     points = all_points[start_index:end_index+1]
     if (len(points) == 2):
         dist = linalg.norm(points[0] - points[1]) / 3.0
-        bezCurve = [points[0], points[0] + leftTangent * dist, points[1] + rightTangent * dist, points[1]]
-        return bezCurve, 0.0, 0
+        bez_curve = [points[0], points[0] + left_tangent * dist, points[1] + right_tangent * dist, points[1]]
+        return bez_curve, 0.0, 0
     # Parameterize points, and attempt to fit curve
-    u = chordLengthParameterize(points)
-    bezCurve = generateBezier(points, u, leftTangent, rightTangent)
+    u = chord_length_parameterize(points)
+    bez_curve = generate_bezier(points, u, left_tangent, right_tangent)
     # Find max deviation of points to fitted curve
-    maxError, splitPoint = computeMaxError(points, bezCurve, u)
-    if maxError < error:
-        return bezCurve, maxError, splitPoint + start_index
+    max_error, split_point = compute_max_error(points, bez_curve, u)
+    if max_error < error:
+        return bez_curve, max_error, split_point + start_index
     
     for _ in range(20):
-        uPrime = reparameterize(bezCurve, points, u)
-        bezCurve = generateBezier(points, uPrime, leftTangent, rightTangent)
-        maxError, splitPoint = computeMaxError(points, bezCurve, uPrime)
-        if maxError < error:
-            return bezCurve, maxError, splitPoint + start_index
-        u = uPrime
+        u_prime = reparameterize(bez_curve, points, u)
+        bez_curve = generate_bezier(points, u_prime, left_tangent, right_tangent)
+        max_error, split_point = compute_max_error(points, bez_curve, u_prime)
+        if max_error < error:
+            return bez_curve, max_error, split_point + start_index
+        u = u_prime
 
-    return bezCurve, maxError, splitPoint + start_index
+    return bez_curve, max_error, split_point + start_index
 
 
-def fitCubicWithMaxSegments(points, leftTangent, rightTangent, error, maxSplits):
+def fit_cubic_with_max_segments(points, left_tangent, right_tangent, error, max_splits):
     # Use heuristic if region only has two points in it
-    maxSegments = 2 ** maxSplits
+    max_segments = 2 ** max_splits
     if (len(points) == 2):
-        dist_for_each_segment = linalg.norm(points[0] - points[1]) / maxSegments
+        dist_for_each_segment = linalg.norm(points[0] - points[1]) / max_segments
         dist = dist_for_each_segment / 3.0
-        bezCurves = []
-        for i in range(maxSegments):
-            start_point = points[0] + leftTangent * dist_for_each_segment * i
-            ctrl1 = start_point + leftTangent * dist
-            end_point = points[0] + leftTangent * dist_for_each_segment * (i+1)
-            ctrl2 = end_point + rightTangent * dist
-            bezCurve = [start_point, ctrl1, ctrl2, end_point]
-            bezCurves.append(bezCurve)
-        return bezCurves
+        bez_curves = []
+        for i in range(max_segments):
+            start_point = points[0] + left_tangent * dist_for_each_segment * i
+            ctrl1 = start_point + left_tangent * dist
+            end_point = points[0] + left_tangent * dist_for_each_segment * (i+1)
+            ctrl2 = end_point + right_tangent * dist
+            bez_curve = [start_point, ctrl1, ctrl2, end_point]
+            bez_curves.append(bez_curve)
+        return bez_curves
 
     beziers = []
     errors = []
-    splitPoints = []
-    while len(beziers) < maxSegments:
+    split_points = []
+    while len(beziers) < max_segments:
         if len(beziers) == 0:
-            bezCurve, maxError, splitPoint = fitOneCubic(points, 0, len(points)-1, leftTangent, rightTangent, error)
-            beziers.append(bezCurve)
-            errors.append(maxError)
-            splitPoints.append([0, splitPoint, len(points)-1])
+            bez_curve, max_error, split_point = fit_one_cubic(points, 0, len(points)-1, left_tangent, right_tangent, error)
+            beziers.append(bez_curve)
+            errors.append(max_error)
+            split_points.append([0, split_point, len(points)-1])
         else:
             if max(errors) == 0:
                 rnd_index = np.random.randint(0, len(beziers))
-                maxErrorIndex = rnd_index
+                max_error_index = rnd_index
             else:
-                maxErrorIndex = errors.index(max(errors))
-            start_index, splitPoint, end_index = splitPoints[maxErrorIndex]
-            centerTengent = normalize(points[splitPoint-1] - points[splitPoint+1])
-            bezCurve1, maxError1, splitPoint1 = fitOneCubic(points, start_index, splitPoint, leftTangent, centerTengent, error)
-            bezCurve2, maxError2, splitPoint2 = fitOneCubic(points, splitPoint, end_index, -centerTengent, rightTangent, error)
-            beziers[maxErrorIndex] = bezCurve1
-            errors[maxErrorIndex] = maxError1
-            splitPoints[maxErrorIndex] = [start_index, splitPoint1, splitPoint]
-            beziers.append(bezCurve2)
-            errors.append(maxError2)
-            splitPoints.append([splitPoint, splitPoint2, end_index])
+                max_error_index = errors.index(max(errors))
+            start_index, split_point, end_index = split_points[max_error_index]
+            center_tangent = normalize(points[split_point-1] - points[split_point+1])
+            bez_curve1, max_error1, split_point1 = fit_one_cubic(points, start_index, split_point, left_tangent, center_tangent, error)
+            bez_curve2, max_error2, split_point2 = fit_one_cubic(points, split_point, end_index, -center_tangent, right_tangent, error)
+            beziers[max_error_index] = bez_curve1
+            errors[max_error_index] = max_error1
+            split_points[max_error_index] = [start_index, split_point1, split_point]
+            beziers.append(bez_curve2)
+            errors.append(max_error2)
+            split_points.append([split_point, split_point2, end_index])
             
     return beziers
 """
@@ -157,43 +157,43 @@ Fits a set of points to a cubic Bezier curve using specified left and right tang
 
 Parameters:
     points: Array of points to be fitted
-    leftTangent: Tangent direction at the start point
-    rightTangent: Tangent direction at the end point
+    left_tangent: Tangent direction at the start point
+    right_tangent: Tangent direction at the end point
     error: Allowable fitting error
 
 Returns:
     Array of fitted Bezier curves
 """
-def fitCubic(points, leftTangent, rightTangent, error):
+def fit_cubic(points, left_tangent, right_tangent, error):
     # Use heuristic if region only has two points in it
     if (len(points) == 2):
         dist = linalg.norm(points[0] - points[1]) / 3.0
-        bezCurve = [points[0], points[0] + leftTangent * dist, points[1] + rightTangent * dist, points[1]]
-        return [bezCurve]
+        bez_curve = [points[0], points[0] + left_tangent * dist, points[1] + right_tangent * dist, points[1]]
+        return [bez_curve]
 
     # Parameterize points, and attempt to fit curve
-    u = chordLengthParameterize(points)
-    bezCurve = generateBezier(points, u, leftTangent, rightTangent)
+    u = chord_length_parameterize(points)
+    bez_curve = generate_bezier(points, u, left_tangent, right_tangent)
     # Find max deviation of points to fitted curve
-    maxError, splitPoint = computeMaxError(points, bezCurve, u)
-    if maxError < error:
-        return [bezCurve]
+    max_error, split_point = compute_max_error(points, bez_curve, u)
+    if max_error < error:
+        return [bez_curve]
 
     # If error not too large, try some reparameterization and iteration
-    if maxError < error**2:
+    if max_error < error**2:
         for _ in range(20):
-            uPrime = reparameterize(bezCurve, points, u)
-            bezCurve = generateBezier(points, uPrime, leftTangent, rightTangent)
-            maxError, splitPoint = computeMaxError(points, bezCurve, uPrime)
-            if maxError < error:
-                return [bezCurve]
-            u = uPrime
+            u_prime = reparameterize(bez_curve, points, u)
+            bez_curve = generate_bezier(points, u_prime, left_tangent, right_tangent)
+            max_error, split_point = compute_max_error(points, bez_curve, u_prime)
+            if max_error < error:
+                return [bez_curve]
+            u = u_prime
 
     # Fitting failed -- split at max error point and fit recursively
     beziers = []
-    centerTangent = normalize(points[splitPoint-1] - points[splitPoint+1])
-    beziers += fitCubic(points[:splitPoint+1], leftTangent, centerTangent, error)
-    beziers += fitCubic(points[splitPoint:], -centerTangent, rightTangent, error)
+    center_tangent = normalize(points[split_point-1] - points[split_point+1])
+    beziers += fit_cubic(points[:split_point+1], left_tangent, center_tangent, error)
+    beziers += fit_cubic(points[split_point:], -center_tangent, right_tangent, error)
 
     return beziers
 
@@ -204,20 +204,20 @@ Generates a Bezier curve based on given points, parameters, and tangent directio
 Parameters:
     points: Array of points
     parameters: Array of parameterized values
-    leftTangent: Left tangent direction
-    rightTangent: Right tangent direction
+    left_tangent: Left tangent direction
+    right_tangent: Right tangent direction
 
 Returns:
     Array of control points defining the generated Bezier curve
 """
-def generateBezier(points, parameters, leftTangent, rightTangent):
-    bezCurve = [points[0], None, None, points[-1]]
+def generate_bezier(points, parameters, left_tangent, right_tangent):
+    bez_curve = [points[0], None, None, points[-1]]
 
     # compute the A's
     A = zeros((len(parameters), 2, 2))
     for i, u in enumerate(parameters):
-        A[i][0] = leftTangent  * 3*(1-u)**2 * u
-        A[i][1] = rightTangent * 3*(1-u)    * u**2
+        A[i][0] = left_tangent  * 3*(1-u)**2 * u
+        A[i][1] = right_tangent * 3*(1-u)    * u**2
 
     # Create the C and X matrices
     C = zeros((2, 2))
@@ -245,23 +245,23 @@ def generateBezier(points, parameters, leftTangent, rightTangent):
 
     # If alpha negative, use the Wu/Barsky heuristic (see text) */
     # (if alpha is 0, you get coincident control points that lead to
-    # divide by zero in any subsequent NewtonRaphsonRootFind() call. */
-    segLength = linalg.norm(points[0] - points[-1])
-    epsilon = 1.0e-6 * segLength
+    # divide by zero in any subsequent newton_raphson_root_find() call. */
+    seg_length = linalg.norm(points[0] - points[-1])
+    epsilon = 1.0e-6 * seg_length
     if alpha_l < epsilon or alpha_r < epsilon:
         # fall back on standard (probably inaccurate) formula, and subdivide further if needed.
-        bezCurve[1] = bezCurve[0] + leftTangent * (segLength / 3.0)
-        bezCurve[2] = bezCurve[3] + rightTangent * (segLength / 3.0)
+        bez_curve[1] = bez_curve[0] + left_tangent * (seg_length / 3.0)
+        bez_curve[2] = bez_curve[3] + right_tangent * (seg_length / 3.0)
 
     else:
         # First and last control points of the Bezier curve are
         # positioned exactly at the first and last data points
         # Control points 1 and 2 are positioned an alpha distance out
         # on the tangent vectors, left and right, respectively
-        bezCurve[1] = bezCurve[0] + leftTangent * alpha_l
-        bezCurve[2] = bezCurve[3] + rightTangent * alpha_r
+        bez_curve[1] = bez_curve[0] + left_tangent * alpha_l
+        bez_curve[2] = bez_curve[3] + right_tangent * alpha_r
 
-    return bezCurve
+    return bez_curve
 
 
 """
@@ -276,7 +276,7 @@ Returns:
     Optimized parameter array
 """
 def reparameterize(bezier, points, parameters):
-    return [newtonRaphsonRootFind(bezier, point, u) for point, u in zip(points, parameters)]
+    return [newton_raphson_root_find(bezier, point, u) for point, u in zip(points, parameters)]
 
 
 """
@@ -300,7 +300,7 @@ Parameters:
 Returns:
     Optimized parameter value
 """
-def newtonRaphsonRootFind(bez, point, u):
+def newton_raphson_root_find(bez, point, u):
     d = q(bez, u)-point
     numerator = (d * qprime(bez, u)).sum()
     denominator = (qprime(bez, u)**2 + d * qprimeprime(bez, u)).sum()
@@ -320,7 +320,7 @@ Parameters:
 Returns:
     Parameterized array with values in range [0,1]
 """
-def chordLengthParameterize(points):
+def chord_length_parameterize(points):
     u = [0.0]
     for i in range(1, len(points)):
         u.append(u[i-1] + linalg.norm(points[i] - points[i-1]))
@@ -342,16 +342,16 @@ Parameters:
 Returns:
     Tuple containing (maximum error value, index of the point with maximum error)
 """
-def computeMaxError(points, bez, parameters):
-    maxDist = 0.0
-    splitPoint = len(points)/2
+def compute_max_error(points, bez, parameters):
+    max_dist = 0.0
+    split_point = len(points)/2
     for i, (point, u) in enumerate(zip(points, parameters)):
         dist = linalg.norm(q(bez, u)-point)**2
-        if dist > maxDist:
-            maxDist = dist
-            splitPoint = i
+        if dist > max_dist:
+            max_dist = dist
+            split_point = i
 
-    return maxDist, splitPoint
+    return max_dist, split_point
 
 
 """

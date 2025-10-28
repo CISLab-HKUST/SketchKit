@@ -1,0 +1,63 @@
+<a href="{{ pathto('index') }}" class="sidebar-brand-title" style="display:block; padding:0.5rem 1em; font-weight:bold; font-size:1.1rem;">
+    SketchKit Documentation
+</a>
+
+<a class="sidebar-brand" href="{{ pathto(master_doc) }}">
+    {% block brand_content %}
+    {% endblock brand_content %}
+  </a>
+  
+  <!-- Dropdown for different versions of the SketchKit docs -->
+  <div style="padding: 0 1em">
+    <script>
+      var sketchkitDocsVersionsPopulated = false;
+  
+      async function getSketchkitVersionList() {
+        const response = await fetch("/docs/versions/index.txt", { cache: "no-cache" });
+        return await response.text();
+      }
+  
+      async function sketchkitDocsPopulateVersionDropDown() {
+        if (sketchkitDocsVersionsPopulated) return;
+        sketchkitDocsVersionsPopulated = true;
+  
+        const versions = (await getSketchkitVersionList())
+          .trim()
+          .split("\n")
+          .reverse();
+  
+        let htmlString = "<ul style='margin: 0.5rem 0 0 0'>";
+            htmlString += `<li><a href="/docs/">main</a></li>`;
+        for (let version of versions) {
+          htmlString += `<li><a href="/docs/versions/${version}">${version}</a></li>`;
+        }
+        htmlString += "</ul>";
+  
+        document.getElementById("sketchkit-version-dropdown").innerHTML = htmlString;
+      }
+    </script>
+  
+    <details
+      style="padding: 0.5rem; background: var(--color-background-primary); border-radius: 0.5rem; border: 1px solid var(--color-sidebar-background-border);"
+      ontoggle="sketchkitDocsPopulateVersionDropDown()"
+    >
+      <summary style="cursor: pointer">
+        <strong>Version:</strong> <em>{{ version }}</em>
+      </summary>
+      <div id="sketchkit-version-dropdown"></div>
+    </details>
+  </div>
+  
+  <div style="text-align: left; padding: 1em">
+    <script async defer src="https://buttons.github.io/buttons.js"></script>
+    <a
+      class="github-button"
+      href="https://github.com/CISLab-HKUST/SketchKit"
+      data-color-scheme="no-preference: light; light: light; dark: light;"
+      data-size="large"
+      data-show-count="true"
+      aria-label="GitHub repository"
+    >
+      GitHub
+    </a>
+  </div>

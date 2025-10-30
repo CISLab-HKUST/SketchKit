@@ -49,7 +49,10 @@ jobs:
           
       - name: Set SKETCHKIT_DOCS_VERSION
         run: |
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+          if [[ -z "${GITHUB_REF}" ]]; then
+            echo "GITHUB_REF is empty. Defaulting to 'main'."
+            VERSION="main"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             VERSION="${GITHUB_REF##*/}"
           else
             VERSION="main"
@@ -81,7 +84,7 @@ jobs:
   deploy-docs:
     needs: build-docs
     runs-on: self-hosted
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     
     steps:
       - name: Download documentation artifacts
@@ -92,30 +95,39 @@ jobs:
           
       - name: Deploy to versions directory
         env:
-          DOCS_DEST_DIR: /home/www/projects/sketchkit/docs
+          DOCS_DEST_DIR: $HOME/www/projects/sketchkit/docs
         run: |
-          mkdir -p $DOCS_DEST_DIR/versions/${SKETCHKIT_DOCS_VERSION}
-          cp -r ./docs-build/* $DOCS_DEST_DIR/versions/${SKETCHKIT_DOCS_VERSION}/
+          if [ "${SKETCHKIT_DOCS_VERSION}" = "main" ]; then
+            DEPLOY_DIR="$DOCS_DEST_DIR"
+          else
+            DEPLOY_DIR="$DOCS_DEST_DIR/versions/${SKETCHKIT_DOCS_VERSION}"
+          fi
+          mkdir -p "$DEPLOY_DIR"
+          cp -r ./docs-build/* "$DEPLOY_DIR/"
+          echo "Documentation deployed to $DEPLOY_DIR"
 
       - name: Update versions/index.txt
         env:
-          DOCS_DEST_DIR: /home/www/projects/sketchkit/docs
+          DOCS_DEST_DIR: $HOME/www/projects/sketchkit/docs
         run: |
           INDEX_FILE="$DOCS_DEST_DIR/versions/index.txt"
-          mkdir -p $(dirname $INDEX_FILE)
-          touch $INDEX_FILE
-          if ! grep -qx "${SKETCHKIT_DOCS_VERSION}" "$INDEX_FILE"; then
+          touch "$INDEX_FILE"
+
+          if [ ! -w "$INDEX_FILE" ]; then
+            echo "No write permission for $INDEX_FILE. Exiting."
+            exit 1
+          fi
+
+          if [ "${SKETCHKIT_DOCS_VERSION}" != "main" ] && ! grep -qx "${SKETCHKIT_DOCS_VERSION}" "$INDEX_FILE"; then
             echo "${SKETCHKIT_DOCS_VERSION}" >> "$INDEX_FILE"
           fi
-          if ! grep -qx "main" "$INDEX_FILE"; then
-            echo "main" >> "$INDEX_FILE"
-          fi
+
           echo "Updated index.txt:"
           cat "$INDEX_FILE"
 
       - name: Deploy main/latest
         env:
-          DOCS_DEST_DIR: /home/www/projects/sketchkit/docs
+          DOCS_DEST_DIR: $HOME/www/projects/sketchkit/docs
         run: |
           if [ "${SKETCHKIT_DOCS_VERSION}" = "main" ]; then
             cp -r ./docs-build/* $DOCS_DEST_DIR/

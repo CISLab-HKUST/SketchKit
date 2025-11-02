@@ -122,14 +122,48 @@ The following are the built-in sketch datasets currently available in SketchKit:
     Sketchy
     PhotoSketching
     GMUSketchCleanup
+    FSCOCO
+    DifferSketching
+    CreativeSketch
 
 
-Utility Scripts
---------------
+Dataset feature
+------------------------------
 
-.. autosummary::
-    :toctree: generated/
-    :template: module.rst
+The following table shows features of each built-in SketchKit dataset.
 
-    sketchkit.datasets.fscoco
-    sketchkit.datasets.differsketching
+- vector representation (polyline or bezier curve) used in each built-in SketchKit dataset.
+
+.. list-table::
+    :widths: 1 1
+    :header-rows: 1
+    :class: fullwidth
+
+    * - Dataset
+      - Representation
+    * - :class:`hzySketch <sketchkit.datasets.hzySketch>`
+      - Polyline
+    * - :class:`QuickDraw <sketchkit.datasets.QuickDraw>`
+      - Polyline
+    * - :class:`ControlSketch <sketchkit.datasets.ControlSketch>`
+      - Bezier
+    * - :class:`TUBerlin <sketchkit.datasets.TUBerlin>`
+      - Bezier
+    * - :class:`TracingVsFreehand <sketchkit.datasets.TracingVsFreehand>`
+      - Polyline
+    * - :class:`OpenSketch <sketchkit.datasets.OpenSketch>`
+      - Polyline
+    * - :class:`SketchXPRIS <sketchkit.datasets.SketchXPRIS>`
+      - Polyline
+    * - :class:`Sketchy <sketchkit.datasets.Sketchy>`
+      - Bezier
+    * - :class:`PhotoSketching <sketchkit.datasets.PhotoSketching>`
+      - Bezier
+    * - :class:`GMUSketchCleanup <sketchkit.datasets.GMUSketchCleanup>`
+      - Bezier
+    * - :class:`FSCOCO <sketchkit.datasets.FSCOCO>`
+      - Polyline
+    * - :class:`DifferSketching <sketchkit.datasets.DifferSketching>`
+      - Polyline
+    * - :class:`CreativeSketch <sketchkit.datasets.CreativeSketch>`
+      - Polyline

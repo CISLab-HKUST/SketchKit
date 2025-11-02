@@ -24,6 +24,8 @@ on:
 jobs:
   build-docs:
     runs-on: self-hosted
+    outputs:
+      version: ${{ steps.set_version.outputs.version }}
 
     steps:
       - name: Checkout repository
@@ -48,6 +50,7 @@ jobs:
           rm -rf docs/build/
           
       - name: Set SKETCHKIT_DOCS_VERSION
+        id: set_version
         run: |
           if [[ -z "${GITHUB_REF}" ]]; then
             echo "GITHUB_REF is empty. Defaulting to 'main'."
@@ -58,8 +61,7 @@ jobs:
             VERSION="main"
           fi
           echo "Detected version: $VERSION"
-          echo "SKETCHKIT_DOCS_VERSION=$VERSION" >> $GITHUB_ENV
-          echo "DOCS_SUBDIR=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           
       - name: Build documentation
         run: |
@@ -78,20 +80,22 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: documentation-${{ github.sha }}
-          path: docs/build/html/
+          path: docs/build/html/*
           retention-days: 30
           
   deploy-docs:
     needs: build-docs
     runs-on: self-hosted
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    env:
+      SKETCHKIT_DOCS_VERSION: ${{ needs.build-docs.outputs.version }}
     
     steps:
       - name: Download documentation artifacts
         uses: actions/download-artifact@v4
         with:
           name: documentation-${{ github.sha }}
-          path: ./docs-build
+          path: docs_build
           
       - name: Deploy to versions directory
         env:
@@ -103,7 +107,7 @@ jobs:
             DEPLOY_DIR="$DOCS_DEST_DIR/versions/${SKETCHKIT_DOCS_VERSION}"
           fi
           mkdir -p "$DEPLOY_DIR"
-          cp -r ./docs-build/* "$DEPLOY_DIR/"
+          cp -rfv docs_build/* "$DEPLOY_DIR/"
           echo "Documentation deployed to $DEPLOY_DIR"
 
       - name: Update versions/index.txt
@@ -111,6 +115,7 @@ jobs:
           DOCS_DEST_DIR: $HOME/www/projects/sketchkit/docs
         run: |
           INDEX_FILE="$DOCS_DEST_DIR/versions/index.txt"
+          mkdir -p "$DOCS_DEST_DIR/versions" 
           touch "$INDEX_FILE"
 
           if [ ! -w "$INDEX_FILE" ]; then
@@ -125,10 +130,10 @@ jobs:
           echo "Updated index.txt:"
           cat "$INDEX_FILE"
 
-      - name: Deploy main/latest
+      - name: Deploy main
         env:
           DOCS_DEST_DIR: $HOME/www/projects/sketchkit/docs
         run: |
           if [ "${SKETCHKIT_DOCS_VERSION}" = "main" ]; then
-            cp -r ./docs-build/* $DOCS_DEST_DIR/
+            cp -rfv docs_build/* "$DOCS_DEST_DIR/"
           fi

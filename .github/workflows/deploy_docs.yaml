@@ -11,14 +11,6 @@ on:
       - 'sketchkit/**'
       - '.github/workflows/deploy_docs.yaml'
       - 'pyproject.toml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
-      - 'sketchkit/**'
-      - '.github/workflows/deploy_docs.yaml'
-      - 'pyproject.toml'
   workflow_dispatch:
 
 jobs:
@@ -99,7 +91,7 @@ jobs:
           
       - name: Deploy to versions directory
         env:
-          DOCS_DEST_DIR: $HOME/www/projects/sketchkit/docs
+          DOCS_DEST_DIR: /home/www/projects/sketchkit/docs
         run: |
           if [ "${SKETCHKIT_DOCS_VERSION}" = "main" ]; then
             DEPLOY_DIR="$DOCS_DEST_DIR"
@@ -112,7 +104,7 @@ jobs:
 
       - name: Update versions/index.txt
         env:
-          DOCS_DEST_DIR: $HOME/www/projects/sketchkit/docs
+          DOCS_DEST_DIR: /home/www/projects/sketchkit/docs
         run: |
           INDEX_FILE="$DOCS_DEST_DIR/versions/index.txt"
           mkdir -p "$DOCS_DEST_DIR/versions" 
@@ -132,7 +124,7 @@ jobs:
 
       - name: Deploy main
         env:
-          DOCS_DEST_DIR: $HOME/www/projects/sketchkit/docs
+          DOCS_DEST_DIR: /home/www/projects/sketchkit/docs
         run: |
           if [ "${SKETCHKIT_DOCS_VERSION}" = "main" ]; then
             cp -rfv docs_build/* "$DOCS_DEST_DIR/"

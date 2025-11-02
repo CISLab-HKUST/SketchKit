@@ -13,7 +13,7 @@
       var sketchkitDocsVersionsPopulated = false;
   
       async function getSketchkitVersionList() {
-        const response = await fetch("/docs/versions/index.txt", { cache: "no-cache" });
+        const response = await fetch("https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/versions/index.txt", { cache: "no-cache" });
         return await response.text();
       }
   

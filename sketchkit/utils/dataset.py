@@ -230,11 +230,3 @@ class SketchDataset(ABC, Sequence):
             str: Additional information to include in __repr__. Empty by default.
         """
         return ""
-
-    def get_dataset_name(self) -> str:
-        """Get the name of the dataset class.
-
-        Returns:
-            str: The name of the dataset class.
-        """
-        return self.__class__.__name__

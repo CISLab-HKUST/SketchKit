@@ -1,6 +1,7 @@
 import numpy as np
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
-from sketchkit.utils.fitCurves import fitCurve
+from sketchkit.utils.fit_curve import fit_curve
+
 
 def line_to_cubic(line) -> Curve:
     """
@@ -51,20 +52,35 @@ def convert_to_curve(sketch: Sketch, maxError=4.0):
         for curve in path.curves:
             if len(polyline_path) == 0:
                 polyline_path.append([curve.p_start.x, curve.p_start.y])
-            elif np.linalg.norm(np.array(polyline_path[-1]) - np.array([curve.p_start.x, curve.p_start.y])) > 1:
+            elif (
+                np.linalg.norm(
+                    np.array(polyline_path[-1])
+                    - np.array([curve.p_start.x, curve.p_start.y])
+                )
+                > 1
+            ):
                 polyline_path.append([curve.p_start.x, curve.p_start.y])
-        if np.linalg.norm(np.array(polyline_path[-1]) - np.array([path.curves[-1].p_end.x, path.curves[-1].p_end.y])) > 1:
+        if (
+            np.linalg.norm(
+                np.array(polyline_path[-1])
+                - np.array([path.curves[-1].p_end.x, path.curves[-1].p_end.y])
+            )
+            > 1
+        ):
             polyline_path.append([path.curves[-1].p_end.x, path.curves[-1].p_end.y])
         print(polyline_path)
         # if len(polyline_path) < 4:
         #     continue
-        curve_path = fitCurve(np.array(polyline_path), maxError)
-        curves = [Curve(
-            Vertex(pt[0][0], pt[0][1]),
-            Vertex(pt[3][0], pt[3][1]),
-            Point(pt[1][0], pt[1][1]),
-            Point(pt[2][0], pt[2][1]),
-        ) for pt in curve_path]
+        curve_path = fit_curve(np.array(polyline_path), maxError)
+        curves = [
+            Curve(
+                Vertex(pt[0][0], pt[0][1]),
+                Vertex(pt[3][0], pt[3][1]),
+                Point(pt[1][0], pt[1][1]),
+                Point(pt[2][0], pt[2][1]),
+            )
+            for pt in curve_path
+        ]
         curve_paths.append(Path(curves=curves))
     new_sketch = Sketch(paths=curve_paths)
     return new_sketch

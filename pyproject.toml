@@ -9,6 +9,7 @@ dependencies = [
     "fastparquet>=2024.11.0",
     "gdown>=5.2.0",
     "ndjson>=0.3.1",
+    "opencv-python>=4.12.0.88",
     "pandas>=2.3.2",
     "patool>=4.0.1",
     "py7zr>=1.0.0",

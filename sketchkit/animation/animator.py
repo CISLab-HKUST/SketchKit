@@ -5,6 +5,7 @@ from PIL import Image
 import gdown
 from torch.nn import functional as F
 import warnings
+
 warnings.filterwarnings("ignore")
 
 from sketchkit.animation.model.RIFE_HDv3 import Model
@@ -19,7 +20,8 @@ class Animator:
         method (str): The vectorization method that is used.
         device (str): The device that is used.
     """
-    def __init__(self, method: str ="RIFE", device: str ="cuda"):
+
+    def __init__(self, method: str = "RIFE", device: str = "cuda"):
         """
         Initializes the Animator with the name of the method.
 
@@ -40,11 +42,10 @@ class Animator:
             self._download_models()
             self.model = Model(self.model_dir, device)
         else:
-            raise Exception('TBD')
+            raise Exception("TBD")
 
     def _download_models(self, cislab_source=False):
-        """Download the pretrained models
-        """
+        """Download the pretrained models"""
         root = os.path.join(
             os.environ.get("HOME", "/"),
             ".cache/sketchkit/models/animation/",
@@ -90,9 +91,17 @@ class Animator:
             gif_frames.append(img_i)
 
         first_frame = gif_frames[0]
-        first_frame.save(save_path, save_all=True, append_images=gif_frames, loop=0, duration=0.01)
+        first_frame.save(
+            save_path, save_all=True, append_images=gif_frames, loop=0, duration=0.01
+        )
 
-    def run(self, input_0: str, input_1: str, inner_frames: int = 8, out_folder: str = "animation"):
+    def run(
+        self,
+        input_0: str,
+        input_1: str,
+        inner_frames: int = 8,
+        output_folder: str | None = None,
+    ) -> list[torch.Tensor]:
         """
         Generate sketch animation or inbetweening.
 
@@ -100,13 +109,11 @@ class Animator:
             input_0 (str): a path to an input raster image (frame 0).
             input_1 (str): a path to an input raster image (frame 1).
             inner_frames (int): number of intermediate frames.
-            out_folder (str, optional): an output folder to store the output svg file.
+            output_folder (str, optional): an output folder to store the output svg file.
         """
         image_list = [input_0, input_1]
 
         img_list = []
-        output_base = os.path.join('./', out_folder)
-        os.makedirs(output_base, exist_ok=True)
 
         for img_i in range(len(image_list) - 1):
             img0_path = image_list[img_i]
@@ -114,8 +121,12 @@ class Animator:
 
             img0 = cv2.imread(img0_path, cv2.IMREAD_UNCHANGED)
             img1 = cv2.imread(img1_path, cv2.IMREAD_UNCHANGED)
-            img0 = (torch.tensor(img0.transpose(2, 0, 1)).to(self.device) / 255.).unsqueeze(0)
-            img1 = (torch.tensor(img1.transpose(2, 0, 1)).to(self.device) / 255.).unsqueeze(0)
+            img0 = (
+                torch.tensor(img0.transpose(2, 0, 1)).to(self.device) / 255.0
+            ).unsqueeze(0)
+            img1 = (
+                torch.tensor(img1.transpose(2, 0, 1)).to(self.device) / 255.0
+            ).unsqueeze(0)
 
             n, c, h, w = img0.shape
             ph = ((h - 1) // 64 + 1) * 64
@@ -128,18 +139,30 @@ class Animator:
                 img_list.append(img0)
             n = inner_frames + 1
             for i in range(n - 1):
-                img_list.append(self.model.inference(img0, img1, (i + 1) * 1. / n))
+                img_list.append(self.model.inference(img0, img1, (i + 1) * 1.0 / n))
             img_list.append(img1)
 
-        _, filename = os.path.split(input_0)
-        filename = filename.split('.')[0]
+        if output_folder is not None:
 
-        filepaths = []
-        for i in range(len(img_list)):
-            save_path = os.path.join(output_base, filename + '_img{}.png'.format(i))
-            cv2.imwrite(save_path,
-                        (img_list[i][0] * 255).byte().cpu().numpy().transpose(1, 2, 0)[:h, :w])
-            filepaths.append(save_path)
+            _, filename = os.path.split(input_0)
+            filename = filename.split(".")[0]
 
-        save_gif_path = os.path.join(output_base, filename + '_dynamic.gif')
-        self._gen_gif(filepaths, save_gif_path)
+            output_base = os.path.join("./", output_folder)
+            os.makedirs(output_base, exist_ok=True)
+            filepaths = []
+            for i in range(len(img_list)):
+                save_path = os.path.join(output_base, filename + "_img{}.png".format(i))
+                cv2.imwrite(
+                    save_path,
+                    (img_list[i][0] * 255)
+                    .byte()
+                    .cpu()
+                    .numpy()
+                    .transpose(1, 2, 0)[:h, :w],
+                )
+                filepaths.append(save_path)
+
+            save_gif_path = os.path.join(output_base, filename + "_dynamic.gif")
+            self._gen_gif(filepaths, save_gif_path)
+
+        return img_list

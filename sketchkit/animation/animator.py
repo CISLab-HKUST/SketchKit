@@ -8,7 +8,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from sketchkit.animation.model.RIFE_HDv3 import Model
-from sketchkit.utils.file import extract_files
+from sketchkit.utils.file import download_with_wget, CISLAB_CDN, extract_files
 
 
 class Animator:
@@ -42,7 +42,7 @@ class Animator:
         else:
             raise Exception('TBD')
 
-    def _download_models(self):
+    def _download_models(self, cislab_source=False):
         """Download the pretrained models
         """
         root = os.path.join(
@@ -54,33 +54,41 @@ class Animator:
         self.model_dir = os.path.join(root, "train_log")
         self.model_path = os.path.join(self.model_dir, "flownet.pkl")
 
+        filename = "RIFEv4.25_0919.zip"
+        archive_path = os.path.join(root, filename)
+
         if not os.path.exists(self.model_path):
-            gdrive_id = "1ZKjcbmt1hypiFprJPIKW0Tt0lr_2i7bg"
-            output_path = os.path.join(root, "RIFEv4.25_0919.zip")
-            gdown.download(id=gdrive_id, output=output_path, quiet=False)
+            if cislab_source:
+                cislab_url = f"{CISLAB_CDN}/datasets/Sketchy/{filename}"
+                print(f"Attempting download from CISLAB: {cislab_url}")
+                download_with_wget(
+                    cislab_url, archive_path, desc="Downloading from CISLAB CDN"
+                )
+                print("CISLAB download completed successfully!")
+            else:
+                gdrive_id = "1ZKjcbmt1hypiFprJPIKW0Tt0lr_2i7bg"
+                print("Using gdown for Google Drive download...")
+                gdown.download(id=gdrive_id, output=archive_path, quiet=False)
+                print("Google Drive download completed successfully!")
 
-            extract_files(
-                file_path=output_path, output_dir=root, remove_sourcefile=True
-            )
-            os.remove(os.path.join(self.model_dir, "IFNet_HDv3.py"))
-            os.remove(os.path.join(self.model_dir, "refine.py"))
-            os.remove(os.path.join(self.model_dir, "RIFE_HDv3.py"))
+                extract_files(
+                    file_path=archive_path, output_dir=root, remove_sourcefile=True
+                )
+                os.remove(os.path.join(self.model_dir, "IFNet_HDv3.py"))
+                os.remove(os.path.join(self.model_dir, "refine.py"))
+                os.remove(os.path.join(self.model_dir, "RIFE_HDv3.py"))
 
-    def _gen_gif(self, img_dir):
-        all_files = os.listdir(img_dir)
-        all_files.sort()
-        all_files = [item for item in all_files if '.png' in item]
-
-        frame_num = len(all_files)
-        all_files = ['img' + str(frame_i) + '.png' for frame_i in range(frame_num)]
+    def _gen_gif(self, all_files, save_path):
+        """
+        Gennerate .gif for images in a folder.
+        """
         all_files += all_files[::-1][1:]
 
         gif_frames = []
-        for img_name in all_files:
-            img_i = Image.open(os.path.join(img_dir, img_name))
+        for img_path in all_files:
+            img_i = Image.open(img_path)
             gif_frames.append(img_i)
 
-        save_path = os.path.join(img_dir, 'dynamic.gif')
         first_frame = gif_frames[0]
         first_frame.save(save_path, save_all=True, append_images=gif_frames, loop=0, duration=0.01)
 
@@ -123,8 +131,15 @@ class Animator:
                 img_list.append(self.model.inference(img0, img1, (i + 1) * 1. / n))
             img_list.append(img1)
 
-        for i in range(len(img_list)):
-            cv2.imwrite(os.path.join(output_base, 'img{}.png'.format(i)),
-                        (img_list[i][0] * 255).byte().cpu().numpy().transpose(1, 2, 0)[:h, :w])
+        _, filename = os.path.split(input_0)
+        filename = filename.split('.')[0]
 
-        self._gen_gif(output_base)
+        filepaths = []
+        for i in range(len(img_list)):
+            save_path = os.path.join(output_base, filename + '_img{}.png'.format(i))
+            cv2.imwrite(save_path,
+                        (img_list[i][0] * 255).byte().cpu().numpy().transpose(1, 2, 0)[:h, :w])
+            filepaths.append(save_path)
+
+        save_gif_path = os.path.join(output_base, filename + '_dynamic.gif')
+        self._gen_gif(filepaths, save_gif_path)

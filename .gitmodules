@@ -1,0 +1,3 @@
+[submodule "sketchkit/models/AnimatedDrawings"]
+	path = sketchkit/models/AnimatedDrawings
+	url = git@github.com:zachzeyuwang/AnimatedDrawings.git

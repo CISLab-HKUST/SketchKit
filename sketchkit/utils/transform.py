@@ -32,7 +32,7 @@ def line_to_cubic(line) -> Curve:
     return cubic
 
 
-def convert_to_curve(sketch: Sketch, datasetName: str, maxError=4.0):
+def convert_to_curve(sketch: Sketch, maxError=4.0):
     """Convert a Sketch with polylines to one with Bezier curves.
 
     Args:
@@ -42,8 +42,6 @@ def convert_to_curve(sketch: Sketch, datasetName: str, maxError=4.0):
     Returns:
         Sketch: New sketch with Bezier curves.
     """
-    if datasetName not in ["DifferSketching", "FSCOCO", "QuickDraw", "SketchXPRIS", "TracingVsFreehand"]:
-        raise ValueError(f"Dataset {datasetName} not supported for polyline to curve conversion.")
     curve_paths = []
     for path in sketch.paths:
         if path.curves is None or len(path.curves) < 1:

@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-from sketchkit.vectorization.network.keypoint import ResidualModule, ResNextModule
+from sketchkit.vectorization.DeepVecSIG24.network.keypoint import ResidualModule, ResNextModule
 
 
 class NDC_resnet_base(nn.Module):
@@ -61,9 +60,6 @@ class NDC_resnet_base(nn.Module):
         x = x / x.abs().max()
         return x
 
-'''
-Chuan's version of Nerual Dual Contouring network
-'''
 class conv2d_ndc(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, batch_norm = False,
             activation = torch.nn.LeakyReLU(negative_slope = 0.01, inplace = True), 
@@ -74,28 +70,6 @@ class conv2d_ndc(nn.Module):
         self.act = activation
     def forward(self, input):
         output = self.conv(input)
-        if self.bn is not None:
-            output = self.bn(output)
-        if self.act is not None:
-            output = self.act(output)
-        return output
-
-class resnet_block_ndc(nn.Module):
-    def __init__(self, in_channels, out_channels,
-            # inplace could reduce the memory usage, but nothing different at performance
-            activation = nn.LeakyReLU(negative_slope = 0.01, inplace = True),
-            batch_norm = False,
-            kernel_size = 1,
-            dilation = 1):
-        super(resnet_block_ndc, self).__init__()
-        self.conv_1 = conv2d_ndc(in_channels, out_channels, kernel_size, dilation = dilation, stride=1, padding='same', bias=True)
-        self.conv_2 = conv2d_ndc(in_channels, out_channels, kernel_size, dilation = dilation, stride=1, padding='same', bias=True, activation = None)
-        self.act = activation
-        self.bn = torch.nn.BatchNorm2d(channels) if batch_norm else None
-
-    def forward(self, input):
-        output = self.conv_1(input)
-        output = self.conv_2(output) + input
         if self.bn is not None:
             output = self.bn(output)
         if self.act is not None:
@@ -321,206 +295,6 @@ class CNN_2d_resnet(NDC_resnet_base):
             out_z = self.conv_out_z(out)
             return out_bool, out_z
 
-        elif self.out_float:
-            out_float = self.conv_out_float(out)
-            return out_float
-
-'''
-For Debug
-'''
-class resnet_block(nn.Module):
-    def __init__(self, ef_dim, kernel_size = 1):
-        super(resnet_block, self).__init__()
-        self.ef_dim = ef_dim
-        self.conv_1 = nn.Conv2d(self.ef_dim, self.ef_dim, kernel_size, stride=1, padding='same', bias=True)
-        self.conv_2 = nn.Conv2d(self.ef_dim, self.ef_dim, kernel_size, stride=1, padding='same', bias=True)
-
-    def forward(self, input):
-        output = self.conv_1(input)
-        output = F.leaky_relu(output, negative_slope=0.01, inplace=True)
-        output = self.conv_2(output)
-        output = output+input
-        output = F.leaky_relu(output, negative_slope=0.01, inplace=True)
-        return output
-
-class CNN_2d_rec7_resnet(NDC_resnet_base):
-
-    def __init__(self, device, out_bool = True, multi_gt_channel = False,
-            out_float = True, large_kernel = False, coord_conv = False,
-            layers = [2, 6, 2], channels = None):
-        super(CNN_2d_rec7_resnet, self).__init__(device)
-        # self.device = device
-        self.ef_dim = 64
-        self.out_bool = out_bool
-        self.out_float = out_float
-        self.coord_conv = coord_conv
-        
-        if large_kernel:
-            if coord_conv:
-                self.conv_0 = nn.Conv2d(3, self.ef_dim, 7, stride=1, padding='same', bias=True)
-            else:
-                self.conv_0 = nn.Conv2d(1, self.ef_dim, 7, stride=1, padding='same', bias=True)
-            self.res_1 = resnet_block(self.ef_dim, kernel_size = 1) # I guess the kernel size of resnet should still be 1? but why?
-            self.conv_1 = nn.Conv2d(self.ef_dim, self.ef_dim, 5, stride=1, padding='same', bias=True)
-            self.res_2 = resnet_block(self.ef_dim, kernel_size = 1)
-            self.conv_2 = nn.Conv2d(self.ef_dim, self.ef_dim, 3, stride=1, padding='same', bias=True)
-        else:
-            if coord_conv:
-                self.conv_0 = nn.Conv2d(3, self.ef_dim, 3, stride=1, padding='same', bias=True)
-            else:
-                self.conv_0 = nn.Conv2d(1, self.ef_dim, 3, stride=1, padding='same', bias=True)
-            self.res_1 = resnet_block(self.ef_dim)
-            self.conv_1 = nn.Conv2d(self.ef_dim, self.ef_dim, 3, stride=1, padding='same', bias=True)
-            self.res_2 = resnet_block(self.ef_dim)
-            self.conv_2 = nn.Conv2d(self.ef_dim, self.ef_dim, 3, stride=1, padding='same', bias=True)
-
-        self.res_3 = resnet_block(self.ef_dim)
-        self.res_4 = resnet_block(self.ef_dim)
-        self.res_5 = resnet_block(self.ef_dim)
-        self.res_6 = resnet_block(self.ef_dim)
-        self.res_7 = resnet_block(self.ef_dim)
-        self.res_8 = resnet_block(self.ef_dim)
-
-        self.conv_3 = nn.Conv2d(self.ef_dim, self.ef_dim, 1, stride=1, padding=0, bias=True)
-        self.conv_4 = nn.Conv2d(self.ef_dim, self.ef_dim, 1, stride=1, padding=0, bias=True)
-        
-        self.conv_out_skel = nn.Conv2d(self.ef_dim, 1, 1, stride=1, padding=0, bias=True)
-
-        if self.out_bool:
-            # we need to output 4 channels for the prediction, 2 for edge of one direction, respectively
-            self.conv_out_bool = nn.Conv2d(self.ef_dim, 4, 1, stride=1, padding=0, bias=True)
-        if self.out_float:
-            self.conv_out_float = nn.Conv2d(self.ef_dim, 2, 1, stride=1, padding=0, bias=True)
-    
-    def forward(self, x):
-        # we need to init keypoint coordinates
-        self.init_keypt(x)
-        if self.coord_conv:
-            out = self.add_coord_channels(x)
-        else:
-            out = x
-        out = self.conv_0(out)
-        out = F.leaky_relu(out, negative_slope=0.01, inplace=True)
-
-        out = self.res_1(out)
-        out = self.conv_1(out)
-        out = F.leaky_relu(out, negative_slope=0.01, inplace=True)
-
-        out = self.res_2(out)
-        out = self.conv_2(out)
-        out = F.leaky_relu(out, negative_slope=0.01, inplace=True)
-
-        out = self.res_3(out)
-        out = self.res_4(out)
-        out = self.res_5(out)
-        out = self.res_6(out)
-        out = self.res_7(out)
-        out = self.res_8(out)
-
-        out = self.conv_3(out)
-        out = F.leaky_relu(out, negative_slope=0.01, inplace=True)
-        out = self.conv_4(out)
-        out = F.leaky_relu(out, negative_slope=0.01, inplace=False)
-        out_skel = self.conv_out_skel(out)
-        b, _, _, _ = out.shape
-
-        if self.out_bool and self.out_float:
-            out_bool = self.conv_out_bool(out)
-            out_float = self.conv_out_float(out)    
-            b, _, _, _ = out_float.shape
-            return out_bool, self.keypt_init[:b, :, :, :] + out_float.clamp(-0.5, 0.5), None, out_skel
-            
-        
-        elif self.out_bool:
-            out_bool = self.conv_out_bool(out)
-            return out_bool
-
-        elif self.out_float:
-            out_float = self.conv_out_float(out)
-            return self.keypt_init + out_float.clamp(-0.5, 0.5)
-
-
-class resnet_block3d(nn.Module):
-    def __init__(self, ef_dim):
-        super(resnet_block3d, self).__init__()
-        self.ef_dim = ef_dim
-        self.conv_1 = nn.Conv3d(self.ef_dim, self.ef_dim, 1, stride=1, padding=0, bias=True)
-        self.conv_2 = nn.Conv3d(self.ef_dim, self.ef_dim, 1, stride=1, padding=0, bias=True)
-
-    def forward(self, input):
-        output = self.conv_1(input)
-        output = F.leaky_relu(output, negative_slope=0.01, inplace=True)
-        output = self.conv_2(output)
-        output = output+input
-        output = F.leaky_relu(output, negative_slope=0.01, inplace=True)
-        return output
-
-class CNN_3d_rec7_resnet(nn.Module):
-
-    def __init__(self, out_bool, out_float, is_undc=False):
-        super(CNN_3d_rec7_resnet, self).__init__()
-        self.ef_dim = 64
-        self.out_bool = out_bool
-        self.out_float = out_float
-        
-        self.conv_0 = nn.Conv3d(1, self.ef_dim, 3, stride=1, padding=0, bias=True)
-
-        self.res_1 = resnet_block3d(self.ef_dim)
-        self.conv_1 = nn.Conv3d(self.ef_dim, self.ef_dim, 3, stride=1, padding=0, bias=True)
-
-        self.res_2 = resnet_block3d(self.ef_dim)
-        self.conv_2 = nn.Conv3d(self.ef_dim, self.ef_dim, 3, stride=1, padding=0, bias=True)
-
-        self.res_3 = resnet_block3d(self.ef_dim)
-        self.res_4 = resnet_block3d(self.ef_dim)
-        self.res_5 = resnet_block3d(self.ef_dim)
-        self.res_6 = resnet_block3d(self.ef_dim)
-        self.res_7 = resnet_block3d(self.ef_dim)
-        self.res_8 = resnet_block3d(self.ef_dim)
-
-        self.conv_3 = nn.Conv3d(self.ef_dim, self.ef_dim, 1, stride=1, padding=0, bias=True)
-        self.conv_4 = nn.Conv3d(self.ef_dim, self.ef_dim, 1, stride=1, padding=0, bias=True)
-
-        if self.out_bool:
-            self.conv_out_bool = nn.Conv3d(self.ef_dim, 3, 1, stride=1, padding=0, bias=True)
-            
-        if self.out_float:
-            self.conv_out_float = nn.Conv3d(self.ef_dim, 3, 1, stride=1, padding=0, bias=True)
-
-    def forward(self, x):
-        out = x
-
-        out = self.conv_0(out)
-        out = F.leaky_relu(out, negative_slope=0.01, inplace=True)
-
-        out = self.res_1(out)
-        out = self.conv_1(out)
-        out = F.leaky_relu(out, negative_slope=0.01, inplace=True)
-
-        out = self.res_2(out)
-        out = self.conv_2(out)
-        out = F.leaky_relu(out, negative_slope=0.01, inplace=True)
-
-        out = self.res_3(out)
-        out = self.res_4(out)
-        out = self.res_5(out)
-        out = self.res_6(out)
-        out = self.res_7(out)
-        out = self.res_8(out)
-
-        out = self.conv_3(out)
-        out = F.leaky_relu(out, negative_slope=0.01, inplace=True)
-        out = self.conv_4(out)
-        out = F.leaky_relu(out, negative_slope=0.01, inplace=True)
-
-        if self.out_bool and self.out_float:
-            out_bool = self.conv_out_bool(out)
-            out_float = self.conv_out_float(out)
-            return torch.sigmoid(out_bool), out_float
-        elif self.out_bool:
-            out_bool = self.conv_out_bool(out)
-            return out_bool
-            # return torch.sigmoid(out_bool)
         elif self.out_float:
             out_float = self.conv_out_float(out)
             return out_float

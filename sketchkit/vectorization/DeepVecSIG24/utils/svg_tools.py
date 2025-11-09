@@ -15,84 +15,12 @@ import copy
 
 
 from os.path import split
-from svgpathtools import Path, Line, svg2paths, CubicBezier, QuadraticBezier
+from svgpathtools import Path, Line, svg2paths
 from svgpathtools.document import flattened_paths
 # https://stackoverflow.com/questions/30447355/speed-of-k-nearest-neighbour-build-search-with-scikit-learn-and-scipy
 # we should use KDTree in sklearn since it is implemented by Cython
 # from scipy.spatial import KDTree
 from random import sample
-from scipy.sparse.csgraph import shortest_path
-
-def get_hw_offset(bbox):
-    h_min, w_min, h_max, w_max = bbox
-    h = h_max - h_min
-    w = w_max - w_min
-    h_offset = h_min + h / 2
-    w_offset = w_min + w / 2
-    return h_offset, w_offset
-
-def get_rotate_matrix(ang):
-    '''assume ang are degrees'''
-    # convert ang from degree to radian
-    assert abs(ang) <= 360
-    ang = (ang / 360 ) * np.pi *+ 2
-    return np.array([[np.cos(ang), -np.sin(ang)],[np.sin(ang), np.cos(ang)]])
-
-def get_line_approximation(paths, sample_dist = None, subdivide = 4, mode = 'line'):
-    '''
-    Given:
-        paths, list of svg elements with length of N
-        subdivide, a int to decide use how many lines to approximate each curve.
-    Return:
-        paths_arrpox, list of svg Lines, the approximation of input svg graph with length of M
-        invert_idx, M x 1 array, mapping approximate line index to svg path index
-        inver_type, M x 1 array, mapping approximate line type back to svg path element type
-        edges, M x 2 list, record all start and end point of each line
-    '''
-    paths_approx = []
-    invert_idx = []
-    invert_type = []
-    edges = []
-    pts = []
-    for i, p in enumerate(paths):
-        if mode == 'line':
-            if type(p) is Line:
-                paths_approx.append(p)
-                invert_idx.append(i)
-                edges.append(((p.start.real, p.start.imag), (p.end.real, p.end.imag)))
-                invert_type.append("Line")
-            # evently split the curve into 4 pieces
-            elif type(p) is CubicBezier or isinstance(p, QuadraticBezier):
-                if sample_dist is not None:
-                    subdivide = int(p.length() / sample_dist)
-                    subdivide = 1 if subdivide == 0 else subdivide
-                else:
-                    assert isinstance(subdivide, int)
-                ts = np.linspace(0, 1, num = subdivide)
-                for j in range(0, len(ts) - 1):
-                    start = p.point(ts[j])
-                    end = p.point(ts[j + 1])
-                    paths_approx.append(Line(start, end))
-                    invert_idx.append(i)
-                    edges.append(((start.real, start.imag), (end.real, end.imag)))
-                    invert_type.append("CubicBezier")
-            else:
-                raise ValueError("Unsupported path type %s"%str(type(p)))
-            
-        elif mode == 'pt':
-            assert sample_dist is not None
-            subdivide = int(p.length() / sample_dist)
-            subdivide = 1 if subdivide == 0 else subdivide
-            ts = np.linspace(0, 1, num = subdivide)
-            for j in range(0, len(ts)):
-                pts.append(p.point(ts[j]))
-        else:
-            raise ValueError("Unsupported mode %s"%mode)
-
-    if mode == 'line':
-        return paths_approx, np.array(invert_idx), np.array(invert_type), edges
-    elif mode == 'pt':
-        return pts
 
 def open_svg_flatten(path_to_svg):
     filepath, svg = split(path_to_svg)
@@ -131,80 +59,6 @@ def open_svg_flatten(path_to_svg):
 
     return paths, (h, w)
 
-def path_to_pts(paths):
-    seg_idx = 0
-    nplist = []
-    path_index = []
-    for i, p in enumerate(paths):
-        if type(p) is Line:
-            nplist.append((paths[i].start.real, paths[i].start.imag))
-            nplist.append((paths[i].end.real, paths[i].end.imag))
-            seg_idx += 2
-            path_index.append((seg_idx, "Line"))
-        elif type(p) is CubicBezier:
-            nplist.append((paths[i].start.real, paths[i].start.imag))
-            nplist.append((paths[i].control1.real, paths[i].control1.imag))
-            nplist.append((paths[i].control2.real, paths[i].control2.imag))
-            nplist.append((paths[i].end.real, paths[i].end.imag))
-            seg_idx += 4
-            path_index.append((seg_idx, 'CubicBezier'))
-        else:
-            continue
-            # raise ValueError("Unsupported path type %s"%str(type(p)))
-        
-    return np.array(nplist), path_index
-
-def pts_to_path(pts, path_index = None):
-    paths = []
-    path_start_idx = 0
-    if path_index is None:
-        assert len(pts) % 2 == 0
-        for i in range(0, len(pts), 2):
-            start = complex(*pts[i])
-            end = complex(*pts[i + 1])
-            paths.append(Line(start, end))
-    else:
-        for path_end_idx, path_type in path_index:
-            path_list = pts[path_start_idx: path_end_idx, :]
-            if path_type == "Line":
-                assert len(path_list) == 2
-                start = complex(*path_list[0])
-                end = complex(*path_list[1])
-                paths.append(Line(start, end))
-            elif path_type == "CubicBezier":
-                assert len(path_list) == 4
-                start = complex(*path_list[0])
-                ctrl1 = complex(*path_list[1])
-                ctrl2 = complex(*path_list[2])
-                end = complex(*path_list[3])
-                paths.append(CubicBezier(start, ctrl1, ctrl2, end))
-            else:
-                raise ValueError("Unsupported path type %s"%path_type)
-            path_start_idx = path_end_idx
-    return paths
-
-def resize_path(paths, re_scale, offset = 0):
-    '''
-    Given,
-        paths, list contains all svg paths
-        re_scale, list with size (1, 2) which contains the re-scaling factor for x and y axis
-    Return,
-        paths, list contains re-scaled svg paths
-    '''
-    assert len(re_scale) == 2
-    if re_scale[0] != 1 or re_scale[1] != 1:
-        pts, path_index = path_to_pts(paths)
-        pts = resize_pts(pts, re_scale[0], re_scale[1], offset)
-        res = pts_to_path(pts, path_index)
-    else:
-        res = paths
-    return res
-
-def resize_pts(pts, x_scale, y_scale, offset = 0):
-    M = np.array([[x_scale, 0], [0, y_scale]])
-    pts = np.matmul(pts, M) + offset
-    return pts
-
 def dot(A, B):
     return A.real * B.real + A.imag * B.imag
 
@@ -225,18 +79,6 @@ def flatten_paths_to_pts_array(paths, unique = False):
         map_to_clean = np.array(map_to_clean)
         pts_array = pts_array[map_to_clean]
     return pts_array
-
-def flatten_paths_known_to_be_polyline_to_pts_array(paths):
-    ## Since `s` is a polyline, we can just take the start point of each line segment and append the last endpoint.
-    paths = np.asarray(paths)
-    ## Assert that it's a polyline.
-    assert ( paths[1:,0] == paths[:-1,1] ).all()
-    pts = np.zeros( ( len(paths) + 1, 2 ) )
-    pts[:-1,0] = paths[:,0].real
-    pts[:-1,1] = paths[:,0].imag
-    pts[-1,0] = paths[-1,1].real
-    pts[-1,1] = paths[-1,1].imag
-    return pts
 
 def build_edge(pts_array, inv = None):
     ## Yotam: numpy.unique() can replace this entire function.
@@ -430,25 +272,6 @@ def bfs_all_pairs(s, ends, connectivity, pts_array, visited_vertex):
             min_pidx = pidx
     return s_shortest, min_e, min_pidx
 
-
-def bfs_all_pairs_scipy(s, ends, edges, pts_array, visited_vertex, pres = None):
-    # construct graph matrix
-    # but construct such a matrix is really time consuming...
-    pt_num = len(pts_array)
-    csgraph = np.zeros((pt_num, pt_num))
-    for eg in edges:
-        i, j = list(eg)
-        if i == j: continue
-        if visited_vertex[i] == False and visited_vertex[j] == False:    
-            csgraph[i][j] = 1
-            csgraph[j][i] = 1
-    _, predecessors = shortest_path(csgraph, method='auto', directed=False, return_predecessors=True, unweighted=False, overwrite=False, indices=None)
-
-    # reconstruct path from s to all ends
-
-    return s_shortest, min_e, min_pidx
-
-
 def bfs_single_pair(s, e, neighbours, pts_array, visited):
     def solve(s, neighbours, n, visited):
         # s, idx for start point
@@ -512,7 +335,7 @@ def simplify_graph(paths, keypts = None, mode = 'hybird', skip_len = 4):
     if keypts is not None:
         nodes = find_alignment_all(keypts, valence, pts_array, connectivity, pt_type, thre_v1 = 1.5, thre_v2 = 1.5, thre_vx = 5)
 
-    def traversal_shortest_path(pts_array, pt_type, unvisited_edges, connectivity, valence, scipy = False):
+    def traversal_shortest_path(pts_array, pt_type, unvisited_edges, connectivity, valence):
         # collect all end points
         st_pts = set(np.where(pt_type == 1)[0])
         end_pts = set(np.where(pt_type > 1)[0])
@@ -540,17 +363,11 @@ def simplify_graph(paths, keypts = None, mode = 'hybird', skip_len = 4):
             
             # 1st pass, find shortest path between start point to each keypoint
             start_time = time.time()
-            if scipy:
-                s_shortest, predecessors, min_pidx = bfs_all_pairs_scipy(s, ends, unvisited_edges, pts_array, visited_vertex)
-            else:
-                s_shortest, min_e, min_pidx = bfs_all_pairs(s, ends, connectivity, pts_array, visited_vertex)
+            s_shortest, min_e, min_pidx = bfs_all_pairs(s, ends, connectivity, pts_array, visited_vertex)
                 
             # 2nd pass, find shortest path between start point to all valence 1 vertices
             if s_shortest is None:
-                if scipy:
-                    s_shortest, predecessors, min_pidx = bfs_all_pairs_scipy(s, v1s, connectivity, pts_array, visited_vertex, predecessors)   
-                else:
-                    s_shortest, min_e, min_pidx = bfs_all_pairs(s, v1s, connectivity, pts_array, visited_vertex)
+                s_shortest, min_e, min_pidx = bfs_all_pairs(s, v1s, connectivity, pts_array, visited_vertex)
             end_time = time.time()
             bfs_time = bfs_time + (end_time - start_time)
 
@@ -590,7 +407,7 @@ def simplify_graph(paths, keypts = None, mode = 'hybird', skip_len = 4):
 
     if mode.lower() == 'bfs':
         edges = [set(e) for e in edges]
-        strokes = traversal_shortest_path(pts_array, pt_type, edges, connectivity, valence, False)
+        strokes = traversal_shortest_path(pts_array, pt_type, edges, connectivity, valence)
     elif mode.lower() == 'hybird':
         ## reconstruct stroke topology
         def find_next_hop_graph(cur_pt_idx, pre_pt_idx, unvisited_pts, connectivity, valence, res_stroke, pts_array, pt_type, dfs = False, pre_dfs = False):

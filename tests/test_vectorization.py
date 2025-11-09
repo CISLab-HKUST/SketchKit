@@ -2,7 +2,7 @@ from sketchkit.vectorization import Vectorizer
 
 
 if __name__ == '__main__':
-    vectorizer = Vectorizer()
+    vectorizer = Vectorizer(method="DeepVecSIG24")
 
     img = "26_0.png"
     sketch = vectorizer.run(img)

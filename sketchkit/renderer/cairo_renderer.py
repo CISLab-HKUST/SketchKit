@@ -4,6 +4,8 @@ import cairocffi as cairo
 import math
 from PIL import Image
 import random
+from typing import List
+from tqdm import tqdm
 
 def generate_random_colors(n):
     """
@@ -313,3 +315,31 @@ class CairoRenderer:
         return canvas
 
 
+def render_frames(sketches: List[Sketch], gif_path: str, canvas_size=512, canvas_color=(1, 1, 1), width: int = 4):
+    """
+    Render a list of animated sketches composed of Bézier curves using a given texture.
+
+    Parameters
+    ----------
+    sketches : List[Sketch]
+        A list of Sketch objects, each containing one or more paths, each with curves. 
+        Curves must be instances of `Curve` with four Bézier control points 
+        (start, control1, control2, end).
+    width : int, optional
+        Stroke width in pixels. Default is 4.
+    gif_path : str
+        Path to save the animated GIF.
+
+    Returns
+    -------
+    None
+    """
+    # Render each frame and collect images
+    renderer = CairoRenderer(canvas_size=canvas_size, canvas_color=canvas_color)
+    frames = []
+    for sketch in tqdm(sketches, desc="Rendering frames"):
+        frame = renderer.render(sketch, width=width)
+        frames.append(Image.fromarray(frame))
+
+    # Save as animated GIF
+    frames[0].save(gif_path, save_all=True, append_images=frames[1:], duration=100, loop=0)

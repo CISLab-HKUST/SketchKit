@@ -1,11 +1,11 @@
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from typing import List
 import numpy as np
-import sketchkit.models.compute_cost as compute_cost
+import sketchkit.ordering.compute_cost as compute_cost
 from operator import itemgetter
-from sketchkit.models.tsp_bnb import Node
+from sketchkit.ordering.tsp_bnb import Node
 from queue import PriorityQueue
-from sketchkit.models.direction import determine_direction
+from sketchkit.ordering.direction import determine_direction
 from sketchkit.utils.transform import line_to_cubic
 from sketchkit.renderer.cairo_renderer import CairoRenderer
 max_k = 4

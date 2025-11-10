@@ -256,6 +256,33 @@ class Curve:
         svg_path = svgpathtools.parse_path(self.to_svg_path())
         return np.array([[svg_path.point(t).real, svg_path.point(t).imag] for t in ts], dtype=np.float32)
 
+    def get_point(self, t: float) -> np.ndarray:
+        """Get a point on the curve at a specified parameter value.
+
+        Args:
+            t (float): Parameter value between 0 and 1.
+
+        Returns:
+            np.ndarray: Point on the curve at the specified parameter value.
+        """
+        m1 = self.np_points[0]
+        m2 = self.np_points[1]
+        m3 = self.np_points[2]
+        m4 = self.np_points[3]
+        p = (1-t)**3 * m1 + 3 * (1-t)**2 * t * m2 + 3 * (1-t) * t**2 * m3 + t**3 * m4
+        return p
+    
+    def is_zero_length(self) -> bool:
+        """Check if the curve is zero length.
+
+        Returns:
+            bool: True if the curve is zero length, False otherwise.
+        """
+        points = self.np_points
+        if np.all(points[0] == points[3]) and self.is_line():
+            return True
+        return False
+        
 
 class Path:
     """Collection of curves.
@@ -432,14 +459,19 @@ class Path:
         for i, curve_index in enumerate(curve_indices):
             if curve_index == 0:
                 t_on_curve = target_lengths[i] / lengths[0]
-                points[i] = self.curves[0].point(t_on_curve)
+                points[i] = self.curves[0].get_point(t_on_curve)
             elif curve_index < len(self.curves):
                 t_on_curve = (target_lengths[i] - pre_sum_lengths[curve_index - 1]) / lengths[curve_index]
-                points[i] = self.curves[curve_index].point(t_on_curve)
+                points[i] = self.curves[curve_index].get_point(t_on_curve)
             else:
-                points[i] = self.curves[-1].point(t_on_curve)
+                points[i] = self.curves[-1].get_point(t_on_curve)
         return points
 
+    # 剔除掉所有长度为0的curve
+    def remove_zero_length_curves(self):
+        """Remove all curves with zero length from the path.
+        """
+        self.curves = [curve for curve in self.curves if not curve.is_zero_length()]
 
 
 class Sketch:

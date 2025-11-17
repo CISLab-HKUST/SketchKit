@@ -6,6 +6,7 @@ from PIL import Image
 import random
 from typing import List
 from tqdm import tqdm
+import os
 
 def generate_random_colors(n):
     """
@@ -343,3 +344,28 @@ def render_frames(sketches: List[Sketch], gif_path: str, canvas_size=512, canvas
 
     # Save as animated GIF
     frames[0].save(gif_path, save_all=True, append_images=frames[1:], duration=100, loop=0)
+
+def render_suggestive_countour(obj_path: str, out_path: str, transform: np.ndarray, canvas_size: int = 512, sug_thresh: float = 0.005):
+    """
+    Render a sketch composed of Bézier curves using a given texture.
+
+    args:
+        obj_path: str
+            Path to the object file.
+        out_path: str
+            Path to save the output image.
+        transform: np.ndarray
+            Transform matrix.
+        canvas_size: int, optional
+            Canvas size. Default is 512.
+        sug_thresh: float, optional
+            Suggestive threshold. Default is 0.005.
+
+    """
+    # 将transform转化为字符串
+    transform_str = " ".join(map(str, transform.flatten()))
+    # 调用命令行sketchkit/renderer/nogui_contour_renderer
+    os.system(f"./sketchkit/renderer/nogui_contour_renderer {obj_path} -o {out_path} -w {canvas_size} -h {canvas_size} -p {sug_thresh} -t {transform_str} -q")
+
+if __name__ == '__main__':
+    render_suggestive_countour('media/rapid.obj', 'test0.ppm', np.array([0, -1, 0, 70, 0, 0, 1, -70, -1, 0, 0, -461, 0, 0, 0, 1]))

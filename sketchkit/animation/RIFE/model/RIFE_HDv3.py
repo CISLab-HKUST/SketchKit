@@ -1,4 +1,4 @@
-from sketchkit.animation.model.IFNet_HDv3 import *
+from sketchkit.animation.RIFE.model.IFNet_HDv3 import *
 
 class Model:
     def __init__(self, model_dir, device):

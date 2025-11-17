@@ -1,6 +1,6 @@
 __version__ = "0.0.1"
 
-# from . import datasets
+from . import datasets
 from . import core
 from . import renderer
 from . import utils

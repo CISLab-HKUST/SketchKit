@@ -38,13 +38,13 @@ class MasterSketch:
         """
         root = os.path.join(
             os.environ.get("HOME", "/"),
-            ".cache/sketchkit/models/cleanup/",
+            ".cache/sketchkit/weights/cleanup/",
             self.method,
         )
         filename = "model_gan.pth"
         self.model_path = os.path.join(root, filename)
         if not os.path.exists(self.model_path):
-            cislab_url = f"{CISLAB_CDN}/models/MasterSketch/{filename}"
+            cislab_url = f"{CISLAB_CDN}/weights/MasterSketch/{filename}"
             print(f"Attempting download from CISLAB: {cislab_url}")
             download_with_wget(
                 cislab_url, self.model_path, desc="Downloading from CISLAB CDN"

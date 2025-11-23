@@ -4,14 +4,8 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'docs/**'
-      - 'sketchkit/**'
-      - '.github/workflows/deploy_docs.yaml'
-      - 'pyproject.toml'
-  pull_request:
-    branches:
-      - main
+    tags:
+      - 'v*' 
     paths:
       - 'docs/**'
       - 'sketchkit/**'
@@ -22,6 +16,8 @@ on:
 jobs:
   build-docs:
     runs-on: self-hosted
+    outputs:
+      version: ${{ steps.set_version.outputs.version }}
 
     steps:
       - name: Checkout repository
@@ -45,6 +41,20 @@ jobs:
         run: |
           rm -rf docs/build/
           
+      - name: Set SKETCHKIT_DOCS_VERSION
+        id: set_version
+        run: |
+          if [[ -z "${GITHUB_REF}" ]]; then
+            echo "GITHUB_REF is empty. Defaulting to 'main'."
+            VERSION="main"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF##*/}"
+          else
+            VERSION="main"
+          fi
+          echo "Detected version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
       - name: Build documentation
         run: |
           cd docs
@@ -62,24 +72,60 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: documentation-${{ github.sha }}
-          path: docs/build/html/
+          path: docs/build/html/*
           retention-days: 30
           
   deploy-docs:
     needs: build-docs
     runs-on: self-hosted
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    env:
+      SKETCHKIT_DOCS_VERSION: ${{ needs.build-docs.outputs.version }}
     
     steps:
       - name: Download documentation artifacts
         uses: actions/download-artifact@v4
         with:
           name: documentation-${{ github.sha }}
-          path: ./docs-build
+          path: docs_build
           
-      - name: Deploy to local directory
+      - name: Deploy to versions directory
         env:
           DOCS_DEST_DIR: /home/www/projects/sketchkit/docs
         run: |
-          mkdir -p $DOCS_DEST_DIR
-          cp -r ./docs-build/* $DOCS_DEST_DIR/
+          if [ "${SKETCHKIT_DOCS_VERSION}" = "main" ]; then
+            DEPLOY_DIR="$DOCS_DEST_DIR"
+          else
+            DEPLOY_DIR="$DOCS_DEST_DIR/versions/${SKETCHKIT_DOCS_VERSION}"
+          fi
+          mkdir -p "$DEPLOY_DIR"
+          cp -rfv docs_build/* "$DEPLOY_DIR/"
+          echo "Documentation deployed to $DEPLOY_DIR"
+
+      - name: Update versions/index.txt
+        env:
+          DOCS_DEST_DIR: /home/www/projects/sketchkit/docs
+        run: |
+          INDEX_FILE="$DOCS_DEST_DIR/versions/index.txt"
+          mkdir -p "$DOCS_DEST_DIR/versions" 
+          touch "$INDEX_FILE"
+
+          if [ ! -w "$INDEX_FILE" ]; then
+            echo "No write permission for $INDEX_FILE. Exiting."
+            exit 1
+          fi
+
+          if [ "${SKETCHKIT_DOCS_VERSION}" != "main" ] && ! grep -qx "${SKETCHKIT_DOCS_VERSION}" "$INDEX_FILE"; then
+            echo "${SKETCHKIT_DOCS_VERSION}" >> "$INDEX_FILE"
+          fi
+
+          echo "Updated index.txt:"
+          cat "$INDEX_FILE"
+
+      - name: Deploy main
+        env:
+          DOCS_DEST_DIR: /home/www/projects/sketchkit/docs
+        run: |
+          if [ "${SKETCHKIT_DOCS_VERSION}" = "main" ]; then
+            cp -rfv docs_build/* "$DOCS_DEST_DIR/"
+          fi

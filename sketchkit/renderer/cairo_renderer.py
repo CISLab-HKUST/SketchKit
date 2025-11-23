@@ -67,7 +67,7 @@ class CairoRenderer:
         self.canvas_size = canvas_size
         self.canvas_color = canvas_color
 
-    def render(self, sketch: Sketch, width: int = 3, fit_canvas: bool = False, texture: str = None):
+    def render(self, sketch: Sketch, width: int = 3, stroke_color: tuple = (1,1,1), fit_canvas: bool = False, texture: str = None):
         """
         Renders the given sketch onto a canvas using Cairo's drawing functions.
 
@@ -132,7 +132,7 @@ class CairoRenderer:
             for curve in each_path.curves:
                 if isinstance(curve, Curve):
                     p0, p1, p2, p3 = curve.p_start, curve.p_crtl1, curve.p_crtl2, curve.p_end
-                    ctx.set_source_rgb(0, 0, 0)
+                    ctx.set_source_rgb(*stroke_color)
                     ctx.move_to(tx(p0.x), ty(p0.y))
                     ctx.curve_to(tx(p1.x), ty(p1.y), tx(p2.x), ty(p2.y), tx(p3.x), ty(p3.y))
                     ctx.stroke()

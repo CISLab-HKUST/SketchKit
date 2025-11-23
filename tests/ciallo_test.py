@@ -1,19 +1,20 @@
 
-from sketchkit.datasets import OpenSketch #, TUBerlin
+from sketchkit.datasets import DifferSketching #, TUBerlin
+from PIL import Image
+from sketchkit.renderer.ciallo_renderer import CialloRenderer
 
 if __name__ == '__main__':
-    my_data = OpenSketch()
+    my_data = DifferSketching()
     print(len(my_data))
 
-    from PIL import Image
-    from sketchkit.renderer.ciallo_renderer import CialloRenderer
-    renderer = CialloRenderer(2000, (1,1,1))
-    raster_image = renderer.render(
-        sketch=my_data[1],
-        texture_path="./sketchkit/assets/stamp2.png",  # your brush/footprint image (RGBA recommended)
-        canvas_size=1024,
-        stroke_width_px=12.0,        # short dimension equals this width
-        spacing_px=6.0,             # center-to-center spacing in pixels
-        out_path="output.png",
-        clear_color=(0, 0, 0, 0),    # transparent
+    renderer = CialloRenderer(800, (1,1,1,1))
+    renderer.render(
+        sketch=my_data[0],
+        brush_image_path="./sketchkit/assets/stamp2.png",
+        rotation_randomness=0.2,
+        thickness=8.0,
+        noise_factor=0.1,
+        interval=0.8,
+        color=(0.0, 0.0, 1.0, 1.0),
+        output_path="stamp.png",
     )

@@ -9,9 +9,11 @@ Provides minimal implementations of three sketch-to-3D model conversion methods:
 All methods provide a unified API interface that accepts Sketch objects or image arrays as input.
 """
 
+from .modeler import Modeler
+
+# Import convenience functions for backward compatibility
 from typing import Union, Optional
 
-# Import core types
 try:
     from sketchkit.core.sketch import Sketch
 except ImportError:
@@ -22,7 +24,6 @@ except ImportError:
         sys.path.insert(0, str(current_dir.parent))
     from sketchkit.core.sketch import Sketch
 
-# Import implementations from methods submodule
 from .methods.teddy_monstermash import teddy_from_raster
 from .methods.sens_minimal import sketch_to_3d_sens as _sketch_to_3d_sens_impl
 from .methods.doubao import sketch_to_3d_doubao_impl
@@ -213,6 +214,7 @@ def sketch_to_3d_sens(
 
 
 __all__ = [
+    'Modeler',
     'sketch_to_3d',
     'sketch_to_3d_teddy',
     'sketch_to_3d_sens',

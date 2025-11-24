@@ -2,11 +2,14 @@ from sketchkit.vectorization import Vectorizer
 
 
 if __name__ == '__main__':
-    vectorizer = Vectorizer(method="DeepVecSIG24")
+    # vectorizer = Vectorizer(method="DeepVecSIG24")
+    vectorizer = Vectorizer(method="LineDrawer")
 
-    img = "26_0.png"
-    sketch = vectorizer.run(img)
+    # img = "26_0.png"
+    # sketch = vectorizer.run(img)
 
+    indir = "test"
+    vectorizer.run(indir)
     # from PIL import Image
     # from sketchkit.renderer.cairo_renderer import CairoRenderer
     #

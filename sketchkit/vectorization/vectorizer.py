@@ -1,5 +1,6 @@
 import os
 from sketchkit.vectorization.DeepVecSIG24 import DeepVecSIG24
+from sketchkit.vectorization.LineDrawer import LineDrawer
 
 class Vectorizer:
     """
@@ -24,6 +25,8 @@ class Vectorizer:
 
         if method == "DeepVecSIG24":
             self.vectorize_method = DeepVecSIG24(device)
+        elif method in {"LineDrawer", "CNNVE"}:
+            self.vectorize_method = LineDrawer(device=device, method=method)
         else:
             raise Exception("Please add implementations.")
 
@@ -41,7 +44,8 @@ class Vectorizer:
         sketch_list = []
         if os.path.isdir(input):
             for img_name in os.listdir(input):
-                if "png" in img_name or "jpg" in img_name or "bmp" in img_name:
+                lower = img_name.lower()
+                if lower.endswith((".png", ".jpg", ".jpeg", ".bmp")):
                     image_paths.append(os.path.join(input, img_name))
         else:
             image_paths.append(input)

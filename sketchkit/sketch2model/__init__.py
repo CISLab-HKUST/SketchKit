@@ -9,15 +9,12 @@ Provides minimal implementations of three sketch-to-3D model conversion methods:
 All methods provide a unified API interface that accepts Sketch objects or image arrays as input.
 """
 
-from typing import Union, Optional, Dict, Any
-from pathlib import Path
-import os
+from typing import Union, Optional
 
 # Import core types
 try:
     from sketchkit.core.sketch import Sketch
 except ImportError:
-    # If not in sketchkit package, try relative import
     import sys
     from pathlib import Path
     current_dir = Path(__file__).parent
@@ -25,10 +22,10 @@ except ImportError:
         sys.path.insert(0, str(current_dir.parent))
     from sketchkit.core.sketch import Sketch
 
-# Import implementations from local modules
-from .teddy_monstermash import teddy_from_raster
-from .sens_minimal import sketch_to_3d_sens as _sketch_to_3d_sens_impl
-from .doubao import sketch_to_3d_doubao_impl
+# Import implementations from methods submodule
+from .methods.teddy_monstermash import teddy_from_raster
+from .methods.sens_minimal import sketch_to_3d_sens as _sketch_to_3d_sens_impl
+from .methods.doubao import sketch_to_3d_doubao_impl
 
 
 def sketch_to_3d_teddy(
@@ -58,43 +55,34 @@ def sketch_to_3d_teddy(
         >>> # Create sketch...
         >>> output = sketch_to_3d_teddy(sketch, "output.obj")
     """
-    # Import necessary modules
     import numpy as np
     from sketchkit.renderer.cairo_renderer import CairoRenderer
+    import os
+    import tempfile
+    import time
     
     # Handle different input types
     if isinstance(sketch_input, Sketch):
-        # Convert Sketch object to image array
         renderer = CairoRenderer(canvas_size=512, canvas_color=(1, 1, 1))
         raster_image = renderer.render(sketch_input, fit_canvas=True)
-        # Convert to grayscale
         if raster_image.ndim == 3:
             raster_image = np.dot(raster_image[...,:3], [0.299, 0.587, 0.114]).astype(np.uint8)
     elif isinstance(sketch_input, str):
-        # File path
         from PIL import Image
         img = Image.open(sketch_input).convert('L')
         raster_image = np.array(img, dtype=np.uint8)
     else:
-        # numpy array
         raster_image = np.asarray(sketch_input, dtype=np.uint8)
         if raster_image.ndim == 3:
             raster_image = np.dot(raster_image[...,:3], [0.299, 0.587, 0.114]).astype(np.uint8)
     
     # Generate output path
     if output_path is None:
-        import tempfile
-        import time
         temp_dir = tempfile.gettempdir()
         timestamp = int(time.time() * 1000)
         output_path = os.path.join(temp_dir, f"teddy_output_{timestamp}.obj")
     
-    # Call teddy_from_raster
-    return teddy_from_raster(
-        raster_image,
-        output_path=output_path,
-        **kwargs
-    )
+    return teddy_from_raster(raster_image, output_path=output_path, **kwargs)
 
 
 def sketch_to_3d_doubao(
@@ -124,27 +112,25 @@ def sketch_to_3d_doubao(
     Example:
         >>> output = sketch_to_3d_doubao(sketch, "output.glb", api_key="your_key")
     """
-    # Import necessary modules
     import numpy as np
     from sketchkit.renderer.cairo_renderer import CairoRenderer
+    import os
+    import tempfile
+    import time
     
     # Handle different input types
     if isinstance(sketch_input, Sketch):
-        # Convert Sketch object to image array
         renderer = CairoRenderer(canvas_size=512, canvas_color=(1, 1, 1))
         raster_image = renderer.render(sketch_input, fit_canvas=True)
-        # Convert to RGB
         if raster_image.ndim == 2 or (raster_image.ndim == 3 and raster_image.shape[2] == 1):
             raster_image = np.stack([raster_image] * 3, axis=-1)
         elif raster_image.ndim == 3 and raster_image.shape[2] == 4:
             raster_image = raster_image[:, :, :3]
     elif isinstance(sketch_input, str):
-        # File path
         from PIL import Image
         img = Image.open(sketch_input).convert('RGB')
         raster_image = np.array(img, dtype=np.uint8)
     else:
-        # numpy array
         raster_image = np.asarray(sketch_input, dtype=np.uint8)
         if raster_image.ndim == 2:
             raster_image = np.stack([raster_image] * 3, axis=-1)
@@ -153,14 +139,11 @@ def sketch_to_3d_doubao(
     
     # Generate output path
     if output_path is None:
-        import tempfile
-        import time
         temp_dir = tempfile.gettempdir()
         timestamp = int(time.time() * 1000)
         file_format = kwargs.get('file_format', 'glb')
         output_path = os.path.join(temp_dir, f"doubao_output_{timestamp}.{file_format}")
     
-    # Call doubao implementation
     return sketch_to_3d_doubao_impl(
         raster_image,
         output_path=output_path,
@@ -170,7 +153,6 @@ def sketch_to_3d_doubao(
     )
 
 
-# Unified interface function
 def sketch_to_3d(
     sketch_input: Union[Sketch, str, 'np.ndarray'],
     method: str = 'sens',
@@ -209,7 +191,6 @@ def sketch_to_3d(
         raise ValueError(f"Unknown method: {method}. Available methods: 'teddy', 'sens', 'doubao-seed3d'")
 
 
-# Re-export sketch_to_3d_sens (using unified interface)
 def sketch_to_3d_sens(
     sketch_input: Union[Sketch, str, 'np.ndarray'],
     output_path: Optional[str] = None,
@@ -231,11 +212,9 @@ def sketch_to_3d_sens(
     return _sketch_to_3d_sens_impl(sketch_input, output_path, **kwargs)
 
 
-# Export all public APIs
 __all__ = [
     'sketch_to_3d',
     'sketch_to_3d_teddy',
     'sketch_to_3d_sens',
     'sketch_to_3d_doubao',
 ]
-

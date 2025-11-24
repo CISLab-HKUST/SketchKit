@@ -29,18 +29,21 @@ except ImportError:
     current_file = Path(__file__).resolve()
     
     # Calculate possible paths based on file location
-    # File is in: sketchkit/sketch2model/teddy_monstermash.py
+    # File is in: sketchkit/sketch2model/methods/teddy_monstermash.py
     # We need to find: external/monstermash/build_teddy or similar
     possible_paths = [
-        # From sketch2model directory
+        # From methods directory
         current_file.parent / "external" / "monstermash" / "build_teddy",
-        # From sketchkit directory
+        # From sketch2model directory
         current_file.parent.parent / "external" / "monstermash" / "build_teddy",
-        # From project root (go up 3 levels from sketch2model)
+        # From sketchkit directory
         current_file.parent.parent.parent / "external" / "monstermash" / "build_teddy",
+        # From project root (go up 4 levels from methods)
+        current_file.parent.parent.parent.parent / "external" / "monstermash" / "build_teddy",
         # Also try the monstermash directory itself (where symlink might be)
         current_file.parent / "external" / "monstermash",
         current_file.parent.parent / "external" / "monstermash",
+        current_file.parent.parent.parent / "external" / "monstermash",
         # Direct build_teddy in same directory
         current_file.parent / "build_teddy",
         # Try common installation locations

@@ -69,9 +69,10 @@ class MinimalSENSInference:
             # 添加SENS项目路径（多个可能的位置）
             current_file = Path(__file__).resolve()
             possible_sens_paths = [
-                current_file.parent / "external" / "sens",  # 从sketch2model目录
-                current_file.parent.parent / "external" / "sens",  # 从sketchkit目录
-                current_file.parent.parent.parent / "external" / "sens",  # 从项目根目录
+                current_file.parent / "external" / "sens",  # 从methods目录
+                current_file.parent.parent / "external" / "sens",  # 从sketch2model目录
+                current_file.parent.parent.parent / "external" / "sens",  # 从sketchkit目录
+                current_file.parent.parent.parent.parent / "external" / "sens",  # 从项目根目录
             ]
             
             sens_path = None

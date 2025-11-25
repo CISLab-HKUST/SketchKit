@@ -27,7 +27,18 @@ dependencies = [
     "wandb>=0.18.0",
     "wget>=3.2",
     "clip @ git+https://github.com/openai/CLIP.git",
+    "scikit-image>=0.25.2",
+    "ffmpeg>=1.4",
+    "svgwrite>=1.4.3",
+    "cssutils>=2.11.1",
+    "numba>=0.62.1",
+    "torch-tools>=0.1.5",
+    "visdom>=0.2.4",
 ]
+
+[build-system]
+requires = ["setuptools", "wheel", "torch", "cmake", "ninja", "numpy"]
+build-backend = "setuptools.build_meta"
 
 [dependency-groups]
 dev = [

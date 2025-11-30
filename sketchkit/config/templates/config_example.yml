@@ -1,0 +1,17 @@
+# SketchKit Configuration File
+# Copy this file to ~/.sketchkit/config.yml and fill in your API keys
+# DO NOT commit the actual config.yml file to version control
+
+api_keys:
+  openai: "YOUR_OPENAI_KEY"
+  anthropic: "YOUR_ANTHROPIC_KEY"
+  google: "YOUR_GOOGLE_KEY"
+  huggingface: "YOUR_HF_TOKEN"
+  stability: "YOUR_STABILITY_API_KEY"
+  replicate: "YOUR_REPLICATE_API_TOKEN"
+  doubao: "YOUR_DOUBAO_API_KEY"
+
+# Add custom API keys as needed
+# custom_service:
+#   api_key: "YOUR_CUSTOM_KEY"
+

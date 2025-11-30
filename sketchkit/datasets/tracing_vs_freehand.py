@@ -75,7 +75,7 @@ class TracingVsFreehand(SketchDataset):
         URL (str): Download URL for the dataset zip file.
     """
 
-    md5_sum = "cdf5ce49867d96e1bd0bc0c7198fb95b"
+    md5_sum = "d069ddc535281d50e271ee8bcbcd091e"
     URL = f"{CISLAB_CDN}/datasets/TracingVsFreehand/sketch.zip"
     metadata = ["id", "file_path", "sketch_type", "category", "file_id"]
 
@@ -201,7 +201,7 @@ class TracingVsFreehand(SketchDataset):
                 print(f"Warning: Could not load {row['file_path']}. Error: {e}")
                 self.raw_data[idx] = Sketch(paths=[])
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Retrieves a single sketch from the dataset by its index.
 
         Args:

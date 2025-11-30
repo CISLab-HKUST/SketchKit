@@ -1,6 +1,5 @@
 import os
 import shutil
-
 import json
 import numpy as np
 from pathlib import Path as PathLibPath
@@ -72,23 +71,23 @@ class CreativeSketch(SketchDataset):
     # Metadata columns for each item
     metadata = ["id", "category", "sub_id", "is_good"]
 
-    def __init__(
-        self,
-        root: str | PathLibPath | None = None,
-        load_all: bool = False,
-        cislab_source: bool = False,
-    ):
-        """Initialize the Creative Sketch dataset.
+    # def __init__(
+    #     self,
+    #     root: str | PathLibPath | None = None,
+    #     load_all: bool = False,
+    #     cislab_source: bool = False,
+    # ):
+    #     """Initialize the Creative Sketch dataset.
 
-        Args:
-            root (str | PathLibPath | None): Root directory to store/load the dataset.
-                If None, uses the default dataset directory.
-            load_all (bool): If True, loads all data into memory for faster access.
-                If False, loads data on-demand. Defaults to False.
-            cislab_source (bool): If True, downloads from CISLAB CDN mirror.
-                If False, downloads from original Google storage. Defaults to False.
-        """
-        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
+    #     Args:
+    #         root (str | PathLibPath | None): Root directory to store/load the dataset.
+    #             If None, uses the default dataset directory.
+    #         load_all (bool): If True, loads all data into memory for faster access.
+    #             If False, loads data on-demand. Defaults to False.
+    #         cislab_source (bool): If True, downloads from CISLAB CDN mirror.
+    #             If False, downloads from original Google storage. Defaults to False.
+    #     """
+    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset.
@@ -208,7 +207,6 @@ class CreativeSketch(SketchDataset):
                     [items_metadata, pd.DataFrame([new_row])], ignore_index=True
                 )
                 cnt += 1
-
             self.items_metadata = items_metadata
             self.items_metadata.to_parquet(
                 os.path.join(self.root, ".metadata.parquet"), compression="zstd"
@@ -254,7 +252,6 @@ class CreativeSketch(SketchDataset):
         else:
             single_sketch_json = self.creature_json_base[orig_idx]
             colors = COLORS_CREATURE
-
         path_list = []
         for j, step in enumerate(single_sketch_json["all_strokes"]):
             stroke_label = single_sketch_json["partsUsed"][j]
@@ -274,7 +271,7 @@ class CreativeSketch(SketchDataset):
             path_list.append(Path(curves=strokes))
         return Sketch(path_list)
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Get a sketch by index.
 
         If a sketch not in memory, load it from disk.

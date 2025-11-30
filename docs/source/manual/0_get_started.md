@@ -63,6 +63,7 @@ conda activate sketchkit
 # Install SketchKit in development mode
 pip install -e .
 ```
+After installation, you can import `sketchkit` in your python program.
 
 #### Step 4: Verify Installation
 Test your installation:

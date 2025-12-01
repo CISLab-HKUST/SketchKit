@@ -11,7 +11,6 @@ dependencies = [
     "gdown>=5.2.0",
     "matplotlib>=3.9.0",
     "ndjson>=0.3.1",
-    "opencv-python>=4.12.0.88",
     "pandas>=2.3.2",
     "patool>=4.0.1",
     "pyunpack>=0.3",
@@ -35,6 +34,7 @@ dependencies = [
     "torch-tools>=0.1.5",
     "visdom>=0.2.4",
     "python-dotenv>=1.2.1",
+    "opencv-contrib-python>=4.12.0.88",
 ]
 
 [build-system]

@@ -1,15 +1,20 @@
+import numpy as np
+from PIL import Image
+
 from sketchkit.vectorization import Vectorizer
 
 
-if __name__ == '__main__':
-    # vectorizer = Vectorizer(method="DeepVecSIG24")
-    vectorizer = Vectorizer(method="LineDrawer")
+if __name__ == "__main__":
+    vectorizer = Vectorizer(method="DeepVecSIG24")
+    # vectorizer = Vectorizer(method="LineDrawer")
 
-    # img = "26_0.png"
-    # sketch = vectorizer.run(img)
+    img_path = "26_0.png"
+    img_np = np.array(Image.open(img_path).convert("L"))
+    sketch = vectorizer.run(img_np)
 
-    indir = "test"
-    vectorizer.run(indir)
+    # indir = "test"
+    # vectorizer.run(indir)
+
     # from PIL import Image
     # from sketchkit.renderer.cairo_renderer import CairoRenderer
     #

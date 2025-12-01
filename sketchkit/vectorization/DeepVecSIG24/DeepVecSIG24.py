@@ -137,17 +137,9 @@ class DeepVecSIG24:
         loadmodel.load_state_dict(checkpoint['model_state_dict'])
         return loadmodel, args_ndc
 
-    def _load_img(self, img_input, device, up_scale,
+    def _load_img(self, img_np, device,
                   resize=False,
-                  path_to_out=None,
                   resize_to=1024):
-        _, png = os.path.split(img_input)
-        name, _ = os.path.splitext(png)
-
-        try:
-            img_np = np.array(Image.open(img_input).convert("L"))
-        except BaseException:
-            img_np = np.array(img_input.convert("L"))
         h, w = img_np.shape[0], img_np.shape[1]
         h_raw = h
         w_raw = w
@@ -174,13 +166,6 @@ class DeepVecSIG24:
         # change image color to blue
         img_np = np.repeat(img_np[..., np.newaxis], 3, axis=-1)
         # save updated input image if possible
-        if path_to_out is not None:
-            if up_scale:
-                img_np = cv2.resize(
-                    img_np, (w * 2, h * 2), interpolation=cv2.INTER_AREA)
-            if not os.path.exists(path_to_out):
-                os.makedirs(path_to_out)
-            Image.fromarray(img_np).save(os.path.join(path_to_out, name + '.png'))
         return img.to(device), img_np, (h_raw, w_raw)
 
     def _D(self, t):
@@ -268,9 +253,7 @@ class DeepVecSIG24:
             rdp_simplify=False,
             epsilon=0.4,
             skip_len=4):
-        p, name = os.path.split(path_to_svg)
-        name, _ = os.path.splitext(name)
-        name = "_".join(name.split("_")[:-1])
+        p, _ = os.path.split(path_to_svg)
         paths, (h, w) = open_svg_flatten(path_to_svg)
         strokes, nodes = simplify_graph(
             paths, keypt_pre_dict, mode="hybird", skip_len=skip_len)
@@ -285,10 +268,10 @@ class DeepVecSIG24:
         wsvg(strokes,
              stroke_widths=[0.5] * len(strokes),
              dimensions=(w, h),
-             filename=os.path.join(p, name + "_final.svg"),
+             filename=os.path.join(p, "final.svg"),
              attributes=attributes)
         # also save another version for visulization
-        self._vis_stroke(strokes, (h, w), os.path.join(p, name + "_vis.svg"))
+        self._vis_stroke(strokes, (h, w), os.path.join(p, "vis.svg"))
         print("Results are saved to dir:", p)
         return strokes
 
@@ -319,28 +302,31 @@ class DeepVecSIG24:
             path_list.append(Path(stroke_list))
         return path_list
 
-    def run(self, image_path: str, out_folder: str = "svg"):
+    def run(
+        self,
+        image_array: np.ndarray,
+        image_folder: str = "./",
+        out_folder: str = "svg"
+    ) -> Sketch:
         """
-        Vectorize the input raster image or images in a folder.
+        Vectorize the input raster image.
 
         Args:
-            image_path (str): a path to an input raster image or a folder with multiple images.
+            image_array (numpy.ndarray): input raster image in shape (H, W), with values in [0, 255].
+            image_folder (str, optional): the folder of the input raster image.
             out_folder (str, optional): an output folder to store the output svg file.
 
         Returns:
             sketch (Sketch): a Sketch instance.
         """
-        img_base, img_name = os.path.split(image_path)
-        name, _ = os.path.splitext(img_name)
-
         # load input data
         if self.device == 'cuda':
-            ww, hh = Image.open(image_path).size
+            ww, hh = image_array.shape[1], image_array.shape[0]
             longer = ww if ww > hh else hh
             resize = True if longer > self.resize_to else False
         else:
             resize = False
-        img, img_np, canvas_size = self._load_img(image_path, self.device, self.args_udf.up_scale,
+        img, img_np, canvas_size = self._load_img(image_array, self.device,
                                                   resize=resize, resize_to=self.resize_to)
         tensor_h, tensor_w = img.shape[2], img.shape[3]
 
@@ -367,16 +353,16 @@ class DeepVecSIG24:
             lines_pre * 2,
             tensor_w * 2,
             tensor_h * 2,
-            os.path.join(img_base, out_folder, name + "_refine.svg"))
+            os.path.join(image_folder, out_folder, "refine.svg"))
 
         # stroke traversal
         paths_poly = self._simplify_SVG(
-            os.path.join(img_base, out_folder, name + "_refine.svg"),
+            os.path.join(image_folder, out_folder, "refine.svg"),
             keypt_pre_dict,
             rdp_simplify=self.rdp,
             epsilon=self.eps,
             skip_len=self.skip_len)
-        os.remove(os.path.join(img_base, out_folder, name + "_refine.svg"))
+        os.remove(os.path.join(image_folder, out_folder, "refine.svg"))
 
         # convert to Sketch format
         path_list = self._paths_to_Sketch(paths_poly)

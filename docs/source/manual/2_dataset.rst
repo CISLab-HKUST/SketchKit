@@ -20,7 +20,7 @@ which contains useful information for searching and filtering sketches.
 
 Key concepts of dataset parameters
 ---------------------------
-**root**: ``Datatype: str``, ``Default: "~/.cache/sketchkit/datasets"`` 
+**root**: ``Datatype: str``, ``Default: "~/.sketchkit/datasets"`` 
 
     | Directory where the dataset is stored or downloaded. 
     | If the dataset is not present locally, it will be automatically downloaded to this path. 

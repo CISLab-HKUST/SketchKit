@@ -16,7 +16,7 @@ pretrained weights and the exported deployment graph.
 - ``LICENSE`` – the upstream BSD 2-Clause license.
 
 The 56 MB pretrained weights are downloaded automatically on first use to
-``~/.cache/sketchkit/image2sketch/hed/hed_pretrained_bsds.caffemodel``. If you
+``~/.sketchkit/image2sketch/hed/hed_pretrained_bsds.caffemodel``. If you
 prefer manual control, place the official ``hed_pretrained_bsds.caffemodel`` in
 ``sketchkit/image2sketch/hed/assets/`` and the wrapper will copy it to the cache.
 You can also pass ``auto_download=False`` with a custom ``checkpoint_dir`` and

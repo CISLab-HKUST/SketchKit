@@ -38,7 +38,7 @@ class MasterSketch:
         """
         root = os.path.join(
             os.environ.get("HOME", "/"),
-            ".cache/sketchkit/weights/cleanup/",
+            ".sketchkit/weights/cleanup/",
             self.method,
         )
         filename = "model_gan.pth"

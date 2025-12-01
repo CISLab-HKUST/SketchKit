@@ -34,6 +34,7 @@ dependencies = [
     "numba>=0.62.1",
     "torch-tools>=0.1.5",
     "visdom>=0.2.4",
+    "python-dotenv>=1.2.1",
 ]
 
 [build-system]

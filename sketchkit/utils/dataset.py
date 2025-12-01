@@ -38,7 +38,7 @@ class SketchDataset(ABC, Sequence):
         Initialize the dataset.
         Args:
             root (str | PathLibPath | None, optional): Root directory for the dataset.
-                If None, defaults to ~/.cache/sketchkit/datasets/{ClassName}/. Defaults to None.
+                If None, defaults to ~/.sketchkit/datasets/{ClassName}/. Defaults to None.
             load_all (bool, optional): Whether to load all data into memory at initialization.
                 Defaults to False.
             cislab_source (bool, optional): Whether to use CISLAB as the data source.
@@ -53,7 +53,7 @@ class SketchDataset(ABC, Sequence):
         if root is None:
             root = os.path.join(
                 os.environ.get("HOME", "/"),
-                ".cache/sketchkit/datasets",
+                ".sketchkit/datasets",
                 self.__class__.__name__,
             )
         if isinstance(root, str):

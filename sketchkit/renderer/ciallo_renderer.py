@@ -1,10 +1,8 @@
 import math
 import moderngl
 import numpy as np
-from typing import List, Tuple, Optional
+from typing import List
 from PIL import Image
-from sketchkit.datasets import DifferSketching, hzySketch
-import time
 
 try:
     from sketchkit.core.sketch import Sketch, Curve, Path, Vertex, Point

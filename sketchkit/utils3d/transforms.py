@@ -1,5 +1,5 @@
 import numpy as np
-
+import torch
 
 def yaw_pitch_roll_from_wxyz(wxyz: np.ndarray) -> tuple[float, float, float]:
     """Convert quaternion (w,x,y,z) to yaw, pitch, roll angles in radians."""
@@ -204,3 +204,61 @@ def convert_coordinate(src, src_type, dest_type="RUB"):
     src = np.array(src)
     trans_matrix = get_coordinate_trans_matrix(src_type, dest_type)
     return (src.T @ trans_matrix).T
+
+# for unit_test (tests/test_3Dsketch.py) in 3D sketch rendering (360 degree view synthesis)
+def _rt_from_lookat_opencv(eye: np.ndarray, lookat: np.ndarray, up: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Build OpenCV extrinsics (R, t) from eye/lookat/up.
+
+    Camera axes: x right, y up, z forward (toward scene). Transforms world to camera: Xc = R Xw + t.
+    """
+    z = lookat - eye
+    z = z / (np.linalg.norm(z) + 1e-9)
+    x = np.cross(z, up)
+    x = x / (np.linalg.norm(x) + 1e-9)
+    y = np.cross(x, z)
+    R = np.stack([x, y, z], axis=0).astype(np.float32)  # rows
+    t = (-R @ eye.astype(np.float32))
+    return R, t
+
+# transform to ndc space following the OpenCV convention
+from sketchkit.utils3d.camera import intrinsics_from_fov_xy
+def project_curves_ndc_opencv(curves: torch.Tensor,
+                              cam_position: np.ndarray,
+                              cam_lookat: np.ndarray,
+                              fov_x: float,
+                              width: int,
+                              height: int) -> torch.Tensor:
+    """Project curves using OpenCV-style K [normalized] and (R,t) from lookat.
+
+    Returns V x N x 4 x 2 in [0,1]. y is up (invert later for Cairo/PIL).
+    """
+    device = curves.device
+    V = cam_position.shape[0]
+    N, P = curves.shape[0], curves.shape[1]
+
+    # Compute fov_y from aspect ratio
+    aspect = float(height) / float(width)
+    fov_y = 2.0 * np.arctan(aspect * np.tan(fov_x / 2.0))
+    K = intrinsics_from_fov_xy(fov_x, fov_y)  # normalized to [0,1]
+
+    verts = curves.detach().cpu().numpy().reshape(-1, 3)  # [N*P,3]
+    out = np.zeros((V, N, P, 2), dtype=np.float32)
+
+    for vi in range(V):
+        eye = cam_position[vi].astype(np.float32)
+        tgt = cam_lookat[vi].astype(np.float32)
+        R, t = _rt_from_lookat_opencv(eye, tgt, np.array([0.0, 1.0, 0.0], dtype=np.float32))
+
+        # Transform to camera
+        Xc = (R @ verts.T + t[:, None]).T  # [N*P,3]
+        # Perspective divide
+        z = np.clip(Xc[:, 2:3], 1e-6, None)
+        x_norm = Xc[:, 0:1] / z
+        y_norm = Xc[:, 1:2] / z
+        # Apply K (already normalized to [0,1])
+        u = K[0, 0] * x_norm + K[0, 2]
+        v = K[1, 1] * y_norm + K[1, 2]
+        uv = np.concatenate([u, v], axis=1)  # [N*P,2]
+        out[vi] = uv.reshape(N, P, 2)
+
+    return torch.from_numpy(out).to(device)

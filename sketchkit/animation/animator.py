@@ -53,7 +53,7 @@ class Animator:
         input_0: np.ndarray,
         input_1: np.ndarray,
         inner_frames: int = 8,
-        output_folder: str | None = None,
+        output_folder: str = "animation",
     ) -> list[np.ndarray]:
         """
         Generate sketch animation or inbetweening.
@@ -62,7 +62,7 @@ class Animator:
             input_0 (numpy.ndarray): an input raster image (frame 0).
             input_1 (numpy.ndarray): an input raster image (frame 1).
             inner_frames (int): number of intermediate frames.
-            output_folder (str, optional): an output folder to store the output svg file.
+            output_folder (str, optional): an output folder to store the output animation results.
 
         Returns:
             img_list (list[numpy.ndarray]): a list of image frames in size H*W*3 in [0, 255].

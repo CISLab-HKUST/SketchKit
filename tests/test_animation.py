@@ -13,5 +13,5 @@ if __name__ == "__main__":
     img1_np = np.array(Image.open(img1_path).convert("RGB"))
 
     img_list = animator.run(
-        img0_np, img1_np, inner_frames=24, output_folder="animation"
+        img0_np, img1_np, inner_frames=24
     )

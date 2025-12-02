@@ -38,7 +38,7 @@ class MasterSketch:
         """
         root = os.path.join(
             os.environ.get("HOME", "/"),
-            ".sketchkit/models/cleanup/",
+            ".sketchkit/weights/cleanup/",
             self.method,
         )
         os.makedirs(root, exist_ok=True)

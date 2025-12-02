@@ -51,7 +51,7 @@ class DeepVecSIG24:
         """
         root = os.path.join(
             os.environ.get("HOME", "/"),
-            ".sketchkit/models/vectorization/",
+            ".sketchkit/weights/vectorization/",
             self.method,
         )
         self.model_udf_path = os.path.join(root, "udf_full.pth")

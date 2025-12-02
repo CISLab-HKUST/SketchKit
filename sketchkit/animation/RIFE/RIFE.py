@@ -43,7 +43,7 @@ class RIFE:
         """Download the pretrained models"""
         root = os.path.join(
             os.environ.get("HOME", "/"),
-            ".sketchkit/models/animation/",
+            ".sketchkit/weights/animation/",
             self.method,
         )
         os.makedirs(root, exist_ok=True)

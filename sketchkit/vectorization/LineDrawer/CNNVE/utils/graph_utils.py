@@ -40,7 +40,14 @@ def my_skeletonize(gray_img_blackbg,m_th=128):
     gray_img=gray_img_blackbg
     type=1
 
-    timgSk = cv2.ximgproc.thinning(gray_img)
+    try:
+        timgSk = cv2.ximgproc.thinning(gray_img)
+    except AttributeError:
+        # Fallback to skimage if opencv-contrib is not installed
+        # thinning expects boolean or 0/1, gray_img is 0/255
+        timgSk = morphology.thin(gray_img > 128)
+        timgSk = (timgSk * 255).astype(np.uint8)
+
     img_m2 = img_as_bool(timgSk)
     npu8_sk=morphology.medial_axis(img_m2)
     return npu8_sk

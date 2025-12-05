@@ -4,6 +4,7 @@ import torch
 from PIL import Image
 
 from sketchkit.animation.RIFE import RIFE
+from sketchkit.animation.LineDrawer import LineDrawerAnimator
 
 
 class Animator:
@@ -28,6 +29,8 @@ class Animator:
 
         if method == "RIFE":
             self.animate_method = RIFE(device)
+        elif method == "LineDrawer":
+            self.animate_method = LineDrawerAnimator(device=device)
         else:
             raise Exception("Please add implementations.")
 

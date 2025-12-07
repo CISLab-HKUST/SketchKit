@@ -1,24 +1,17 @@
 
-import os, sys, json, glob
+import os, json, glob
 from PIL import Image
 import numpy as np
 import torch
-from PIL import Image, ImageDraw
 import argparse  
 
-#sanity check for Cairo/SketchKit
+# Renderer availability is determined lazily inside main.
 try:
-    from sketchkit.core.sketch import Vertex, Point, Curve, Path, Sketch
-    from sketchkit.renderer.cairo_renderer import CairoRenderer
-    _HAS_CAIRO = True
+    from sketchkit.renderer.sketch3d_renderer import Sketch3DRenderer
 except ImportError:
-    _HAS_CAIRO = False
+    Sketch3DRenderer = None
 
-from sketchkit.utils3d.sketch3d import Sketch3D, Path3D, Curve3D, Vertex3D, Point3D
-from PIL import Image, ImageDraw
-
-#transform
-from sketchkit.utils3d.transforms import project_curves_ndc_opencv
+from sketchkit.core.sketch3d import Sketch3D, Path3D, Curve3D, Vertex3D, Point3D
 
 #for 360 views rendering (wir3d way)
 def load_renderlist(renderlist_path):
@@ -60,45 +53,27 @@ def save_gif_from_dir(frames_dir, out_gif, fps=30):
     imgs = [Image.open(f).convert("RGB") for f in files]
     imgs[0].save(out_gif, save_all=True, append_images=imgs[1:], duration=int(1000 / fps), loop=0)
 
-def render_with_cairo(vertices_ndc, width, height, colors=None, stroke_width=2.0, bg_rgb=(1,1,1)):
-    """Render curves using SketchKit CairoRenderer.
+def _select_renderer(width: int, height: int, device: torch.device, backend: str | None):
+    """Return renderer matching backend preference ('cairo', 'diffvg')."""
+    if Sketch3DRenderer is None:
+        return None, None
 
-    vertices_ndc: [N,4,2] in [0,1]
-    colors: optional RGBA or RGB per curve (values 0-1)
-    stroke_width: thickness to assign to start/end vertices
-    Returns PIL.Image.
-    """
-    assert _HAS_CAIRO, "Cairo/SketchKit not available in environment"
-    paths = []
-    #print(f"Rendering with Cairo/SketchKit... {len(vertices_ndc)} curves")
-    for ci, ctrl in enumerate(vertices_ndc):
-        # Map ndc -> pixel coordinates (float)
-        px = ctrl[:,0] * width
-        #py = ctrl[:,1] * height
-        py = (1.0 - ctrl[:,1]) * height
-        # Create vertices and control points
-        rgb = None
-        if colors is not None:
-            rgb = colors[ci][:3]
-            #print(f"Using color: {rgb} for curve {ci}")
-        v_start = Vertex(float(px[0]), float(py[0]), thickness=stroke_width, color=rgb, opacity=1.0)
-        v_end   = Vertex(float(px[3]), float(py[3]), thickness=stroke_width, color=rgb, opacity=1.0)
-        p_ctrl1 = Point(float(px[1]), float(py[1]))
-        p_ctrl2 = Point(float(px[2]), float(py[2]))
-        curve = Curve(v_start, v_end, p_ctrl1, p_ctrl2)
-        path = Path([curve])
-        paths.append(path)
-    sketch = Sketch(paths)
-    renderer = CairoRenderer(width, bg_rgb)
-    arr = renderer.render(sketch)  # expects (H,W,3) np array RGB 0-255 or float
-    if arr.dtype != np.uint8:
-        arr = np.clip(arr*255,0,255).astype(np.uint8)
-    return Image.fromarray(arr, 'RGB')
+    backend = (backend).lower()
+
+    renderer = Sketch3DRenderer(
+        width=width,
+        height=height,
+        device=device,
+        backend=backend,
+    )
+    return backend, renderer
 
 
+# Main function to render CIS logo sketch from multiple views
 def main(renderlist_path="./renderlist.json",
     out_dir="./sketch3d_test_out",
-    views=60, width=512, height=512, make_gif=True):
+    views=60, width=512, height=512, make_gif=True,
+    backend: str | None = "auto"):
     os.makedirs(out_dir, exist_ok=True)
     positions, lookats, fov = load_renderlist(renderlist_path)
     if views is not None:
@@ -116,19 +91,25 @@ def main(renderlist_path="./renderlist.json",
         [0, 0.6, 0, 1], # I - green
         [0, 0, 1, 1],   # S - blue
     ], dtype=np.float32)
+    backend_name, renderer = _select_renderer(width, height, device, backend)
+    print("renderer:", renderer)
+    if renderer is None:
+        raise RuntimeError("Neither CairoRenderer nor pydiffvg backends are available for Sketch3DRenderer.")
+    verts_ndc = renderer.project_curves_ndc_opencv(curves, positions, lookats, fov)
 
+    print(f"Rendering {verts_ndc.shape[0]} views with Sketch3DRenderer ({backend_name} backend)...")
 
-    verts_ndc = project_curves_ndc_opencv(curves, positions, lookats, fov, width, height)  # [V,3,4,2]
-    
-    #debug rendering info
-    if  _HAS_CAIRO:
-         print(f"Rendering with Cairo/SketchKit...")
+    images = renderer.render(
+        cis3d,
+        positions,
+        lookats,
+        fov,
+        colors=colors,
+        stroke_width=2.0,
+        projected=verts_ndc,
+    )
 
-    # Render each view
-    for i in range(verts_ndc.shape[0]):
-        view_ctrl = verts_ndc[i].detach().cpu().numpy()  # [N_curves,4,2]
-        if _HAS_CAIRO:
-            pil = render_with_cairo(view_ctrl, width, height, colors=colors, stroke_width=2.0)
+    for i, pil in enumerate(images):
         pil.save(os.path.join(out_dir, f"{i:03d}.png"))
     if make_gif:
         save_gif_from_dir(out_dir, os.path.join(out_dir, "orbit.gif"), fps=30)
@@ -142,5 +123,15 @@ if __name__ == "__main__":
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--height", type=int, default=512)
     parser.add_argument("--no-gif", action="store_true")
+    parser.add_argument("--backend", type=str, default="cairo", choices=["cairo", "diffvg"],
+                        help="Rendering backend to use")
     args = parser.parse_args()
-    main(args.renderlist, args.out, args.views, args.width, args.height, make_gif=not args.no_gif)
+    main(
+        args.renderlist,
+        args.out,
+        args.views,
+        args.width,
+        args.height,
+        make_gif=not args.no_gif,
+        backend=args.backend,
+    )

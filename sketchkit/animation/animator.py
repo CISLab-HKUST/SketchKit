@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import cv2
 import torch
 from PIL import Image
@@ -49,37 +50,36 @@ class Animator:
 
     def run(
         self,
-        input_0: str,
-        input_1: str,
+        input_0: np.ndarray,
+        input_1: np.ndarray,
         inner_frames: int = 8,
-        output_folder: str | None = None,
-    ) -> list[torch.Tensor]:
+        output_folder: str = "animation",
+    ) -> list[np.ndarray]:
         """
         Generate sketch animation or inbetweening.
 
         Args:
-            input_0 (str): a path to an input raster image (frame 0).
-            input_1 (str): a path to an input raster image (frame 1).
+            input_0 (numpy.ndarray): an input raster image (frame 0).
+            input_1 (numpy.ndarray): an input raster image (frame 1).
             inner_frames (int): number of intermediate frames.
-            output_folder (str, optional): an output folder to store the output svg file.
+            output_folder (str, optional): an output folder to store the output animation results.
+
+        Returns:
+            img_list (list[numpy.ndarray]): a list of image frames in size H*W*3 in [0, 255].
         """
         input_image_list = [input_0, input_1]
         img_list = self.animate_method.run(input_image_list, inner_frames)
 
         if output_folder is not None:
-
-            _, filename = os.path.split(input_0)
-            filename = filename.split(".")[0]
-
             output_base = os.path.join("./", output_folder)
             os.makedirs(output_base, exist_ok=True)
             filepaths = []
             for i in range(len(img_list)):
-                save_path = os.path.join(output_base, filename + "_img{}.png".format(i))
+                save_path = os.path.join(output_base, "img{}.png".format(i))
                 cv2.imwrite(save_path, img_list[i])
                 filepaths.append(save_path)
 
-            save_gif_path = os.path.join(output_base, filename + "_dynamic.gif")
+            save_gif_path = os.path.join(output_base, "dynamic.gif")
             self._gen_gif(filepaths, save_gif_path)
 
         return img_list

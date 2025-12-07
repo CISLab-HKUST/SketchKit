@@ -32,7 +32,11 @@ The module currently supports the following methods:
 
 ### Deep-Sketch-Vectorization
 
-The method implements [Deep Sketch Vectorization via Implicit Surface Extraction](https://cragl.cs.gmu.edu/sketchvector/). *Additional description*
+The method implements [Deep Sketch Vectorization via Implicit Surface Extraction](https://cragl.cs.gmu.edu/sketchvector/) from SIGGRAPH 2024. After using the code above, a `final.svg` denoting the vector image and its corresponding stroke visualization `vis.svg` can be found in the `svg` folder in the same directory as the script.
+
+### LineDrawer
+
+*Method description*
 
 *Any other usage beyond basic usage*
 
@@ -41,9 +45,3 @@ The method implements [Deep Sketch Vectorization via Implicit Surface Extraction
 ```python
 xxx
 ```
-
-### LineDrawer
-
-*Method description*
-
-*Any other usage beyond basic usage*

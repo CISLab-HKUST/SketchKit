@@ -1,4 +1,5 @@
 import os
+import numpy as np
 from sketchkit.cleanup.MasterSketch import MasterSketch
 
 class Cleaner:
@@ -27,30 +28,20 @@ class Cleaner:
         else:
             raise Exception("Please add implementations.")
 
-    def run(self, input: str):
+    def run(
+        self,
+        input: np.ndarray
+    ) -> np.ndarray:
         """
-        Vectorize the input raster image or images in a folder.
+        Simplify the input raster image.
 
         Args:
-            input (str): a path to an input raster image or a folder with multiple images.
+            input (numpy.ndarray): input raster image in shape (H, W), with values in [0, 255].
 
         Returns:
-            sketch_list (list[numpy.ndimage] | numpy.ndimage): a list of sketch image in H*W in [0, 255] or an image when there is only one item.
+            sketch (numpy.ndarray): an image in H*W in [0, 255].
         """
-        image_paths = []
-        sketch_list = []
-        if os.path.isdir(input):
-            for img_name in os.listdir(input):
-                if "png" in img_name or "jpg" in img_name or "bmp" in img_name:
-                    image_paths.append(os.path.join(input, img_name))
-        else:
-            image_paths.append(input)
-
-        for image_path in image_paths:
-            sketch = self.cleanup_method.run(image_path)
-            sketch_list.append(sketch)
-
-        if len(sketch_list) == 1:
-            return sketch_list[0]
-        else:
-            return sketch_list
+        sketch = self.cleanup_method.run(input)
+        if type(sketch) is not np.ndarray:
+            raise Exception("Should return a numpy array. But with %s now." % str(type(sketch)))
+        return sketch

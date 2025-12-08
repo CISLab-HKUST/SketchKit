@@ -18,23 +18,21 @@ To create the reference video:
 ### Usage Example
 
 ```python
-from sketchkit.animation import Animator
+from sketchkit.ordering import Orderer
 
-# Initialize Animator with LineDrawer method
-animator = Animator(method="LineDrawer", device="cuda")
+# Initialize Orderer with LineDrawer method
+orderer = Orderer(method="LineDrawer", device="cuda")
 
 # Run ordering using sketch image and reference video
 # img_path: Static sketch path
 # video_path: Reference video path
-img_path="a1-2.png"
-img_np = np.array(Image.open(img_path).convert("L"))
-video_path="a1-2.png.mp4"
-output_folder="ordering_output
+img_path = "a1-2.png"
+video_path = "a1-2.png.mp4"
+output_folder = "ordering_output"
 
-frames = animator.run(
-    img_np, 
-    video_path, 
-    output_folder
+frames = orderer.run(
+    [img_path, video_path], 
+    output_folder=output_folder
 )
 ```
 

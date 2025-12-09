@@ -33,14 +33,13 @@ img_path="a1-2.png"
 img_np = np.array(Image.open(img_path).convert("L"))
 video_path="a1-2.png.mp4"
 
-# Returns a list of Sketch objects, one for each frame
-sketches: list[Sketch] = orderer.run(
+# Returns a single Sketch object with ordered paths
+sketch = orderer.run(
     [img_path, video_path]
 )
 
-# Example: Access the last frame's sketch
-last_sketch = sketches[-1]
-print(f"Generated {len(sketches)} sketch frames.")
+# Example: Access the paths
+print(f"Generated ordered sketch with {sketch.path_num} paths.")
 ```
 
-The output is a list of `Sketch` objects corresponding to the sequence of drawings.
+The output is a single `Sketch` object where the order of `sketch.paths` corresponds to the drawing sequence.

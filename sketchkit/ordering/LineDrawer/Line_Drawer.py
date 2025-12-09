@@ -31,7 +31,7 @@ class LineDrawer:
         
         img = cv2.imread(input_0, cv2.IMREAD_GRAYSCALE)
         
-        frames = self.model.run(img, input_1)
+        sketch = self.model.run(img, input_1)
         
-        # frames is now a list of Sketch objects
-        return frames
+        # Returns a single Sketch object
+        return sketch

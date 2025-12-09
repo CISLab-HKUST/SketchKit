@@ -42,16 +42,16 @@ class CNNVE:
         self.frame_matcher = FrameMatcher()
         self.color_generator = ColorGenerator()
     
-    def run(self, img: np.ndarray, video_path: str) -> list[Sketch]:
+    def run(self, img: np.ndarray, video_path: str) -> Sketch:
         """
-        Generate animation sketches from image and video.
+        Generate a single Sketch with ordered paths from image and video.
         
         Args:
             img (np.ndarray): Input image as a 2D numpy array (grayscale).
             video_path (str): Path to video file for frame synchronization.
             
         Returns:
-            list[Sketch]: List of generated Sketch objects for each frame
+            Sketch: Generated Sketch object with paths ordered by drawing sequence.
         """
         import tempfile
         from PIL import Image
@@ -94,7 +94,7 @@ class CNNVE:
             video_path: Path to video file
             
         Returns:
-            list[Sketch]: List of generated Sketch objects
+            Sketch: Generated Sketch object
         """
         if not os.path.exists(video_path):
             raise FileNotFoundError(f"Video file not found: {video_path}")
@@ -149,14 +149,13 @@ class CNNVE:
             m_list_ids, ref_frames, (h, w)
         )
         
-        sketches = self._generate_sketches(
-             msort, point_list_map, len(ref_frames)
+        sketch = self._generate_ordered_sketch(
+             msort, point_list_map
         )
         
-        if len(sketches) > 0:
-             print(f'✓ Generated {len(sketches)} sketches')
+        print(f'✓ Generated ordered sketch with {sketch.path_num} paths')
         
-        return sketches
+        return sketch
     
     def _point_to_vertex(self, p):
         """Convert [y, x] point to Vertex(x, y)."""
@@ -193,70 +192,22 @@ class CNNVE:
              
         return Path(curves)
 
-    def _generate_sketches(self, msort, point_list_map, num_frames):
+    def _generate_ordered_sketch(self, msort, point_list_map):
         """
-        Generate Sketch objects for each frame.
+        Generate a single Sketch object with paths ordered by frame appearance.
         """
-        sketches = []
-        current_paths = []
+        ordered_paths = []
         
-        # msort keys are frame indices. 
-        # We need to iterate through frames in order.
         mid_list = sorted(msort.keys())
-        # Filter out special last_layid if not needed or treat it as final frame?
-        # Usually last_layid=9999 collects unmatched strokes.
-        # We should probably add them at the end or ignore. 
-        # Let's assume user wants animation frames corresponding to video.
-        
-        # Map frame index to new strokes
-        frame_new_strokes = {}
-        for idx in mid_list:
-            if idx == 9999: continue
-            frame_new_strokes[idx] = msort[idx]
-
-        # But we need to return 'num_frames' sketches? 
-        # Or just sketches for frames where something happens?
-        # The previous code returned `frames` list which I assume had length ~ num_frames?
-        # Let's verify `_generate_colored_frames`:
-        # it iterated `mid_list`. If `mid_list` only contains indices where strokes appear,
-        # then we are skipping frames. 
-        # Wait, `ref_frames` has all frames. `frame_matcher` iterates `ref_frames`.
-        # `msort` keys are indices of `ref_frames`.
-        
-        # If we want to return a list of sketches corresponding to the animation flow:
-        # We should probably iterate from 0 to max_frame_idx.
-        
-        max_frame = max([k for k in mid_list if k != 9999]) if len(mid_list) > 1 else 0
-        # Or simple: just map what we have.
-        
-        # Re-reading `_generate_colored_frames`:
-        # `for ii, idx_frame in enumerate(mid_list):`
-        # It appends to `frames`. 
-        # `frames.append(white_bg.copy())` 
-        # It accumulates: `white_bg[mm] = color`.
-        # So for each *key in msort* (which corresponds to a frame index), it produces ONE output frame?
-        # No, `white_bg` is accumulated. 
-        # It seems it produces a sequence of sketches, where each step adds new strokes.
         
         for idx_frame in mid_list:
-             if idx_frame == 9999: 
-                 # Unmatched strokes - add them at the very end or ignore?
-                 # Let's add them to a final frame
-                 stroke_ids = msort[idx_frame]
-             else:
-                 stroke_ids = msort[idx_frame]
+             stroke_ids = msort[idx_frame]
             
              for sid in stroke_ids:
                  pts = point_list_map[sid]
                  path = self._points_to_path(pts)
                  if path:
-                     current_paths.append(path)
+                     ordered_paths.append(path)
              
-             # Create sketch for this state
-             # We need to deepcopy paths? Sketch holds references. 
-             # Just creating new Sketch with list copy is enough structure-wise.
-             # Note: logic requires accumulating paths.
-             sketches.append(Sketch(paths=list(current_paths)))
-             
-        return sketches
+        return Sketch(paths=ordered_paths)
 

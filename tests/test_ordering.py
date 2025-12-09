@@ -26,17 +26,16 @@ if __name__ == '__main__':
         print(f"Video path: {video_path}")
         
         # Orderer expects paths
-        sketches = orderer.run([img_path, video_path])
+        sketch = orderer.run([img_path, video_path])
         
-        print(f"\n✓ Ordered sketches generated: {len(sketches)}")
-        if len(sketches) > 0:
-            last_sketch = sketches[-1]
-            print(f"  Last sketch has {last_sketch.path_num} paths and {last_sketch.curve_num} curves.")
-            
-            # Verify it is a Sketch object
-            if isinstance(last_sketch, Sketch):
-                print("  ✓ Output confirmed as Sketch objects")
-            else:
-                print(f"  ⚠ Error: Output is {type(last_sketch)}, expected Sketch")
+        print(f"\n✓ Ordered sketch generated.")
+        
+        # Verify it is a Sketch object
+        if isinstance(sketch, Sketch):
+            print(f"  ✓ Output confirmed as Sketch object")
+            print(f"  path_num: {sketch.path_num}")
+            print(f"  curve_num: {sketch.curve_num}")
+        else:
+            print(f"  ⚠ Error: Output is {type(sketch)}, expected Sketch")
 
         print("Done.")

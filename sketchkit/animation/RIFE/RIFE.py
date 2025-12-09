@@ -1,5 +1,6 @@
 import os
 import cv2
+import numpy as np
 import torch
 from PIL import Image
 import gdown
@@ -42,7 +43,7 @@ class RIFE:
         """Download the pretrained models"""
         root = os.path.join(
             os.environ.get("HOME", "/"),
-            ".sketchkit/models/animation/",
+            ".sketchkit/weights/animation/",
             self.method,
         )
         os.makedirs(root, exist_ok=True)
@@ -73,24 +74,25 @@ class RIFE:
                 os.remove(os.path.join(self.model_dir, "refine.py"))
                 os.remove(os.path.join(self.model_dir, "RIFE_HDv3.py"))
 
-    def run(self, input_image_list: list[str], inner_frames: int):
+    def run(
+        self,
+        input_image_list: list[np.ndarray],
+        inner_frames: int
+    ) -> list[np.ndarray]:
         """
         Generate sketch animation or inbetweening for a list of keyframes.
 
         Args:
-            input_image_list (list[str]): a list of paths to keyframes.
+            input_image_list (list[numpy.ndarray]): a list of keyframes in shape (H, W, 3), with values in [0, 255].
             inner_frames (int): number of intermediate frames.
 
         Returns:
-            frame_list (numpy.ndimage): a list of image frames in size H*W*3 in [0, 255].
+            frame_list (list[numpy.ndarray]): a list of image frames in size H*W*3 in [0, 255].
         """
         frame_list = []
         for img_i in range(len(input_image_list) - 1):
-            img0_path = input_image_list[img_i]
-            img1_path = input_image_list[img_i + 1]
-
-            img0 = cv2.imread(img0_path, cv2.IMREAD_UNCHANGED)
-            img1 = cv2.imread(img1_path, cv2.IMREAD_UNCHANGED)
+            img0 = input_image_list[img_i]
+            img1 = input_image_list[img_i + 1]
             img0 = (torch.tensor(img0.transpose(2, 0, 1)).to(self.device) / 255.0).unsqueeze(0)
             img1 = (torch.tensor(img1.transpose(2, 0, 1)).to(self.device) / 255.0).unsqueeze(0)
 

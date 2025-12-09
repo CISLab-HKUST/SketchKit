@@ -300,11 +300,6 @@ class Sketch3DRenderer:
     def render(
         self,
         sketch3d: Sketch3D,
-        cam_position: np.ndarray | None = None,
-        cam_lookat: np.ndarray | None = None,
-        fov_x: float | None = None,
-        extrinsics: np.ndarray | torch.Tensor | list | None = None,
-        intrinsics: np.ndarray | torch.Tensor | list | None = None,
         cameras: list[Camera] | Camera | None = None,
         colors: np.ndarray | torch.Tensor | list | None = None,
         stroke_width: float = 2.0,
@@ -316,12 +311,6 @@ class Sketch3DRenderer:
         if projected is None:
             if cameras is not None:
                 projected = self.project_curves_ndc(curves, cameras=cameras)
-            elif extrinsics is not None and intrinsics is not None:
-                projected = self.project_curves_ndc(curves, extrinsics=extrinsics, intrinsics=intrinsics)
-            elif cam_position is not None and cam_lookat is not None and fov_x is not None:
-                projected = self.project_curves_ndc_opencv(
-                    curves, cam_position, cam_lookat, fov_x
-                )
             else:
                 raise ValueError(
                     "Must provide either 'cameras', (extrinsics, intrinsics), or (cam_position, cam_lookat, fov_x) or projected."

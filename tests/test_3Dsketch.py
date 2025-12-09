@@ -148,7 +148,6 @@ def main(
 
     # Curves in world coordinates
     cis3d = make_cis_sketch3d()
-    curves = cis3d.stack_tensor().to(device)  # [3,4,3]
 
     colors = np.array(
         [

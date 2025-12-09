@@ -5,6 +5,7 @@ sys.path.append(os.getcwd())
 import numpy as np
 from PIL import Image
 from sketchkit.ordering import Orderer
+from sketchkit.core.sketch import Sketch
 
 
 if __name__ == '__main__':
@@ -25,7 +26,17 @@ if __name__ == '__main__':
         print(f"Video path: {video_path}")
         
         # Orderer expects paths
-        frames = orderer.run([img_path, video_path])
+        sketches = orderer.run([img_path, video_path])
         
-        print(f"\n✓ Ordering frames generated: {len(frames)}")
+        print(f"\n✓ Ordered sketches generated: {len(sketches)}")
+        if len(sketches) > 0:
+            last_sketch = sketches[-1]
+            print(f"  Last sketch has {last_sketch.path_num} paths and {last_sketch.curve_num} curves.")
+            
+            # Verify it is a Sketch object
+            if isinstance(last_sketch, Sketch):
+                print("  ✓ Output confirmed as Sketch objects")
+            else:
+                print(f"  ⚠ Error: Output is {type(last_sketch)}, expected Sketch")
+
         print("Done.")

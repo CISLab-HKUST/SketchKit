@@ -53,11 +53,12 @@ class FrameMatcher:
                 if idx_frame not in msort.keys():
                     msort[idx_frame] = []
                 
-                msort[idx_frame].append(stroke_m)
+                # Store the ID instead of the mask
+                msort[idx_frame].append(id)
                 b_matched = True
                 break
             
             if not b_matched:
-                msort[last_layid].append(stroke_m)
+                msort[last_layid].append(id)
         
         return msort

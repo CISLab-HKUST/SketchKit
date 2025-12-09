@@ -28,7 +28,7 @@ class Object3D:
     ):
         self.xyz = np.array(xyz, dtype=float)
         self.wxyz = np.array(wxyz, dtype=float)
-        self.look_at = None
+        self._look_at = None
 
     @classmethod
     def from_transform_matrix(cls, transform_matrix):

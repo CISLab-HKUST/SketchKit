@@ -6,6 +6,7 @@ from sketchkit.core.sketch import Curve, Path, Point, Sketch, Vertex
 from sketchkit.core.sketch3d import Sketch3D
 from sketchkit.renderer.cairo_renderer import CairoRenderer
 from sketchkit.utils3d.camera import intrinsics_from_fov_xy
+from sketchkit.core.camera import Camera
 
 try:
     import pydiffvg  # type: ignore
@@ -58,10 +59,81 @@ class Sketch3DRenderer:
         z = z / (np.linalg.norm(z) + 1e-9)
         x = np.cross(z, up)
         x = x / (np.linalg.norm(x) + 1e-9)
-        y = np.cross(x, z)
+        y = np.cross(z, x)
         R = np.stack([x, y, z], axis=0).astype(np.float32)
         t = (-R @ eye.astype(np.float32))
         return R, t
+
+    @staticmethod
+    def _project_curves_ndc(
+        curves: torch.Tensor,
+        extrinsics: np.ndarray | None = None,
+        intrinsics: np.ndarray | None = None,
+        cameras: list[Camera] | None = None,
+    ) -> torch.Tensor:
+        """Project Bézier control points to normalized device coordinates using camera matrices."""
+        device = curves.device
+        
+        if cameras is not None:
+            V = len(cameras)
+        elif extrinsics is not None:
+            V = extrinsics.shape[0]
+        else:
+            raise ValueError("Must provide either 'cameras' or 'extrinsics'.")
+
+        N, P = curves.shape[0], curves.shape[1]
+
+        verts = curves.detach().cpu().numpy().reshape(-1, 3)
+        # Homogeneous coordinates
+        verts_homo = np.concatenate([verts, np.ones((verts.shape[0], 1))], axis=1)
+
+        out = np.zeros((V, N, P, 2), dtype=np.float32)
+
+        for vi in range(V):
+            if cameras is not None:
+                ext = cameras[vi].extrinsics
+                K = cameras[vi].intrinsics
+            else:
+                ext = extrinsics[vi]
+                K = intrinsics[vi]
+
+            # Camera coordinates: Xc = E @ Xw
+            Xc_homo = (ext @ verts_homo.T).T
+            z = np.clip(Xc_homo[:, 2:3], 1e-6, None)
+            x_norm = Xc_homo[:, 0:1] / z
+            y_norm = Xc_homo[:, 1:2] / z
+
+            u = K[0, 0] * (x_norm) + K[0, 2]
+            v = K[1, 1] * y_norm + K[1, 2]
+            out[vi] = np.concatenate([u, v], axis=1).reshape(N, P, 2)
+
+        return torch.from_numpy(out).to(device)
+
+    def project_curves_ndc(
+        self,
+        curves: torch.Tensor,
+        extrinsics: np.ndarray | torch.Tensor | list | None = None,
+        intrinsics: np.ndarray | torch.Tensor | list | None = None,
+        cameras: list[Camera] | Camera | None = None,
+    ) -> torch.Tensor:
+        if cameras is not None:
+            if isinstance(cameras, Camera):
+                cameras = [cameras]
+            return self._project_curves_ndc(curves, cameras=cameras)
+
+        if extrinsics is None or intrinsics is None:
+            raise ValueError("Must provide either 'cameras' or both 'extrinsics' and 'intrinsics'.")
+
+        if isinstance(extrinsics, list):
+            extrinsics = np.array(extrinsics)
+        if isinstance(intrinsics, list):
+            intrinsics = np.array(intrinsics)
+        if isinstance(extrinsics, torch.Tensor):
+            extrinsics = extrinsics.cpu().numpy()
+        if isinstance(intrinsics, torch.Tensor):
+            intrinsics = intrinsics.cpu().numpy()
+
+        return self._project_curves_ndc(curves, extrinsics=extrinsics, intrinsics=intrinsics)
 
     @staticmethod
     def _project_curves_ndc_opencv(
@@ -137,7 +209,7 @@ class Sketch3DRenderer:
         paths: list[Path] = []
         for curve_idx, ctrl in enumerate(projected):
             px = ctrl[:, 0] * float(self.width)
-            py = (1.0 - ctrl[:, 1]) * float(self.height)
+            py = ctrl[:, 1] * float(self.height)   # no need to perform flip #(1.0 - ctrl[:, 1]) * float(self.height)
             rgb = None
             if colors is not None:
                 rgb = tuple(float(c) for c in colors[curve_idx][:3])
@@ -221,17 +293,20 @@ class Sketch3DRenderer:
             img = opacity * img[..., :3] + (1 - opacity)
         if img.dim() == 3 and img.shape[-1] == 4:
             img = img[..., :3]
-        img = torch.flip(img, dims=(0,))
+        #img = torch.flip(img, dims=(0,))
         img_np = (img.clamp(0.0, 1.0).cpu().numpy() * 255.0).astype(np.uint8)
         return Image.fromarray(img_np, "RGB")
 
     def render(
         self,
         sketch3d: Sketch3D,
-        cam_position: np.ndarray,
-        cam_lookat: np.ndarray,
-        fov_x: float,
+        cam_position: np.ndarray | None = None,
+        cam_lookat: np.ndarray | None = None,
+        fov_x: float | None = None,
         *,
+        extrinsics: np.ndarray | torch.Tensor | list | None = None,
+        intrinsics: np.ndarray | torch.Tensor | list | None = None,
+        cameras: list[Camera] | Camera | None = None,
         colors: np.ndarray | torch.Tensor | list | None = None,
         stroke_width: float = 2.0,
         projected: torch.Tensor | None = None,
@@ -240,13 +315,28 @@ class Sketch3DRenderer:
         curves = sketch3d.stack_tensor().to(self.device)
         colors_arr = self._normalize_colors(colors)
         if projected is None:
-            projected = self.project_curves_ndc_opencv(curves, cam_position, cam_lookat, fov_x)
+            if cameras is not None:
+                projected = self.project_curves_ndc(curves, cameras=cameras)
+            elif extrinsics is not None and intrinsics is not None:
+                projected = self.project_curves_ndc(curves, extrinsics=extrinsics, intrinsics=intrinsics)
+            elif cam_position is not None and cam_lookat is not None and fov_x is not None:
+                projected = self.project_curves_ndc_opencv(
+                    curves, cam_position, cam_lookat, fov_x
+                )
+            else:
+                raise ValueError(
+                    "Must provide either 'cameras', (extrinsics, intrinsics), or (cam_position, cam_lookat, fov_x) or projected."
+                )
         images: list[Image.Image] = []
 
         for view_idx in range(projected.shape[0]):
             view_ctrl = projected[view_idx].detach().cpu().numpy()
             if self.backend == "cairo":
-                images.append(self._render_view_cairo(view_ctrl, colors_arr, stroke_width))
+                images.append(
+                    self._render_view_cairo(view_ctrl, colors_arr, stroke_width)
+                )
             else:
-                images.append(self._render_view_diffvg(view_ctrl, colors_arr, stroke_width))
+                images.append(
+                    self._render_view_diffvg(view_ctrl, colors_arr, stroke_width)
+                )
         return images

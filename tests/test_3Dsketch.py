@@ -5,6 +5,8 @@ import torch
 import argparse
 
 from sketchkit.utils.file import save_seq_gif,save_seq_video
+from sketchkit.core.camera import Camera 
+from sketchkit.utils3d.transforms import wxyz_from_look_at
 
 # Renderer availability is determined lazily inside main.
 try:
@@ -16,13 +18,34 @@ from sketchkit.core.sketch3d import Sketch3D, Path3D, Curve3D, Vertex3D, Point3D
 
 
 # for 360 views rendering (wir3d way)
-def load_renderlist(renderlist_path):
-    with open(renderlist_path, "r") as f:
-        rl = json.load(f)
-    positions = np.asarray(rl["positions"], dtype=np.float32)
-    lookats = np.asarray(rl["lookats"], dtype=np.float32)
-    fov = float(rl["fov"])  # radians
-    return positions, lookats, fov
+def generate_orbit_views(num_frames, fov_deg=60, radius=2.0):
+    azimuths = torch.linspace(0, 2.0 * np.pi, num_frames)
+    elevations = torch.zeros_like(azimuths) * np.pi * 0.25
+    azimuths = azimuths.tolist()
+    elevations = elevations.tolist()
+
+    cameras = []
+
+    for azimuth, elevation in zip(azimuths, elevations):
+        # Orbit around Y axis (Y is up)
+        r_xz = radius * np.cos(elevation)
+        y = radius * np.sin(elevation)
+        x = r_xz * np.cos(azimuth)
+        z = r_xz * np.sin(azimuth)
+        
+        xyz = np.array([x, y, z])
+        
+        camera = Camera()
+        # camera.set_look_at([0, 0, 0])
+        # Manually calculate wxyz with up=[0,1,0] for Y-up scene
+        wxyz = wxyz_from_look_at(xyz, np.array([0, 0, 0]), up=np.array([0, 1, 0]))
+        
+        camera.set_xyz(xyz)
+        camera.set_wxyz(wxyz)
+        camera.set_fov(fov=(fov_deg / 180) * np.pi)
+        cameras.append(camera)
+
+    return cameras
 
 
 # create the CIS Logo
@@ -114,10 +137,12 @@ def main(
     backend: str | None = "auto",
 ):
     os.makedirs(out_dir, exist_ok=True)
-    positions, lookats, fov = load_renderlist(renderlist_path)
-    if views is not None:
-        positions = positions[:views]
-        lookats = lookats[:views]
+    # positions, lookats, fov = load_renderlist(renderlist_path)
+    cameras = generate_orbit_views(views, fov_deg=60, radius=2.2)
+    
+    # if views is not None:
+    #     positions = positions[:views]
+    #     lookats = lookats[:views]
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -134,25 +159,21 @@ def main(
         dtype=np.float32,
     )
     backend_name, renderer = _select_renderer(width, height, device, backend)
-    print("renderer:", renderer)
     if renderer is None:
         raise RuntimeError(
             "Neither CairoRenderer nor pydiffvg backends are available for Sketch3DRenderer."
         )
-    verts_ndc = renderer.project_curves_ndc_opencv(curves, positions, lookats, fov)
+    # verts_ndc = renderer.project_curves_ndc_opencv(curves, positions, lookats, fov)
 
     print(
-        f"Rendering {verts_ndc.shape[0]} views with Sketch3DRenderer ({backend_name} backend)..."
+        f"Rendering {len(cameras)} views with Sketch3DRenderer ({backend_name} backend)..."
     )
 
     images = renderer.render(
         cis3d,
-        positions,
-        lookats,
-        fov,
+        cameras=cameras,
         colors=colors,
         stroke_width=2.0,
-        projected=verts_ndc,
     )
 
     # for i, pil in enumerate(images):

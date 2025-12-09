@@ -24,8 +24,8 @@ if __name__ == '__main__':
         print(f"Running ordering with image path: {img_path}")
         print(f"Video path: {video_path}")
         
-        # Orderer expects paths and output_folder to save GIF
-        frames = orderer.run(img_path, video_path, output_folder="test_output")
+        # Orderer expects paths
+        frames = orderer.run([img_path, video_path])
         
         print(f"\n✓ Ordering frames generated: {len(frames)}")
-        print("Check test_output folder for results and GIF.")
+        print("Done.")

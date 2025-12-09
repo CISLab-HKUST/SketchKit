@@ -12,7 +12,7 @@ import numpy as np
 from .video_processor import VideoProcessor
 from .frame_matcher import FrameMatcher  
 from .color_generator import ColorGenerator
-from sketchkit.vectorization.LineDrawer.CNNVE.utils.image_utils import save_gif, criterion_mask_overlap
+from sketchkit.vectorization.LineDrawer.CNNVE.utils.image_utils import criterion_mask_overlap
 
 # MASK_TH is defined in utils.py as 50, but we can define it here or import it if it exists in vectorization utils
 # In vectorization/utils/image_utils.py, criterion_mask_overlap uses hardcoded 30 for I_th and merge_th argument
@@ -41,17 +41,16 @@ class CNNVE:
         self.frame_matcher = FrameMatcher()
         self.color_generator = ColorGenerator()
     
-    def run(self, img: np.ndarray, video_path: str, output_dir: str = None) -> str:
+    def run(self, img: np.ndarray, video_path: str) -> list[np.ndarray]:
         """
-        Generate animation GIF from image and video.
+        Generate animation frames from image and video.
         
         Args:
             img (np.ndarray): Input image as a 2D numpy array (grayscale).
             video_path (str): Path to video file for frame synchronization.
-            output_dir (str, optional): Output directory. If None, uses current directory.
             
         Returns:
-            str: Path to generated GIF file
+            list[np.ndarray]: List of generated frames
         """
         import tempfile
         from PIL import Image
@@ -77,20 +76,14 @@ class CNNVE:
             
             img_data = cv2.imread(temp_img_path, 0)
             
-            if output_dir is None:
-                output_dir = os.path.join(".", "animation_output")
-            
-            os.makedirs(output_dir, exist_ok=True)
-            
-
             frames = self._vis_merge_result_paints_undo(
-                img_data, merge_dic, video_path, output_dir
+                img_data, merge_dic, video_path
             )
             
             return frames
 
     
-    def _vis_merge_result_paints_undo(self, im_ori_c1, merge_dic, video_path, outdir):
+    def _vis_merge_result_paints_undo(self, im_ori_c1, merge_dic, video_path):
         """
         Visualize stroke merging with video synchronization.
         
@@ -98,7 +91,6 @@ class CNNVE:
             im_ori_c1: Original image
             merge_dic: Merge dictionary with stroke data
             video_path: Path to video file
-            outdir: Output directory
             
         Returns:
             list: List of generated frames
@@ -149,10 +141,8 @@ class CNNVE:
             msort, im_ori_c1, ref_frames, (h, w)
         )
         
-        if outdir is not None:
-             gif_path = os.path.join(outdir, 'animation.gif')
-             save_gif(gif_path, frames)
-             print(f'✓ Animation saved to: {gif_path}')
+        if len(frames) > 0:
+             print(f'✓ Generated {len(frames)} frames')
         
         return frames
     

@@ -31,7 +31,7 @@ class LineDrawer:
         
         img = cv2.imread(input_0, cv2.IMREAD_GRAYSCALE)
         
-        frames = self.model.run(img, input_1, output_dir=None)
+        frames = self.model.run(img, input_1)
         
         # Convert RGB frames (from CNNVE) to BGR (for animator.py/cv2)
         bgr_frames = [cv2.cvtColor(f, cv2.COLOR_RGB2BGR) for f in frames]

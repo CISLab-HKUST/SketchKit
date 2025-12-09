@@ -219,7 +219,7 @@ def stroke_extracion_multi_segments(model, points, im_ori, b_with_remove=False):
         a_mask_img=cv2.polylines(mask_img.copy(), [blist], False, tmp_color, thickness=thickness)
         mask_lst.append(a_mask_img)
     m1,m2,m0=model.get_result_batch_s2(sk_img_c1,mask_lst,rect_lst)
-    my_print('m1,m2,m0',m1.shape,m2.shape,m0.shape)
+    # my_print('m1,m2,m0',m1.shape,m2.shape,m0.shape)
     #bm1=mask_paste_back(m1,rect_lst,points,sk_img_c1)
     #bm2=mask_paste_back(m2,rect_lst,points,sk_img_c1)
     bm2=m2

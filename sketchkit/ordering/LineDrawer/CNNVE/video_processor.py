@@ -82,29 +82,6 @@ def get_match(images, indir):
             images2_idx.append(i_img)
             images2.append(A.copy())
     
-    # Save visualization
-    images3 = []
-    for id, img in enumerate(images):
-        if id in images2_idx:
-            imgbb = add_pil_border(Image.fromarray(img), border_width=3, border_color=(0, 255, 0))
-        else:
-            imgbb = add_pil_border(Image.fromarray(img))
-        images3.append(imgbb.copy())
-    
-    if len(images3) > 0:
-        widths, heights = zip(*(img.size for img in images3))
-        total_width = sum(widths)
-        max_height = max(heights)
-        
-        merged_img = Image.new('RGB', (total_width, max_height))
-        x_offset = 0
-        for img in images3:
-            merged_img.paste(img, (x_offset, 0))
-            x_offset += img.size[0]
-            img.close()
-        
-        output_path = os.path.join(indir, "remove-imglist.png")
-        merged_img.save(output_path)
     
     return images2
 
@@ -136,27 +113,28 @@ class VideoProcessor:
             return []
         
         import tempfile
-        outdir = tempfile.mkdtemp(prefix="video_frames_")
-        
-        # Use OpenCV instead of ffmpeg for better compatibility
-        cap = cv2.VideoCapture(src_mp4)
-        if not cap.isOpened():
-            print(f"Error: Could not open video file {src_mp4}")
-            return []
-            
-        frame_idx = 0
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
+        import tempfile
+        # Use TemporaryDirectory to ensure cleanup
+        with tempfile.TemporaryDirectory(prefix="video_frames_") as outdir:
+            # Use OpenCV instead of ffmpeg for better compatibility
+            cap = cv2.VideoCapture(src_mp4)
+            if not cap.isOpened():
+                print(f"Error: Could not open video file {src_mp4}")
+                return []
                 
-            frame_path = os.path.join(outdir, f"image{frame_idx + 1:02d}.png")
-            cv2.imwrite(frame_path, frame)
-            frame_idx += 1
+            frame_idx = 0
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                    
+                frame_path = os.path.join(outdir, f"image{frame_idx + 1:02d}.png")
+                cv2.imwrite(frame_path, frame)
+                frame_idx += 1
+                
+            cap.release()
             
-        cap.release()
-        
-        return self.imgs_to_mask(outdir, ref)
+            return self.imgs_to_mask(outdir, ref)
     
     def imgs_to_mask(self, indir, linedrawing=None):
         """
@@ -170,8 +148,8 @@ class VideoProcessor:
             list: Filtered frames
         """
         m_th = 128
-        logdir = indir + '/out'
-        os.makedirs(logdir, exist_ok=True)
+        m_th = 128
+        # logdir = indir + '/out'   <-- Removed redundant output folder creation
         
         fs = glob.glob(indir + '/*.png')
         imglst = []
@@ -192,8 +170,8 @@ class VideoProcessor:
             h, w = imglst[-1].shape[:2]
             ref = cv2.resize(linedrawing, (w, h), interpolation=cv2.INTER_AREA)
         
-        print('imgs_to_mask2', imglst_fname)
-        print('linedrawing', ref.shape, imglst[-1].shape)
+        # print('imgs_to_mask2', imglst_fname)
+        # print('linedrawing', ref.shape, imglst[-1].shape)
         
         # Take last 15 frames
         imglst = imglst[-15:]

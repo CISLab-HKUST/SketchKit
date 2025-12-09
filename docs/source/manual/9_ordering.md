@@ -28,12 +28,10 @@ orderer = Orderer(method="LineDrawer", device="cuda")
 # video_path: Reference video path
 img_path = "a1-2.png"
 video_path = "a1-2.png.mp4"
-output_folder = "ordering_output"
 
 frames = orderer.run(
-    [img_path, video_path], 
-    output_folder=output_folder
+    [img_path, video_path]
 )
 ```
 
-The output frames (and GIF) visualizing the ordered drawing process will be saved to `ordering_output`.
+The output is a list of frames visualizing the ordered drawing process.

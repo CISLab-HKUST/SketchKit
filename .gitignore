@@ -29,3 +29,4 @@ docs/source/manual/generated
 
 # ignore tests output
 tests/sketch3d_test_out/
+renderlist.json

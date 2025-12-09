@@ -303,7 +303,6 @@ class Sketch3DRenderer:
         cam_position: np.ndarray | None = None,
         cam_lookat: np.ndarray | None = None,
         fov_x: float | None = None,
-        *,
         extrinsics: np.ndarray | torch.Tensor | list | None = None,
         intrinsics: np.ndarray | torch.Tensor | list | None = None,
         cameras: list[Camera] | Camera | None = None,

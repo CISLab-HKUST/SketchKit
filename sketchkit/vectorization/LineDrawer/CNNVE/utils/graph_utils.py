@@ -182,7 +182,7 @@ def buildTree(img,start=None):
     img = img.copy()
     shape = img.shape
     nWhitePixels = np.sum(img)
-    my_print('buildTree start=',start,nWhitePixels)
+    # my_print('buildTree start=',start,nWhitePixels)
     # neighbor offsets (8 nbors)
     nbPxOff = np.array([ [-1,-1], [-1,0] , [-1,1] ,
                          [0,-1] ,           [0,1]  ,
@@ -204,7 +204,7 @@ def buildTree(img,start=None):
                 coord = np.where(img == 255)
                 #coord = np.where(img == 0)
                 it = np.nditer(img, flags=['multi_index'])
-                my_print('it-',it[0],blackedPixels)
+                # my_print('it-',it[0],blackedPixels)
                 
                 while not it[0]:
                 #while not it.finished:
@@ -220,7 +220,7 @@ def buildTree(img,start=None):
         
         startV = Vertex(start)
         queue.append(startV)
-        my_print("Start vertex: ", startV)
+        # my_print("Start vertex: ", startV)
         
         # set start pixel to False (visited)
         img[startV.point[0],startV.point[1]] = False

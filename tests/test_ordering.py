@@ -9,14 +9,14 @@ from sketchkit.core.sketch import Sketch
 
 
 if __name__ == '__main__':
-    orderer = Orderer(method="LineDrawer")
+    orderer = Orderer.create(method="LineDrawer")
 
     # Load image
     img_path = "a1-2.png"
     img_np = np.array(Image.open(img_path).convert("L"))
     
     # Video path
-    video_path = "a1-2.png.mp4"
+    video_path = "a1-2.mp4"
     
     if not os.path.exists(video_path):
         print(f"⚠ Warning: Video file {video_path} not found")
@@ -26,7 +26,7 @@ if __name__ == '__main__':
         print(f"Video path: {video_path}")
         
         # Orderer expects paths
-        sketch = orderer.run([img_path, video_path])
+        sketch = orderer.run(img_np, video_path)
         
         print(f"\n✓ Ordered sketch generated.")
         

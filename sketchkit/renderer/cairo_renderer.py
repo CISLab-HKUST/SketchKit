@@ -365,7 +365,7 @@ def render_suggestive_countour(obj_path: str, out_path: str, transform: np.ndarr
     # 将transform转化为字符串
     transform_str = " ".join(map(str, transform.flatten()))
     # 调用命令行sketchkit/renderer/nogui_contour_renderer
-    os.system(f"./sketchkit/renderer/nogui_contour_renderer {obj_path} -o {out_path} -w {canvas_size} -h {canvas_size} -p {sug_thresh} -t {transform_str} -q")
+    os.system(f"./sketchkit/renderer/nogui_contour_renderer {obj_path} -o {out_path} -w {canvas_size} -h {canvas_size} --sug_thresh {sug_thresh} -t {transform_str} -q --sugcontour --contour")
 
 if __name__ == '__main__':
     render_suggestive_countour('media/rapid.obj', 'test0.ppm', np.array([0, -1, 0, 70, 0, 0, 1, -70, -1, 0, 0, -461, 0, 0, 0, 1]))

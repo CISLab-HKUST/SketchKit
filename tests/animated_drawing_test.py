@@ -1,10 +1,10 @@
 
 
 from sketchkit.datasets.differsketching import DifferSketching
-from sketchkit.ordering import animated_drawing, render_animated_drawing
+from sketchkit.ordering import Orderer
 from tqdm import tqdm
 if __name__ == '__main__':
-    my_data = DifferSketching()
+    my_data = DifferSketching(cislab_source=True)
     print(len(my_data))
     # print(my_data[0])
 
@@ -15,11 +15,11 @@ if __name__ == '__main__':
     sketch = my_data[0]
     outpath = 'PhotoSketch.png'
     svg_outpath = 'PhotoSketch.svg'
+    
+    animated_ordering = Orderer.create(method="Fu", device="cpu")
+    sketch = animated_ordering.run(sketch, 'animated_sketch.gif')
+    
     if outpath is not None:
         sketch.to_svg(svg_outpath)
         raster_image_png = Image.fromarray(raster_image, 'RGB')
         raster_image_png.save(outpath, 'PNG')
-    animated_path_indices = animated_drawing(sketch)
-    print(animated_path_indices)
-    sketch_frames = render_animated_drawing(sketch, animated_path_indices)
-    render_frames(sketch_frames, 'animated_sketch.gif', canvas_size=800, canvas_color=(1, 1, 1), width=4)

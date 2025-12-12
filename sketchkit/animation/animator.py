@@ -7,6 +7,7 @@ from PIL import Image
 from sketchkit.animation.RIFE import RIFE
 
 
+
 class Animator:
     """
     A class for sketch animation or inbetweening.

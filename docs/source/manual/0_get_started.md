@@ -35,6 +35,13 @@ If you see the version information (e.g., `conda 24.7.1`), then Anaconda is inst
 
 ### Install SketchKit
 
+#### Configure API keys
+The API keys are stored in `~/sketchkit/config`. The keys should be stored like the following:
+
+```sh
+OPENAI_API_KEY="sk-proj-xxxxxxxxxxxxx"
+```
+
 #### Step 1: Prepare SketchKit Files
 Extract `SketchKit.zip` to a folder named `SketchKit`
 

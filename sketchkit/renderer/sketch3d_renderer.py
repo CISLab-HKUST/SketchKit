@@ -50,145 +50,46 @@ class Sketch3DRenderer:
                 raise RuntimeError("pydiffvg is not installed; unable to use 'diffvg' backend.")
             self._cairo_renderer = None
 
-    @staticmethod
-    def _rt_from_lookat_opencv(
-        eye: np.ndarray, lookat: np.ndarray, up: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """Compute OpenCV-style rotation and translation from look-at parameters."""
-        z = lookat - eye
-        z = z / (np.linalg.norm(z) + 1e-9)
-        x = np.cross(z, up)
-        x = x / (np.linalg.norm(x) + 1e-9)
-        y = np.cross(z, x)
-        R = np.stack([x, y, z], axis=0).astype(np.float32)
-        t = (-R @ eye.astype(np.float32))
-        return R, t
-
-    @staticmethod
-    def _project_curves_ndc(
-        curves: torch.Tensor,
-        extrinsics: np.ndarray | None = None,
-        intrinsics: np.ndarray | None = None,
-        cameras: list[Camera] | None = None,
-    ) -> torch.Tensor:
-        """Project Bézier control points to normalized device coordinates using camera matrices."""
-        device = curves.device
-        
-        if cameras is not None:
-            V = len(cameras)
-        elif extrinsics is not None:
-            V = extrinsics.shape[0]
-        else:
-            raise ValueError("Must provide either 'cameras' or 'extrinsics'.")
-
-        N, P = curves.shape[0], curves.shape[1]
-
-        verts = curves.detach().cpu().numpy().reshape(-1, 3)
-        # Homogeneous coordinates
-        verts_homo = np.concatenate([verts, np.ones((verts.shape[0], 1))], axis=1)
-
-        out = np.zeros((V, N, P, 2), dtype=np.float32)
-
-        for vi in range(V):
-            if cameras is not None:
-                ext = cameras[vi].extrinsics
-                K = cameras[vi].intrinsics
-            else:
-                ext = extrinsics[vi]
-                K = intrinsics[vi]
-
-            # Camera coordinates: Xc = E @ Xw
-            Xc_homo = (ext @ verts_homo.T).T
-            z = np.clip(Xc_homo[:, 2:3], 1e-6, None)
-            x_norm = Xc_homo[:, 0:1] / z
-            y_norm = Xc_homo[:, 1:2] / z
-
-            u = K[0, 0] * (x_norm) + K[0, 2]
-            v = K[1, 1] * y_norm + K[1, 2]
-            out[vi] = np.concatenate([u, v], axis=1).reshape(N, P, 2)
-
-        return torch.from_numpy(out).to(device)
-
+    #exposed as public method
     def project_curves_ndc(
         self,
         curves: torch.Tensor,
-        extrinsics: np.ndarray | torch.Tensor | list | None = None,
-        intrinsics: np.ndarray | torch.Tensor | list | None = None,
         cameras: list[Camera] | Camera | None = None,
     ) -> torch.Tensor:
         if cameras is not None:
             if isinstance(cameras, Camera):
                 cameras = [cameras]
-            return self._project_curves_ndc(curves, cameras=cameras)
+            
+            """Project Bézier control points to normalized device coordinates using camera matrices."""
+            device = curves.device
+            
+            V = len(cameras)
+            N, P = curves.shape[0], curves.shape[1]
 
-        if extrinsics is None or intrinsics is None:
-            raise ValueError("Must provide either 'cameras' or both 'extrinsics' and 'intrinsics'.")
+            verts = curves.detach().cpu().numpy().reshape(-1, 3)
+            # Homogeneous coordinates
+            verts_homo = np.concatenate([verts, np.ones((verts.shape[0], 1))], axis=1)
 
-        if isinstance(extrinsics, list):
-            extrinsics = np.array(extrinsics)
-        if isinstance(intrinsics, list):
-            intrinsics = np.array(intrinsics)
-        if isinstance(extrinsics, torch.Tensor):
-            extrinsics = extrinsics.cpu().numpy()
-        if isinstance(intrinsics, torch.Tensor):
-            intrinsics = intrinsics.cpu().numpy()
+            out = np.zeros((V, N, P, 2), dtype=np.float32)
 
-        return self._project_curves_ndc(curves, extrinsics=extrinsics, intrinsics=intrinsics)
+            for vi in range(V):
+                if cameras is not None:
+                    ext = cameras[vi].extrinsics
+                    K = cameras[vi].intrinsics
 
-    @staticmethod
-    def _project_curves_ndc_opencv(
-        curves: torch.Tensor,
-        cam_position: np.ndarray,
-        cam_lookat: np.ndarray,
-        fov_x: float,
-        width: int,
-        height: int,
-        up: np.ndarray | tuple[float, float, float],
-    ) -> torch.Tensor:
-        """Project Bézier control points to normalized device coordinates."""
-        device = curves.device
-        V = cam_position.shape[0]
-        N, P = curves.shape[0], curves.shape[1]
+                # Camera coordinates: Xc = E @ Xw
+                Xc_homo = (ext @ verts_homo.T).T
+                z = np.clip(Xc_homo[:, 2:3], 1e-6, None)
+                x_norm = Xc_homo[:, 0:1] / z
+                y_norm = Xc_homo[:, 1:2] / z
 
-        aspect = float(height) / float(width)
-        fov_y = 2.0 * np.arctan(aspect * np.tan(fov_x / 2.0))
-        K = intrinsics_from_fov_xy(fov_x, fov_y)
+                u = K[0, 0] * (x_norm) + K[0, 2]
+                v = K[1, 1] * y_norm + K[1, 2]
+                out[vi] = np.concatenate([u, v], axis=1).reshape(N, P, 2)
 
-        verts = curves.detach().cpu().numpy().reshape(-1, 3)
-        out = np.zeros((V, N, P, 2), dtype=np.float32)
-        up_vec = np.asarray(up, dtype=np.float32)
-
-        for vi in range(V):
-            eye = cam_position[vi].astype(np.float32)
-            tgt = cam_lookat[vi].astype(np.float32)
-            R, t = Sketch3DRenderer._rt_from_lookat_opencv(eye, tgt, up_vec)
-
-            Xc = (R @ verts.T + t[:, None]).T
-            z = np.clip(Xc[:, 2:3], 1e-6, None)
-            x_norm = Xc[:, 0:1] / z
-            y_norm = Xc[:, 1:2] / z
-            u = K[0, 0] * x_norm + K[0, 2]
-            v = K[1, 1] * y_norm + K[1, 2]
-            out[vi] = np.concatenate([u, v], axis=1).reshape(N, P, 2)
-
-        return torch.from_numpy(out).to(device)
-
-    def project_curves_ndc_opencv(
-        self,
-        curves: torch.Tensor,
-        cam_position: np.ndarray,
-        cam_lookat: np.ndarray,
-        fov_x: float,
-    ) -> torch.Tensor:
-        return self._project_curves_ndc_opencv(
-            curves,
-            cam_position,
-            cam_lookat,
-            fov_x,
-            self.width,
-            self.height,
-            self.up,
-        )
+            return torch.from_numpy(out).to(device)
+        else:
+            raise ValueError("Must provide 'cameras' for projection.");
 
     @staticmethod
     def _normalize_colors(colors: np.ndarray | torch.Tensor | list | None) -> np.ndarray | None:

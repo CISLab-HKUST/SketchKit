@@ -162,7 +162,6 @@ def main(
         raise RuntimeError(
             "Neither CairoRenderer nor pydiffvg backends are available for Sketch3DRenderer."
         )
-    # verts_ndc = renderer.project_curves_ndc_opencv(curves, positions, lookats, fov)
 
     print(
         f"Rendering {len(cameras)} views with Sketch3DRenderer ({backend_name} backend)..."

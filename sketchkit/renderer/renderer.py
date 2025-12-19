@@ -39,7 +39,7 @@ class Renderer(ABC):
 class Render3DOptions:
     canvas_size: tuple[int, int] = (512, 512)
     background_color: tuple[int, int, int] = (255, 255, 255)
-    stroke_color: tuple[int, int, int] = (0, 0, 0)
+    stroke_color: tuple[int, int, int] = None
     stroke_width: float = 1.0
 
 

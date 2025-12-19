@@ -1,12 +1,14 @@
 import numpy as np
 import torch
 from PIL import Image
+from copy import deepcopy
 
 from sketchkit.core.sketch import Curve, Path, Point, Sketch, Vertex
 from sketchkit.core.sketch3d import Sketch3D
 from sketchkit.renderer.cairo_renderer import CairoRenderer
 from sketchkit.utils3d.camera import intrinsics_from_fov_xy
 from sketchkit.core.camera import Camera
+from sketchkit.renderer.renderer import Renderer3D, Render3DOptions
 
 try:
     import pydiffvg  # type: ignore
@@ -17,13 +19,13 @@ except Exception:  # pragma: no cover - optional dependency
     _HAS_DIFFVG = False
 
 
-class Sketch3DRenderer:
+class Sketch3DRenderer(Renderer3D):
     """Project and render 3D sketch curves with selectable renderer backend."""
 
     def __init__(
         self,
-        width: int,
-        height: int,
+        width: int = 512,
+        height: int = 512,
         *,
         backend: str = "cairo",
         device: torch.device | None = None,
@@ -40,6 +42,14 @@ class Sketch3DRenderer:
         if backend not in {"cairo", "diffvg"}:
             raise ValueError("Unsupported backend '{backend}'. Only 'cairo' and 'diffvg' are available.".format(backend=backend))
         self.backend = backend
+
+        # Initialize default Render3DOptions
+        bg_int = tuple(int(c * 255) for c in background_rgb)
+        self.render_options = Render3DOptions(
+            canvas_size=(self.width, self.height),
+            background_color=bg_int, # type: ignore
+            stroke_width=2.0
+        )
 
         if self.backend == "cairo":
             # Canvas is square in CairoRenderer; use max dimension to avoid cropping.
@@ -100,6 +110,47 @@ class Sketch3DRenderer:
             raise ValueError("Colors must be shaped [N,3] or [N,4].")
         return arr
 
+    def _get_sketch_colors(self, sketch: Sketch3D) -> np.ndarray | None:
+        colors = []
+        has_color = False
+        for path in sketch.paths:
+            for curve in path.curves:
+                c = curve.p_start.color
+                if c is not None:
+                    has_color = True
+                    # Ensure we have a consistent shape, e.g. (3,) or (4,)
+                    # If some are None and some are set, we need a default for None.
+                    # We'll handle normalization later, just collect raw values here.
+                    colors.append(c)
+                else:
+                    colors.append(None)
+        
+        if not has_color:
+            return None
+            
+        # Fill Nones with black or some default if we have mixed content
+        # Assuming if has_color is True, we want to use per-curve colors.
+        final_colors = []
+        for c in colors:
+            if c is None:
+                final_colors.append([0.0, 0.0, 0.0])
+            else:
+                final_colors.append(c)
+        
+        return np.array(final_colors, dtype=np.float32)
+
+    def _resolve_stroke_colors(self, sketch: Sketch3D, options: Render3DOptions, num_curves: int) -> np.ndarray:
+        """Resolve stroke colors from options or sketch, returning normalized [0,1] float array."""
+        if options.stroke_color is not None:
+            # options.stroke_color is 0-255 int/float tuple
+            stroke_color = np.array([c / 255.0 for c in options.stroke_color], dtype=np.float32)
+            colors_arr = np.tile(stroke_color, (num_curves, 1))
+        else:
+            colors_arr = self._get_sketch_colors(sketch)
+            if colors_arr is None:
+                colors_arr = np.zeros((num_curves, 3), dtype=np.float32)
+        return colors_arr
+
     # Project control points into a 2D Sketch representation for Cairo
     def _sketch_from_projected(
         self,
@@ -153,9 +204,8 @@ class Sketch3DRenderer:
         projected: np.ndarray,
         colors: np.ndarray | None,
         stroke_width: float,
-        *,
+        background_color: tuple[int, int, int] = (255, 255, 255),
         seed: int = 0,
-        white_bg: bool = True,
     ) -> Image.Image:
         if not _HAS_DIFFVG:
             raise RuntimeError("pydiffvg is required for the 'diffvg' backend.")
@@ -189,43 +239,107 @@ class Sketch3DRenderer:
         img = pydiffvg.RenderFunction.apply(
             self.width, self.height, 2, 2, seed, None, *scene_args
         )
-        if white_bg and img.shape[-1] == 4:
-            opacity = img[..., 3:4]
-            img = opacity * img[..., :3] + (1 - opacity)
+        
+        # Compositing with background
+        bg_color = torch.tensor([c / 255.0 for c in background_color], device=img.device, dtype=torch.float32)
+        
+        if img.shape[-1] == 4:
+            alpha = img[..., 3:4]
+            rgb = img[..., :3]
+            # DiffVG returns premultiplied alpha. Blend with background.
+            # result = src_color + (1 - src_alpha) * dst_color
+            img = rgb + (1 - alpha) * bg_color
+
         if img.dim() == 3 and img.shape[-1] == 4:
             img = img[..., :3]
         #img = torch.flip(img, dims=(0,))
         img_np = (img.clamp(0.0, 1.0).cpu().numpy() * 255.0).astype(np.uint8)
         return Image.fromarray(img_np, "RGB")
 
-    def render(
+    # might need to be tested more thoroughly
+    def _render(
+        self,
+        sketch: Sketch3D,
+        camera: Camera,
+        options: Render3DOptions
+    ) -> np.ndarray:
+        """
+        Implementation of the abstract _render method from Renderer3D.
+        Renders a single view to a numpy array.
+        """
+        # Update dimensions if options differ
+        w, h = options.canvas_size
+        curves = sketch.stack_tensor().to(self.device)
+        colors_arr = self._resolve_stroke_colors(sketch, options, curves.shape[0])
+        
+        projected = self.project_curves_ndc(curves, cameras=[camera])
+        view_ctrl = projected[0].detach().cpu().numpy()
+        
+        if self.backend == "cairo":
+            if self._cairo_renderer:
+                 bg_float = tuple(c / 255.0 for c in options.background_color)
+                 self._cairo_renderer.canvas_color = bg_float
+            img = self._render_view_cairo(view_ctrl, colors_arr, options.stroke_width)
+        else:
+            img = self._render_view_diffvg(view_ctrl, colors_arr, options.stroke_width, background_color=options.background_color)
+            
+        return np.array(img)
+
+    def render_batch(
         self,
         sketch3d: Sketch3D,
-        cameras: list[Camera] | Camera | None = None,
-        colors: np.ndarray | torch.Tensor | list | None = None,
-        stroke_width: float = 2.0,
-        projected: torch.Tensor | None = None,
+        cameras: list[Camera],
+        render_options: Render3DOptions | dict | None = None
     ) -> list[Image.Image]:
         """Render each camera view to a PIL image using the configured backend."""
+        # Resolve options
+        if isinstance(render_options, dict):
+            _render_options = deepcopy(self.render_options)
+            for k, v in render_options.items():
+                if hasattr(_render_options, k):
+                    setattr(_render_options, k, v)
+        elif render_options is not None:
+            _render_options = render_options
+        else:
+            _render_options = self.render_options
+
         curves = sketch3d.stack_tensor().to(self.device)
-        colors_arr = self._normalize_colors(colors)
-        if projected is None:
-            if cameras is not None:
-                projected = self.project_curves_ndc(curves, cameras=cameras)
-            else:
-                raise ValueError(
-                    "Must provide either 'cameras', (extrinsics, intrinsics), or (cam_position, cam_lookat, fov_x) or projected."
-                )
+        colors_arr = self._resolve_stroke_colors(sketch3d, _render_options, curves.shape[0])
+
+        projected = self.project_curves_ndc(curves, cameras=cameras)
+        
         images: list[Image.Image] = []
+        stroke_width = _render_options.stroke_width
 
         for view_idx in range(projected.shape[0]):
             view_ctrl = projected[view_idx].detach().cpu().numpy()
             if self.backend == "cairo":
+                if self._cairo_renderer:
+                     bg_float = tuple(c / 255.0 for c in _render_options.background_color)
+                     self._cairo_renderer.canvas_color = bg_float
                 images.append(
                     self._render_view_cairo(view_ctrl, colors_arr, stroke_width)
                 )
             else:
                 images.append(
-                    self._render_view_diffvg(view_ctrl, colors_arr, stroke_width)
+                    self._render_view_diffvg(view_ctrl, colors_arr, stroke_width, background_color=_render_options.background_color)
                 )
         return images
+
+    def render(
+        self,
+        sketch3d: Sketch3D,
+        cameras: list[Camera] | Camera | None = None,
+        render_options: Render3DOptions | dict | None = None
+    ) -> list[Image.Image] | np.ndarray:
+        """
+        Overridden render method to support both legacy batch rendering and new Renderer3D interface.
+        """
+        if isinstance(cameras, list):
+            # Legacy/Batch mode
+            return self.render_batch(sketch3d, cameras, render_options)
+        elif isinstance(cameras, Camera):
+            # New interface mode: render(sketch, camera, options)
+            return self._render(sketch3d, cameras, render_options)
+        else:
+             raise ValueError("Invalid arguments for render.")

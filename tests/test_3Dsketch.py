@@ -7,6 +7,7 @@ import argparse
 from sketchkit.utils.file import save_seq_gif,save_seq_video
 from sketchkit.core.camera import Camera 
 from sketchkit.utils3d.transforms import wxyz_from_look_at
+from sketchkit.renderer.renderer import Render3DOptions
 
 # Renderer availability is determined lazily inside main.
 try:
@@ -81,6 +82,7 @@ def make_cis_sketch3d() -> Sketch3D:
         c2 = Point3D(*ctrls[2])
         return Curve3D(v0, v3, c1, c2)
 
+    # colors: C-red, I-green, S-blue
     pathC = Path3D([make_curve(C_ctrls, (1, 0, 0))])
     pathI = Path3D([make_curve(I_ctrls, (0, 0.6, 0))])
     pathS = Path3D([make_curve(S_ctrls, (0, 0, 1))])
@@ -135,28 +137,17 @@ def main(
     height=512,
     make_gif=True,
     backend: str | None = "auto",
+    stroke_color: tuple[int, int, int] | None = None,
 ):
     os.makedirs(out_dir, exist_ok=True)
     # positions, lookats, fov = load_renderlist(renderlist_path)
     cameras = generate_orbit_views(views, fov_deg=60, radius=2.2)
-    
-    # if views is not None:
-    #     positions = positions[:views]
-    #     lookats = lookats[:views]
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     # Curves in world coordinates
     cis3d = make_cis_sketch3d()
 
-    colors = np.array(
-        [
-            [1, 0, 0, 1],  # C - red
-            [0, 0.6, 0, 1],  # I - green
-            [0, 0, 1, 1],  # S - blue
-        ],
-        dtype=np.float32,
-    )
     backend_name, renderer = _select_renderer(width, height, device, backend)
     if renderer is None:
         raise RuntimeError(
@@ -167,11 +158,14 @@ def main(
         f"Rendering {len(cameras)} views with Sketch3DRenderer ({backend_name} backend)..."
     )
 
+    options = Render3DOptions(stroke_width=2.0)
+    if stroke_color is not None:
+        options.stroke_color = stroke_color
+
     images = renderer.render(
         cis3d,
         cameras=cameras,
-        colors=colors,
-        stroke_width=2.0,
+        render_options=options,
     )
 
     # for i, pil in enumerate(images):
@@ -199,7 +193,17 @@ if __name__ == "__main__":
         choices=["cairo", "diffvg"],
         help="Rendering backend to use",
     )
+    parser.add_argument(
+        "--stroke_color",
+        type=int,
+        nargs=3,
+        help="Override stroke color (R G B) 0-255",
+        default=None,
+    )
     args = parser.parse_args()
+
+    stroke_color = tuple(args.stroke_color) if args.stroke_color else None
+
     main(
         args.renderlist,
         args.out,
@@ -208,4 +212,5 @@ if __name__ == "__main__":
         args.height,
         make_gif=not args.no_gif,
         backend=args.backend,
+        stroke_color=stroke_color,
     )

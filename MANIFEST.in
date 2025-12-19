@@ -1,1 +1,2 @@
 recursive-include third_party/diffvg *
+recursive-include sketchkit/sketch2model/methods/sens/spaghetti_deps *.py

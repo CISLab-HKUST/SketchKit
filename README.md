@@ -34,6 +34,81 @@ def add_numbers(a: int, b: int) -> int:
 
 **Tip:** you can just let chatGPT do this for you! 😆
 
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/CISLab-HKUST/SketchKit.git
+cd SketchKit
+
+# Install in development mode
+pip install -e .
+```
+
+### Building Teddy C++ Module
+
+The Teddy method requires a compiled C++ extension. Build it as follows:
+
+**Prerequisites:**
+- CMake (>= 3.10)
+- C++ compiler (g++/clang++ on Linux/macOS, Visual Studio on Windows)
+- Python development headers
+
+**Build steps:**
+
+```bash
+# Install pybind11 (if not already installed)
+pip install pybind11
+
+# Build Teddy module
+# Note: The build script location may vary depending on your setup
+# If you have a build script, run it:
+python build_teddy.py
+
+# Or manually with CMake:
+mkdir -p build_teddy && cd build_teddy
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make
+```
+
+**Verify the build:**
+
+```python
+# Test if Teddy module can be imported
+python -c "import teddy_sketch2model; print('Teddy module OK')"
+```
+
+## Quick Test (sketch2model)
+
+Test the three sketch-to-3D conversion methods:
+
+```python
+from sketchkit.sketch2model import sketch_to_3d
+
+# Teddy method (fast, traditional)
+sketch_to_3d('sketch.png', method='teddy', output_path='output.obj')
+
+# SENS method (neural network, first run downloads ~705MB model)
+sketch_to_3d('sketch.png', method='sens', output_path='output.obj')
+
+# Doubao-Seed3D method (API-based, requires DOUBAO_API_KEY)
+sketch_to_3d('sketch.png', method='doubao', output_path='output.glb', api_key='your_key')
+```
+
+Or test from command line:
+
+```bash
+# Teddy
+python -c "from sketchkit.sketch2model import sketch_to_3d; sketch_to_3d('sketch.png', method='teddy', output_path='output.obj')"
+
+# SENS (first run: 5-10 min for model download)
+python -c "from sketchkit.sketch2model import sketch_to_3d; sketch_to_3d('sketch.png', method='sens', output_path='output.obj')"
+
+# Doubao (set API key first)
+export DOUBAO_API_KEY=your_key
+python -c "from sketchkit.sketch2model import sketch_to_3d; sketch_to_3d('sketch.png', method='doubao', output_path='output.glb')"
+```
+
 ## Development
 
 We adapt the [GitHub flow](https://docs.github.com/en/get-started/using-github/github-flow) for collaboration.

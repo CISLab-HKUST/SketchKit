@@ -91,4 +91,10 @@ setup(
     ext_modules=[CMakeExtension('diffvg', 'third_party/diffvg', build_with_cuda)],
     cmdclass=dict(build_ext=Build),
     zip_safe=False,
+    include_package_data=True,
+    package_data={
+        'sketchkit.sketch2model.methods.sens.spaghetti_deps': [
+            '**/*.py',
+        ],
+    },
 )

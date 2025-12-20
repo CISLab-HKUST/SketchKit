@@ -138,6 +138,7 @@ def main(
     make_gif=True,
     backend: str | None = "auto",
     stroke_color: tuple[int, int, int] | None = None,
+    single_view: bool = False,
 ):
     os.makedirs(out_dir, exist_ok=True)
     # positions, lookats, fov = load_renderlist(renderlist_path)
@@ -145,6 +146,7 @@ def main(
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+    
     # Curves in world coordinates
     cis3d = make_cis_sketch3d()
 
@@ -161,6 +163,19 @@ def main(
     options = Render3DOptions(stroke_width=2.0)
     if stroke_color is not None:
         options.stroke_color = stroke_color
+
+    if single_view:
+        print("Testing single camera render...")
+        camera = cameras[0]
+        image_np = renderer.render(
+            cis3d,
+            cameras=camera,
+            render_options=options,
+        )
+        img = Image.fromarray(image_np)
+        img.save(os.path.join(out_dir, "single_view.png"))
+        print(f"Saved single view to {os.path.join(out_dir, 'single_view.png')}")
+        return
 
     images = renderer.render(
         cis3d,
@@ -200,6 +215,10 @@ if __name__ == "__main__":
         help="Override stroke color (R G B) 0-255",
         default=None,
     )
+    # add single view test
+    parser.add_argument(
+        "--single_view", action="store_true", help="Render a single view for testing"
+    )
     args = parser.parse_args()
 
     stroke_color = tuple(args.stroke_color) if args.stroke_color else None
@@ -213,4 +232,5 @@ if __name__ == "__main__":
         make_gif=not args.no_gif,
         backend=args.backend,
         stroke_color=stroke_color,
+        single_view=args.single_view,
     )

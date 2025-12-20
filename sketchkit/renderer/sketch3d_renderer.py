@@ -269,6 +269,13 @@ class Sketch3DRenderer(Renderer3D):
         """
         # Update dimensions if options differ
         w, h = options.canvas_size
+        if (w != self.width) or (h != self.height):
+            self.width = w
+            self.height = h   
+            if self.backend == "cairo" and self._cairo_renderer is not None:
+                canvas_size = max(self.width, self.height)
+                self._cairo_renderer.canvas_size = canvas_size
+
         curves = sketch.stack_tensor().to(self.device)
         colors_arr = self._resolve_stroke_colors(sketch, options, curves.shape[0])
         
@@ -289,40 +296,29 @@ class Sketch3DRenderer(Renderer3D):
         self,
         sketch3d: Sketch3D,
         cameras: list[Camera],
-        render_options: Render3DOptions | dict | None = None
+        options: Render3DOptions | dict | None = None
     ) -> list[Image.Image]:
         """Render each camera view to a PIL image using the configured backend."""
-        # Resolve options
-        if isinstance(render_options, dict):
-            _render_options = deepcopy(self.render_options)
-            for k, v in render_options.items():
-                if hasattr(_render_options, k):
-                    setattr(_render_options, k, v)
-        elif render_options is not None:
-            _render_options = render_options
-        else:
-            _render_options = self.render_options
 
         curves = sketch3d.stack_tensor().to(self.device)
-        colors_arr = self._resolve_stroke_colors(sketch3d, _render_options, curves.shape[0])
-
+        colors_arr = self._resolve_stroke_colors(sketch3d, options, curves.shape[0])
         projected = self.project_curves_ndc(curves, cameras=cameras)
         
         images: list[Image.Image] = []
-        stroke_width = _render_options.stroke_width
+        stroke_width = options.stroke_width
 
         for view_idx in range(projected.shape[0]):
             view_ctrl = projected[view_idx].detach().cpu().numpy()
             if self.backend == "cairo":
                 if self._cairo_renderer:
-                     bg_float = tuple(c / 255.0 for c in _render_options.background_color)
+                     bg_float = tuple(c / 255.0 for c in options.background_color)
                      self._cairo_renderer.canvas_color = bg_float
                 images.append(
                     self._render_view_cairo(view_ctrl, colors_arr, stroke_width)
                 )
             else:
                 images.append(
-                    self._render_view_diffvg(view_ctrl, colors_arr, stroke_width, background_color=_render_options.background_color)
+                    self._render_view_diffvg(view_ctrl, colors_arr, stroke_width, background_color=options.background_color)
                 )
         return images
 

@@ -1,6 +1,7 @@
 import numpy as np
 from sketchkit.utils.geometry import bezier_lengths, is_line
 import svgpathtools
+import json
 
 
 class Point:
@@ -300,13 +301,15 @@ class Path:
         3
     """
 
-    def __init__(self, curves: list[Curve] | None = None):
+    def __init__(self, curves: list[Curve] | None = None, label: str | None = None):
         """Initialize a Path.
 
         Args:
             curves (list[Curve] | None, optional): Initial curves. Defaults to None.
+            label (str | None, optional): Label for the path. Defaults to None.
         """
         self.curves = curves if curves else []
+        self.label = label
 
     @property
     def curve_num(self):
@@ -603,62 +606,77 @@ class Sketch:
         opacity_value = np.float32(value) if value is not None else None
         self._set_paths_attribute("opacity", opacity_value)
 
-    def to_svg(self, size: int = 512, filename: str = None, fit_size: bool = False) -> str:
-            """Convert the sketch to an SVG string.
+    def to_svg(self, size: int = 512, filename: str = None, fit_size: bool = False, is_polyline: bool = False) -> str:
+        """Convert the sketch to an SVG string.
 
-            Args:
-                size: Size of the SVG canvas (width and height in pixels).
-                filename: Optional filename to save the SVG.
-                fit_size: If True, scale and center the sketch while preserving aspect ratio.
+        Args:
+            size: Size of the SVG canvas (width and height in pixels).
+            filename: Optional filename to save the SVG.
+            fit_size: If True, scale and center the sketch while preserving aspect ratio.
 
-            Returns:
-                str: SVG representation of the sketch.
-            """
-            svg_parts = []
-            svg_parts.append('<?xml version="1.0"?>')
-            svg_parts.append(f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{size}" height="{size}">')
-            svg_parts.append('<defs/>')
-            svg_parts.append('<g>')
+        Returns:
+            str: SVG representation of the sketch.
+        """
+        svg_parts = []
+        svg_parts.append('<?xml version="1.0"?>')
+        svg_parts.append(f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{size}" height="{size}">')
+        svg_parts.append('<defs/>')
+        svg_parts.append('<g>')
 
-            # 计算缩放和偏移参数
-            scale = 1.0
-            offset_x = 0.0
-            offset_y = 0.0
+        # 计算缩放和偏移参数
+        scale = 1.0
+        offset_x = 0.0
+        offset_y = 0.0
+        
+        if fit_size:
+            # 收集所有点以确定边界
+            all_points = []
+            for path in self.paths:
+                for curve in path.curves:
+                    if not isinstance(curve, Curve):
+                        raise ValueError("All strokes must be of type `Curve`.")
+                    
+                    p0, p1, p2, p3 = curve.p_start, curve.p_crtl1, curve.p_crtl2, curve.p_end
+                    all_points.append([p0.x, p0.y])
+                    all_points.append([p1.x, p1.y])
+                    all_points.append([p2.x, p2.y])
+                    all_points.append([p3.x, p3.y])
             
-            if fit_size:
-                # 收集所有点以确定边界
-                all_points = []
-                for path in self.paths:
-                    for curve in path.curves:
-                        if not isinstance(curve, Curve):
-                            raise ValueError("All strokes must be of type `Curve`.")
-                        
-                        p0, p1, p2, p3 = curve.p_start, curve.p_crtl1, curve.p_crtl2, curve.p_end
-                        all_points.append([p0.x, p0.y])
-                        all_points.append([p1.x, p1.y])
-                        all_points.append([p2.x, p2.y])
-                        all_points.append([p3.x, p3.y])
+            if all_points:
+                # 计算边界
+                points_array = np.array(all_points)
+                min_x, min_y = np.min(points_array, axis=0)
+                max_x, max_y = np.max(points_array, axis=0)
                 
-                if all_points:
-                    # 计算边界
-                    points_array = np.array(all_points)
-                    min_x, min_y = np.min(points_array, axis=0)
-                    max_x, max_y = np.max(points_array, axis=0)
-                    
-                    # 计算大小和中心
-                    width = max_x - min_x
-                    height = max_y - min_y
-                    center_x = (min_x + max_x) / 2
-                    center_y = (min_y + max_y) / 2
-                    
-                    # 计算缩放因子以适应画布并留出边距
-                    padding = 0.05  # 5%边距
-                    scale = min((size * (1 - padding * 2)) / width, (size * (1 - padding * 2)) / height)
-                    
-                    # 计算平移以居中草图
-                    offset_x = size / 2 - center_x * scale
-                    offset_y = size / 2 - center_y * scale
+                # 计算大小和中心
+                width = max_x - min_x
+                height = max_y - min_y
+                center_x = (min_x + max_x) / 2
+                center_y = (min_y + max_y) / 2
+                
+                # 计算缩放因子以适应画布并留出边距
+                padding = 0.05  # 5%边距
+                scale = min((size * (1 - padding * 2)) / width, (size * (1 - padding * 2)) / height)
+                
+                # 计算平移以居中草图
+                offset_x = size / 2 - center_x * scale
+                offset_y = size / 2 - center_y * scale
+        if is_polyline:
+            for path in self.paths:
+                points = []
+                for curve in path.curves:
+                    if not isinstance(curve, Curve):
+                        raise ValueError("All strokes must be of type `Curve`.")
+                    p0= curve.p_start
+                    points.append(f'{p0.x * scale + offset_x},{p0.y * scale + offset_y}')
+                end_point = path.curves[-1].p_end
+                points.append(f'{end_point.x * scale + offset_x},{end_point.y * scale + offset_y}')
+                color = path.color[0][0] if path.color[0][0] is not None else (0, 0, 0)
 
+                color_hex = f'#{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}'
+                width = np.average(path.pressure) * (path.thickness[0][0] if path.thickness[0][0] is not None else 1.0)
+                svg_parts.append(f'<polyline points="{" ".join(points)}" stroke="{color_hex}" stroke-width="{width}" fill="none"/>')
+        else:
             for path in self.paths:
                 for curve in path.curves:
                     if not isinstance(curve, Curve):
@@ -683,11 +701,25 @@ class Sketch:
                     path_d = f'M {x0} {y0} C {x1} {y1}, {x2} {y2}, {x3} {y3}'
                     svg_parts.append(f'<path d="{path_d}" stroke="{color_hex}" stroke-width="{thickness}" fill="none" stroke-opacity="{opacity}"/>')
 
-            svg_parts.append('</g>')
-            svg_parts.append('</svg>')
-            final_str = '\n'.join(svg_parts)
-            
-            if filename:
-                with open(filename, 'w') as f:
-                    f.write(final_str)
-            return final_str
+        svg_parts.append('</g>')
+        svg_parts.append('</svg>')
+        final_str = '\n'.join(svg_parts)
+        
+        if filename:
+            with open(filename, 'w') as f:
+                f.write(final_str)
+        return final_str
+    
+    def set_label_from_json(self, json_path: str):
+        """Set labels for paths from a JSON file.
+
+        Args:
+            json_path (str): Path to the JSON file containing labels.
+        """
+        with open(json_path, 'r') as f:
+            data = json.load(f)
+            labels = data['labels']
+            if len(labels) != len(self.paths):
+                raise ValueError("Number of labels must match number of paths.")
+            for i, label in enumerate(labels):
+                self.paths[i].label = label

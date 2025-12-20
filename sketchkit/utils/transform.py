@@ -1,6 +1,7 @@
 import numpy as np
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.fit_curve import fit_curve
+import json
 
 
 def line_to_cubic(line) -> Curve:
@@ -84,3 +85,42 @@ def convert_to_curve(sketch: Sketch, maxError=4.0):
         curve_paths.append(Path(curves=curves))
     new_sketch = Sketch(paths=curve_paths)
     return new_sketch
+
+def hex_to_float_rgb(hex_color: str):
+    hex_color = hex_color.lstrip('#')
+    if len(hex_color) != 6:
+        raise ValueError("Wrong hex color format.")
+    return tuple(int(hex_color[i:i+2], 16) / 255.0 for i in (0, 2, 4))
+
+def load_sketch(json_path: str) -> Sketch:
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+        paths = []
+        for path_dict in data:
+            txy = path_dict['txy']
+            pressure = path_dict['p']
+            color = hex_to_float_rgb(path_dict['color'])
+            width = int(path_dict['width'])
+            assert len(pressure) * 3 == len(txy), "Pressure and txy must have the same length."
+            curves = []
+            for i in range(len(pressure) - 1):
+                p0 = txy[3 * i + 1: 3 * i + 3]
+                p1 = txy[3 * i + 4: 3 * i + 6]
+                line = np.array([p0, p1])
+                segment = line_to_cubic(line)
+                segment.p_start.pressure = pressure[i]
+                segment.p_end.pressure = pressure[i + 1]
+                curves.append(segment)
+            path = Path(curves=curves)
+            path.color = color
+            path.thickness = width
+            paths.append(path)
+        sketch = Sketch(paths=paths)
+        return sketch
+    
+if __name__ == '__main__':
+    json_path = 'media/eg_drawing (3)_drawing (1).json'
+    sketch = load_sketch(json_path)
+    svg_str = sketch.to_svg(size=800, is_polyline=True)
+    with open('media/eg_drawing (3)_drawing (1).svg', 'w') as f:
+        f.write(svg_str)

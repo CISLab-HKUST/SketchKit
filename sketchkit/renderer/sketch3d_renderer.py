@@ -267,15 +267,7 @@ class Sketch3DRenderer(Renderer3D):
         Implementation of the abstract _render method from Renderer3D.
         Renders a single view to a numpy array.
         """
-        # Update dimensions if options differ
-        w, h = options.canvas_size
-        if (w != self.width) or (h != self.height):
-            self.width = w
-            self.height = h   
-            if self.backend == "cairo" and self._cairo_renderer is not None:
-                canvas_size = max(self.width, self.height)
-                self._cairo_renderer.canvas_size = canvas_size
-
+        
         curves = sketch.stack_tensor().to(self.device)
         colors_arr = self._resolve_stroke_colors(sketch, options, curves.shape[0])
         
@@ -305,7 +297,6 @@ class Sketch3DRenderer(Renderer3D):
         projected = self.project_curves_ndc(curves, cameras=cameras)
         
         images: list[Image.Image] = []
-        stroke_width = options.stroke_width
 
         for view_idx in range(projected.shape[0]):
             view_ctrl = projected[view_idx].detach().cpu().numpy()
@@ -314,11 +305,11 @@ class Sketch3DRenderer(Renderer3D):
                      bg_float = tuple(c / 255.0 for c in options.background_color)
                      self._cairo_renderer.canvas_color = bg_float
                 images.append(
-                    self._render_view_cairo(view_ctrl, colors_arr, stroke_width)
+                    self._render_view_cairo(view_ctrl, colors_arr, options.stroke_width)
                 )
             else:
                 images.append(
-                    self._render_view_diffvg(view_ctrl, colors_arr, stroke_width, background_color=options.background_color)
+                    self._render_view_diffvg(view_ctrl, colors_arr, options.stroke_width, background_color=options.background_color)
                 )
         return images
 
@@ -331,6 +322,16 @@ class Sketch3DRenderer(Renderer3D):
         """
         Overridden render method to support both legacy batch rendering and new Renderer3D interface.
         """
+
+        # Update dimensions if options differ
+        w, h = render_options.canvas_size
+        if (w != self.width) or (h != self.height):
+            self.width = w
+            self.height = h   
+            if self.backend == "cairo" and self._cairo_renderer is not None:
+                canvas_size = max(self.width, self.height)
+                self._cairo_renderer.canvas_size = canvas_size
+
         if isinstance(cameras, list):
             # Legacy/Batch mode
             return self.render_batch(sketch3d, cameras, render_options)

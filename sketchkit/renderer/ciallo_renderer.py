@@ -191,7 +191,10 @@ def build_stamp_instance_data(polylines: List[np.ndarray], spacing: float, base_
 class CialloRenderer:
     def __init__(self, canvas_size: int = 512, background_color=(1, 1, 1, 0)):
         self.size = (canvas_size, canvas_size)
-        self.ctx = moderngl.create_standalone_context()
+        try:
+            self.ctx = moderngl.create_standalone_context()
+        except:
+            self.ctx = moderngl.create_standalone_context(backend='egl')
         self.ctx.enable(moderngl.BLEND)
         self.ctx.blend_func = moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA
         

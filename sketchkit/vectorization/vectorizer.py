@@ -1,5 +1,8 @@
 import os
+import numpy as np
+from sketchkit.core.sketch import Sketch
 from sketchkit.vectorization.DeepVecSIG24 import DeepVecSIG24
+from sketchkit.vectorization.LineDrawer import LineDrawer
 
 class Vectorizer:
     """
@@ -24,33 +27,25 @@ class Vectorizer:
 
         if method == "DeepVecSIG24":
             self.vectorize_method = DeepVecSIG24(device)
+        elif method in {"LineDrawer", "CNNVE"}:
+            self.vectorize_method = LineDrawer(device=device, method=method)
         else:
             raise Exception("Please add implementations.")
 
-    def run(self, input: str):
+    def run(
+        self,
+        input: np.ndarray
+    ) -> Sketch:
         """
-        Vectorize the input raster image or images in a folder.
+        Vectorize the input raster image.
 
         Args:
-            input (str): a path to an input raster image or a folder with multiple images.
+            input (numpy.ndarray): input raster image in shape (H, W), with values in [0, 255].
 
         Returns:
-            sketch_list (list[Sketch] | Sketch): a list of Sketch or a Sketch when there is only one item.
+            sketch (Sketch): a Sketch instance.
         """
-        image_paths = []
-        sketch_list = []
-        if os.path.isdir(input):
-            for img_name in os.listdir(input):
-                if "png" in img_name or "jpg" in img_name or "bmp" in img_name:
-                    image_paths.append(os.path.join(input, img_name))
-        else:
-            image_paths.append(input)
-
-        for image_path in image_paths:
-            sketch = self.vectorize_method.run(image_path)
-            sketch_list.append(sketch)
-
-        if len(sketch_list) == 1:
-            return sketch_list[0]
-        else:
-            return sketch_list
+        sketch = self.vectorize_method.run(input)
+        if type(sketch) is not Sketch:
+            raise Exception("Should return a Sketch instance. But with %s now." % str(type(sketch)))
+        return sketch

@@ -138,7 +138,7 @@ class hzySketch(SketchDataset):
 
     #     Args:
     #         data_base: The base directory for storing all datasets.
-    #             Defaults to '~/.cache/sketchkit/datasets'.
+    #             Defaults to '~/.sketchkit/datasets'.
     #     """
     #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 

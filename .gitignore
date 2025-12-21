@@ -17,6 +17,7 @@ venv/
 .coverage
 htmlcov/
 *.png
+*.mp4
 .cache
 
 # IDEs

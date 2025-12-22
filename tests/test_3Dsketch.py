@@ -75,6 +75,7 @@ def make_cis_sketch3d() -> Sketch3D:
         (0.9, -0.6, depth_S),
     ]
 
+    # Helper to create a curve from control points and color
     def make_curve(ctrls, color):
         v0 = Vertex3D(*ctrls[0], thickness=2.0, color=color, opacity=1.0)
         v3 = Vertex3D(*ctrls[3], thickness=2.0, color=color, opacity=1.0)
@@ -160,7 +161,8 @@ def main(
         f"Rendering {len(cameras)} views with Sketch3DRenderer ({backend_name} backend)..."
     )
 
-    options = Render3DOptions(stroke_width=2.0)
+    options = Render3DOptions(stroke_width=10.0)
+
     if stroke_color is not None:
         options.stroke_color = stroke_color
 

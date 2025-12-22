@@ -151,12 +151,54 @@ class Sketch3DRenderer(Renderer3D):
                 colors_arr = np.zeros((num_curves, 3), dtype=np.float32)
         return colors_arr
 
+    def _get_sketch_widths(self, sketch: Sketch3D) -> np.ndarray | None:
+        widths = []
+        has_width = False
+        for path in sketch.paths:
+            for curve in path.curves:
+                w = curve.p_start.thickness
+                if w is not None:
+                    has_width = True
+                    widths.append(w)
+                else:
+                    widths.append(None)
+        
+        if not has_width:
+            return None
+            
+        final_widths = []
+        for w in widths:
+            if w is None:
+                final_widths.append(2.0)
+            else:
+                final_widths.append(w)
+        
+        return np.array(final_widths, dtype=np.float32)
+
+    def _resolve_stroke_widths(self, sketch: Sketch3D, options: Render3DOptions, num_curves: int) -> np.ndarray | float:
+        """Resolve stroke widths from options or sketch."""
+        sw = None
+        if options is not None:
+            # Check if options is a dict or object
+            if isinstance(options, dict):
+                 sw = options.get('stroke_width')
+            else:
+                 sw = getattr(options, 'stroke_width', None)
+
+        if sw is not None:
+            return float(sw)
+        
+        widths_arr = self._get_sketch_widths(sketch)
+        if widths_arr is None:
+            return 2.0
+        return widths_arr
+
     # Project control points into a 2D Sketch representation for Cairo
     def _sketch_from_projected(
         self,
         projected: np.ndarray,
         colors: np.ndarray | None,
-        stroke_width: float,
+        stroke_width: float | np.ndarray,
     ) -> Sketch:
         paths: list[Path] = []
         for curve_idx, ctrl in enumerate(projected):
@@ -165,8 +207,16 @@ class Sketch3DRenderer(Renderer3D):
             rgb = None
             if colors is not None:
                 rgb = tuple(float(c) for c in colors[curve_idx][:3])
-            v_start = Vertex(px[0], py[0], thickness=stroke_width, color=rgb, opacity=1.0)
-            v_end = Vertex(px[3], py[3], thickness=stroke_width, color=rgb, opacity=1.0)
+            
+            if stroke_width is None:
+                sw = 1.0
+            elif isinstance(stroke_width, (float, int)):
+                sw = float(stroke_width)
+            else:
+                sw = float(stroke_width[curve_idx])
+
+            v_start = Vertex(px[0], py[0], thickness=sw, color=rgb, opacity=1.0)
+            v_end = Vertex(px[3], py[3], thickness=sw, color=rgb, opacity=1.0)
             p_ctrl1 = Point(px[1], py[1])
             p_ctrl2 = Point(px[2], py[2])
             paths.append(Path([Curve(v_start, v_end, p_ctrl1, p_ctrl2)]))
@@ -176,12 +226,17 @@ class Sketch3DRenderer(Renderer3D):
         self,
         projected: np.ndarray,
         colors: np.ndarray | None,
-        stroke_width: float,
+        stroke_width: float | np.ndarray,
     ) -> Image.Image:
         if self._cairo_renderer is None:
             raise RuntimeError("Cairo renderer not initialized.")
         sketch2d = self._sketch_from_projected(projected, colors, stroke_width)
-        raster = self._cairo_renderer.render(sketch2d, width=int(stroke_width))
+        
+        w_arg = 2
+        if isinstance(stroke_width, (float, int)):   #directly update with render_option
+             w_arg = int(stroke_width)
+
+        raster = self._cairo_renderer.render(sketch2d, width=w_arg)
         if raster.dtype != np.uint8:
             raster = np.clip(raster * 255.0, 0, 255).astype(np.uint8)
         return Image.fromarray(raster, "RGB")
@@ -203,7 +258,7 @@ class Sketch3DRenderer(Renderer3D):
         self,
         projected: np.ndarray,
         colors: np.ndarray | None,
-        stroke_width: float,
+        stroke_width: float | np.ndarray,
         background_color: tuple[int, int, int] = (255, 255, 255),
         seed: int = 0,
     ) -> Image.Image:
@@ -214,14 +269,26 @@ class Sketch3DRenderer(Renderer3D):
         shape_groups = []
         num_control_points = torch.zeros(1, dtype=torch.int32) + 2
 
+        # synchronize the use of stroke_width from render_options and the vertex definitions
+        if isinstance(stroke_width, (float, int)) and (stroke_width is None or stroke_width <= 0):
+            stroke_width = 1.0   #should use some default value
+        elif stroke_width is None:
+             stroke_width = 1.0
+
         for curve_idx, ctrl in enumerate(projected):
             px = torch.tensor(ctrl[:, 0] * float(self.width), dtype=torch.float32)
             py = torch.tensor(ctrl[:, 1] * float(self.height), dtype=torch.float32)
             canvas_points = torch.stack([px, py], dim=-1)
+            
+            if isinstance(stroke_width, (float, int)):
+                sw = float(stroke_width)
+            else:
+                sw = float(stroke_width[curve_idx])
+
             path = pydiffvg.Path(
                 num_control_points=num_control_points,
                 points=canvas_points,
-                stroke_width=torch.tensor(float(stroke_width), dtype=torch.float32),
+                stroke_width=torch.tensor(sw, dtype=torch.float32),
                 is_closed=False,
             )
             shapes.append(path)
@@ -270,6 +337,7 @@ class Sketch3DRenderer(Renderer3D):
         
         curves = sketch.stack_tensor().to(self.device)
         colors_arr = self._resolve_stroke_colors(sketch, options, curves.shape[0])
+        widths_arr = self._resolve_stroke_widths(sketch, options, curves.shape[0])
         
         projected = self.project_curves_ndc(curves, cameras=[camera])
         view_ctrl = projected[0].detach().cpu().numpy()
@@ -278,9 +346,9 @@ class Sketch3DRenderer(Renderer3D):
             if self._cairo_renderer:
                  bg_float = tuple(c / 255.0 for c in options.background_color)
                  self._cairo_renderer.canvas_color = bg_float
-            img = self._render_view_cairo(view_ctrl, colors_arr, options.stroke_width)
+            img = self._render_view_cairo(view_ctrl, colors_arr, widths_arr)
         else:
-            img = self._render_view_diffvg(view_ctrl, colors_arr, options.stroke_width, background_color=options.background_color)
+            img = self._render_view_diffvg(view_ctrl, colors_arr, widths_arr, background_color=options.background_color)
             
         return np.array(img)
 
@@ -294,6 +362,7 @@ class Sketch3DRenderer(Renderer3D):
 
         curves = sketch3d.stack_tensor().to(self.device)
         colors_arr = self._resolve_stroke_colors(sketch3d, options, curves.shape[0])
+        widths_arr = self._resolve_stroke_widths(sketch3d, options, curves.shape[0])
         projected = self.project_curves_ndc(curves, cameras=cameras)
         
         images: list[Image.Image] = []
@@ -305,11 +374,11 @@ class Sketch3DRenderer(Renderer3D):
                      bg_float = tuple(c / 255.0 for c in options.background_color)
                      self._cairo_renderer.canvas_color = bg_float
                 images.append(
-                    self._render_view_cairo(view_ctrl, colors_arr, options.stroke_width)
+                    self._render_view_cairo(view_ctrl, colors_arr, widths_arr)
                 )
             else:
                 images.append(
-                    self._render_view_diffvg(view_ctrl, colors_arr, options.stroke_width, background_color=options.background_color)
+                    self._render_view_diffvg(view_ctrl, colors_arr, widths_arr, background_color=options.background_color)
                 )
         return images
 

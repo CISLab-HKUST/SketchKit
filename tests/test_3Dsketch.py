@@ -115,7 +115,7 @@ def save_gif_from_dir(frames_dir, out_gif, fps=30):
 
 
 def _select_renderer(
-    width: int, height: int, device: torch.device, backend: str | None
+    options: Render3DOptions, device: torch.device, backend: str | None
 ):
     """Return renderer matching backend preference ('cairo', 'diffvg')."""
     if Sketch3DRenderer is None:
@@ -124,8 +124,7 @@ def _select_renderer(
     backend = (backend).lower()
 
     renderer = Sketch3DRenderer(
-        width=width,
-        height=height,
+        render_options=options,
         device=device,
         backend=backend,
     )
@@ -158,7 +157,15 @@ def main(
     else:
         cis3d = make_cis_sketch3d()
 
-    backend_name, renderer = _select_renderer(width, height, device, backend)
+    if varied_thickness:
+        options = Render3DOptions(canvas_size=(width, height), stroke_width=None)
+    else:
+        options = Render3DOptions(canvas_size=(width, height), stroke_width=10.0)
+
+    if stroke_color is not None:
+        options.stroke_color = stroke_color
+
+    backend_name, renderer = _select_renderer(options, device, backend)
     if renderer is None:
         raise RuntimeError(
             "Neither CairoRenderer nor pydiffvg backends are available for Sketch3DRenderer."
@@ -167,14 +174,6 @@ def main(
     print(
         f"Rendering {len(cameras)} views with Sketch3DRenderer ({backend_name} backend)..."
     )
-
-    if varied_thickness:
-        options = Render3DOptions(stroke_width=None)
-    else:
-        options = Render3DOptions(stroke_width=10.0)
-
-    if stroke_color is not None:
-        options.stroke_color = stroke_color
 
     if single_view:
         print("Testing single camera render...")

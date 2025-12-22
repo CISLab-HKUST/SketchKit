@@ -24,37 +24,35 @@ class Sketch3DRenderer(Renderer3D):
 
     def __init__(
         self,
-        width: int = 512,
-        height: int = 512,
-        *,
+        render_options: Render3DOptions | None = None,
         backend: str = "cairo",
         device: torch.device | None = None,
-        up: np.ndarray | tuple[float, float, float] = (0.0, 1.0, 0.0),
-        background_rgb: tuple[float, float, float] = (1.0, 1.0, 1.0),
     ) -> None:
-        self.width = int(width)
-        self.height = int(height)
         self.device = device if device is not None else torch.device(
             "cuda:0" if torch.cuda.is_available() else "cpu"
         )
-        self.up = np.asarray(up, dtype=np.float32)
         backend = backend.lower()
         if backend not in {"cairo", "diffvg"}:
             raise ValueError("Unsupported backend '{backend}'. Only 'cairo' and 'diffvg' are available.".format(backend=backend))
         self.backend = backend
 
-        # Initialize default Render3DOptions
-        bg_int = tuple(int(c * 255) for c in background_rgb)
-        self.render_options = Render3DOptions(
-            canvas_size=(self.width, self.height),
-            background_color=bg_int, # type: ignore
-            stroke_width=2.0
-        )
-
+        if render_options is not None:
+            self.render_options = render_options
+        else:
+            # Initialize default Render3DOptions
+            bg_int = (255, 255, 255)
+            self.render_options = Render3DOptions(
+                canvas_size=(512, 512),   #default size
+                background_color=bg_int, # type: ignore
+                stroke_width=2.0
+            )
+        
         if self.backend == "cairo":
             # Canvas is square in CairoRenderer; use max dimension to avoid cropping.
-            canvas_size = max(self.width, self.height)
-            self._cairo_renderer = CairoRenderer(canvas_size=canvas_size, canvas_color=background_rgb)
+            w, h = self.render_options.canvas_size
+            canvas_size = max(w, h)
+            bg_float = tuple(c / 255.0 for c in self.render_options.background_color)
+            self._cairo_renderer = CairoRenderer(canvas_size=canvas_size, canvas_color=bg_float)
         else:
             if not _HAS_DIFFVG:
                 raise RuntimeError("pydiffvg is not installed; unable to use 'diffvg' backend.")
@@ -201,8 +199,8 @@ class Sketch3DRenderer(Renderer3D):
     ) -> Sketch:
         paths: list[Path] = []
         for curve_idx, ctrl in enumerate(projected):
-            px = ctrl[:, 0] * float(self.width)
-            py = ctrl[:, 1] * float(self.height)   # no need to perform flip #(1.0 - ctrl[:, 1]) * float(self.height)
+            px = ctrl[:, 0] * float(self.render_options.canvas_size[0])
+            py = ctrl[:, 1] * float(self.render_options.canvas_size[1])   # no need to perform flip #(1.0 - ctrl[:, 1]) * float(self.height)
             rgb = None
             if colors is not None:
                 rgb = tuple(float(c) for c in colors[curve_idx][:3])
@@ -275,8 +273,8 @@ class Sketch3DRenderer(Renderer3D):
             stroke_width = 1.0
 
         for curve_idx, ctrl in enumerate(projected):
-            px = torch.tensor(ctrl[:, 0] * float(self.width), dtype=torch.float32)
-            py = torch.tensor(ctrl[:, 1] * float(self.height), dtype=torch.float32)
+            px = torch.tensor(ctrl[:, 0] * float(self.render_options.canvas_size[0]), dtype=torch.float32)
+            py = torch.tensor(ctrl[:, 1] * float(self.render_options.canvas_size[1]), dtype=torch.float32)
             canvas_points = torch.stack([px, py], dim=-1)
             
             if isinstance(stroke_width, (float, int)):
@@ -300,10 +298,10 @@ class Sketch3DRenderer(Renderer3D):
             shape_groups.append(shape_group)
 
         scene_args = pydiffvg.RenderFunction.serialize_scene(
-            self.width, self.height, shapes, shape_groups
+            self.render_options.canvas_size[0], self.render_options.canvas_size[1], shapes, shape_groups
         )
         img = pydiffvg.RenderFunction.apply(
-            self.width, self.height, 2, 2, seed, None, *scene_args
+            self.render_options.canvas_size[0], self.render_options.canvas_size[1], 2, 2, seed, None, *scene_args
         )
         
         # Compositing with background
@@ -381,6 +379,7 @@ class Sketch3DRenderer(Renderer3D):
                 )
         return images
 
+    #all from render_options
     def render(
         self,
         sketch3d: Sketch3D,
@@ -390,21 +389,28 @@ class Sketch3DRenderer(Renderer3D):
         """
         Overridden render method to support both legacy batch rendering and new Renderer3D interface.
         """
+        if render_options is None:
+            opts = self.render_options
+        elif isinstance(render_options, dict):
+            opts = deepcopy(self.render_options)
+            for k, v in render_options.items():
+                if hasattr(opts, k):
+                    setattr(opts, k, v)
+        else:
+            opts = render_options
 
         # Update dimensions if options differ
-        w, h = render_options.canvas_size
-        if (w != self.width) or (h != self.height):
-            self.width = w
-            self.height = h   
+        w, h = opts.canvas_size
+        if (w != self.render_options.canvas_size[0]) or (h != self.render_options.canvas_size[1]):
             if self.backend == "cairo" and self._cairo_renderer is not None:
-                canvas_size = max(self.width, self.height)
+                canvas_size = max(w, h)
                 self._cairo_renderer.canvas_size = canvas_size
 
         if isinstance(cameras, list):
             # Legacy/Batch mode
-            return self.render_batch(sketch3d, cameras, render_options)
+            return self.render_batch(sketch3d, cameras, opts)
         elif isinstance(cameras, Camera):
             # New interface mode: render(sketch, camera, options)
-            return self._render(sketch3d, cameras, render_options)
+            return self._render(sketch3d, cameras, opts)
         else:
              raise ValueError("Invalid arguments for render.")

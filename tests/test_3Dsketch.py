@@ -50,8 +50,11 @@ def generate_orbit_views(num_frames, fov_deg=60, radius=2.0):
 
 
 # create the CIS Logo
-def make_cis_sketch3d() -> Sketch3D:
+def make_cis_sketch3d(thicknesses=None) -> Sketch3D:
     """Higher-level 3D sketch for letters CIS with depth offsets."""
+    if thicknesses is None:
+        thicknesses = [5.0, 5.0, 5.0]
+
     sketch = Sketch3D()
     # Depth layering: C slightly behind, I center, S forward
     depth_C, depth_I, depth_S = -0.1, 0.0, 0.1
@@ -76,17 +79,17 @@ def make_cis_sketch3d() -> Sketch3D:
     ]
 
     # Helper to create a curve from control points and color
-    def make_curve(ctrls, color):
-        v0 = Vertex3D(*ctrls[0], thickness=2.0, color=color, opacity=1.0)
-        v3 = Vertex3D(*ctrls[3], thickness=2.0, color=color, opacity=1.0)
+    def make_curve(ctrls, color, thickness):
+        v0 = Vertex3D(*ctrls[0], thickness=thickness, color=color, opacity=1.0)
+        v3 = Vertex3D(*ctrls[3], thickness=thickness, color=color, opacity=1.0)
         c1 = Point3D(*ctrls[1])
         c2 = Point3D(*ctrls[2])
         return Curve3D(v0, v3, c1, c2)
 
     # colors: C-red, I-green, S-blue
-    pathC = Path3D([make_curve(C_ctrls, (1, 0, 0))])
-    pathI = Path3D([make_curve(I_ctrls, (0, 0.6, 0))])
-    pathS = Path3D([make_curve(S_ctrls, (0, 0, 1))])
+    pathC = Path3D([make_curve(C_ctrls, (1, 0, 0), thicknesses[0])])
+    pathI = Path3D([make_curve(I_ctrls, (0, 0.6, 0), thicknesses[1])])
+    pathS = Path3D([make_curve(S_ctrls, (0, 0, 1), thicknesses[2])])
     sketch.add(pathC)
     sketch.add(pathI)
     sketch.add(pathS)
@@ -140,6 +143,7 @@ def main(
     backend: str | None = "auto",
     stroke_color: tuple[int, int, int] | None = None,
     single_view: bool = False,
+    varied_thickness: bool = False,
 ):
     os.makedirs(out_dir, exist_ok=True)
     # positions, lookats, fov = load_renderlist(renderlist_path)
@@ -149,7 +153,10 @@ def main(
 
     
     # Curves in world coordinates
-    cis3d = make_cis_sketch3d()
+    if varied_thickness:
+        cis3d = make_cis_sketch3d(thicknesses=[5.0, 1.0, 13.0])
+    else:
+        cis3d = make_cis_sketch3d()
 
     backend_name, renderer = _select_renderer(width, height, device, backend)
     if renderer is None:
@@ -161,7 +168,10 @@ def main(
         f"Rendering {len(cameras)} views with Sketch3DRenderer ({backend_name} backend)..."
     )
 
-    options = Render3DOptions(stroke_width=10.0)
+    if varied_thickness:
+        options = Render3DOptions(stroke_width=None)
+    else:
+        options = Render3DOptions(stroke_width=10.0)
 
     if stroke_color is not None:
         options.stroke_color = stroke_color
@@ -221,6 +231,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--single_view", action="store_true", help="Render a single view for testing"
     )
+    parser.add_argument(
+        "--varied_thickness", action="store_true", help="Use varied thickness for C, I, S and no global stroke_width"
+    )
     args = parser.parse_args()
 
     stroke_color = tuple(args.stroke_color) if args.stroke_color else None
@@ -235,4 +248,5 @@ if __name__ == "__main__":
         backend=args.backend,
         stroke_color=stroke_color,
         single_view=args.single_view,
+        varied_thickness=args.varied_thickness,
     )

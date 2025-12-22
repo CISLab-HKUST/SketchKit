@@ -10,7 +10,7 @@ class RenderOptions:
     canvas_size: tuple[int, int] = (512, 512)
     background_color: tuple[int, int, int] = (255, 255, 255)
     stroke_color: tuple[int, int, int] = (0, 0, 0)
-    stroke_width: float = 1.0
+    stroke_width: float = None  # default should be None, which might be the best for the implementations in sketch3d_renderer.py
 
 
 class Renderer(ABC):

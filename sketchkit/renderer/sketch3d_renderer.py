@@ -172,7 +172,6 @@ class Sketch3DRenderer(Renderer3D):
                 final_widths.append(2.0)
             else:
                 final_widths.append(w)
-        
         return np.array(final_widths, dtype=np.float32)
 
     def _resolve_stroke_widths(self, sketch: Sketch3D, options: Render3DOptions, num_curves: int) -> np.ndarray | float:
@@ -273,7 +272,7 @@ class Sketch3DRenderer(Renderer3D):
         if isinstance(stroke_width, (float, int)) and (stroke_width is None or stroke_width <= 0):
             stroke_width = 1.0   #should use some default value
         elif stroke_width is None:
-             stroke_width = 1.0
+            stroke_width = 1.0
 
         for curve_idx, ctrl in enumerate(projected):
             px = torch.tensor(ctrl[:, 0] * float(self.width), dtype=torch.float32)

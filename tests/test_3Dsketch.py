@@ -115,20 +115,16 @@ def save_gif_from_dir(frames_dir, out_gif, fps=30):
 
 
 def _select_renderer(
-    options: Render3DOptions, device: torch.device, backend: str | None
+    options: Render3DOptions
 ):
     """Return renderer matching backend preference ('cairo', 'diffvg')."""
     if Sketch3DRenderer is None:
         return None, None
 
-    backend = (backend).lower()
-
     renderer = Sketch3DRenderer(
         render_options=options,
-        device=device,
-        backend=backend,
     )
-    return backend, renderer
+    return options.back_end, renderer
 
 
 # Main function to render CIS logo sketch from multiple views
@@ -148,9 +144,6 @@ def main(
     # positions, lookats, fov = load_renderlist(renderlist_path)
     cameras = generate_orbit_views(views, fov_deg=60, radius=2.2)
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    
     # Curves in world coordinates
     if varied_thickness:
         cis3d = make_cis_sketch3d(thicknesses=[5.0, 1.0, 13.0])
@@ -162,10 +155,13 @@ def main(
     else:
         options = Render3DOptions(canvas_size=(width, height), stroke_width=10.0)
 
+    options.back_end = backend
+    options.device = "cuda" if torch.cuda.is_available() else "cpu"
+
     if stroke_color is not None:
         options.stroke_color = stroke_color
 
-    backend_name, renderer = _select_renderer(options, device, backend)
+    backend_name, renderer = _select_renderer(options)
     if renderer is None:
         raise RuntimeError(
             "Neither CairoRenderer nor pydiffvg backends are available for Sketch3DRenderer."

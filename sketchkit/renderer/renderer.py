@@ -41,6 +41,8 @@ class Render3DOptions:
     background_color: tuple[int, int, int] = (255, 255, 255)
     stroke_color: tuple[int, int, int] = None
     stroke_width: float = 1.0
+    back_end: str = "cairo"  # "cairo" or "pydiffvg"
+    device: str = "cuda"  # "cpu" or "cuda"
 
 
 class Renderer3D(ABC):

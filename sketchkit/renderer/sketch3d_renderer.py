@@ -25,17 +25,7 @@ class Sketch3DRenderer(Renderer3D):
     def __init__(
         self,
         render_options: Render3DOptions | None = None,
-        backend: str = "cairo",
-        device: torch.device | None = None,
     ) -> None:
-        self.device = device if device is not None else torch.device(
-            "cuda:0" if torch.cuda.is_available() else "cpu"
-        )
-        backend = backend.lower()
-        if backend not in {"cairo", "diffvg"}:
-            raise ValueError("Unsupported backend '{backend}'. Only 'cairo' and 'diffvg' are available.".format(backend=backend))
-        self.backend = backend
-
         if render_options is not None:
             self.render_options = render_options
         else:
@@ -44,8 +34,21 @@ class Sketch3DRenderer(Renderer3D):
             self.render_options = Render3DOptions(
                 canvas_size=(512, 512),   #default size
                 background_color=bg_int, # type: ignore
-                stroke_width=2.0
+                stroke_width=2.0,
+                back_end="cairo",
+                device="cuda" if torch.cuda.is_available() else "cpu"
             )
+
+        # Setup device
+        if isinstance(self.render_options.device, str):
+            self.device = torch.device(self.render_options.device if torch.cuda.is_available() and "cuda" in self.render_options.device else "cpu")
+        else:
+            self.device = self.render_options.device
+
+        # Setup backend
+        self.backend = self.render_options.back_end.lower()
+        if self.backend not in {"cairo", "diffvg"}:
+            raise ValueError("Unsupported backend '{backend}'. Only 'cairo' and 'diffvg' are available.".format(backend=self.backend))
         
         if self.backend == "cairo":
             # Canvas is square in CairoRenderer; use max dimension to avoid cropping.

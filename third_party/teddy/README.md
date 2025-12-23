@@ -30,24 +30,30 @@ python -m pip install -r requirements.txt
 
 ## Build Steps
 
-### 1. Configure CMake
+### Option 1: Using setup.py (Recommended)
+
+```bash
+cd third_party/teddy
+python setup.py build_ext
+```
+
+This will automatically:
+- Create the `build/` directory
+- Configure CMake
+- Compile the C++ module
+
+### Option 2: Manual CMake Build
 
 ```bash
 cd third_party/teddy
 mkdir build && cd build
-cmake .. \
-    -DEIGEN3_DIR=/path/to/eigen \
-    -DLIBIGL_DIR=/path/to/libigl/include \
-    -DTHIRD_PARTY_DIR=/path/to/monster-mash/third_party
-```
-
-### 2. Compile
-
-```bash
+cmake ..
 cmake --build . --config Release
 ```
 
-### 3. Verify
+**Note**: Dependencies (Eigen3, libigl, etc.) are bundled in `third_party/teddy/third_party/` and will be automatically found during compilation.
+
+### Verify
 
 Compiled module `teddy_sketch2model.cpython-*.so` will be in `build/` directory.
 

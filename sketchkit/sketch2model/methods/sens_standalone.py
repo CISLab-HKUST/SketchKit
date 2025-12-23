@@ -4,12 +4,12 @@ SENS Standalone Inference using TorchScript models.
 This module provides SENS inference without requiring the original SENS codebase.
 Only requires: torch, numpy, PIL, skimage
 
-Users need to download pre-trained TorchScript models separately.
-See README.md for download instructions.
+Models are automatically downloaded on first use, following the dataset download pattern.
 """
 
 import os
 import sys
+import zipfile
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
@@ -25,6 +25,28 @@ except ImportError:
         from skimage.measure import marching_cubes_lewiner as marching_cubes
     except ImportError:
         marching_cubes = None
+
+# Import download utilities from sketchkit
+try:
+    from sketchkit.utils.file import extract_files
+except ImportError:
+    extract_files = None
+
+try:
+    import gdown
+except ImportError:
+    gdown = None
+
+# Google Drive folder ID for SENS TorchScript models
+SENS_MODELS_GDRIVE_FOLDER_ID = "17pw-Op9bBlpcJuvocT4DtGpWAmnW_mU9"
+REQUIRED_MODEL_FILES = [
+    "sens_encoder.pt",
+    "sens_occ_former_full.pt",
+    "sens_from_gmm.pt",
+    "sens_affine.pt",
+    "sens_occ_head.pt",
+    "sens_config.pt"
+]
 
 
 class SENSStandaloneInference:
@@ -43,36 +65,132 @@ class SENSStandaloneInference:
         - sens_config.pt
     """
     
-    def __init__(self, model_dir: Optional[str] = None, device: str = 'cpu'):
+    def __init__(self, model_dir: Optional[str] = None, device: str = 'cpu', skip_integrity_check: bool = False):
         """
         Initialize SENS standalone inference.
         
+        Models are automatically downloaded if not found, following the dataset download pattern.
+        
         Args:
             model_dir: Directory containing exported TorchScript models.
-                       If None, searches default locations.
+                       If None, uses default cache location ~/.cache/sketchkit/sens_models/torchscript
             device: Computing device ('cpu' or 'cuda')
+            skip_integrity_check: Skip integrity check and download (for testing)
         """
         self.device = torch.device(device)
-        self.model_dir = self._find_model_dir(model_dir)
         
-        if self.model_dir is None:
-            cache_dir = Path.home() / ".cache" / "sketchkit" / "sens_models" / "torchscript"
-            raise FileNotFoundError(
-                "SENS TorchScript models not found. "
-                "Please download the models and place them in one of the following locations:\n"
-                f"  1. {cache_dir}\n"
-                "  2. exported_sens_full/ (in project root)\n"
-                "  3. Or specify model_dir parameter\n\n"
-                "Required files: sens_encoder.pt, sens_occ_former_full.pt, sens_from_gmm.pt, "
-                "sens_affine.pt, sens_occ_head.pt, sens_config.pt\n\n"
-                "See README.md for download instructions."
-            )
+        # Determine cache directory
+        if model_dir is None:
+            model_dir = str(Path.home() / ".cache" / "sketchkit" / "sens_models" / "torchscript")
+        
+        self.model_dir = Path(model_dir)
+        self.model_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Check integrity and download if needed (following dataset pattern)
+        if not skip_integrity_check:
+            if not self._check_integrity():
+                print(f"SENS TorchScript models not found or incomplete in {self.model_dir}.")
+                print("Downloading from Google Drive...")
+                self._download()
+                if not self._check_integrity():
+                    raise RuntimeError(
+                        "Failed to download or verify SENS models. "
+                        "Please check your internet connection or download manually from:\n"
+                        f"https://drive.google.com/drive/folders/{SENS_MODELS_GDRIVE_FOLDER_ID}"
+                    )
         
         self._load_models()
         self.sample_cache = {}
     
+    def _check_integrity(self) -> bool:
+        """Check if all required model files exist (following dataset pattern)."""
+        for filename in REQUIRED_MODEL_FILES:
+            file_path = self.model_dir / filename
+            if not file_path.exists() or file_path.stat().st_size == 0:
+                return False
+        return True
+    
+    def _download(self):
+        """
+        Download SENS models from Google Drive (following dataset download pattern).
+        
+        Downloads the entire folder and extracts it.
+        """
+        if gdown is None:
+            raise RuntimeError(
+                "gdown is required for automatic model download. "
+                "Install with: pip install gdown\n"
+                "Or download models manually from:\n"
+                f"https://drive.google.com/drive/folders/{SENS_MODELS_GDRIVE_FOLDER_ID}"
+            )
+        
+        print(f"Downloading SENS TorchScript models from Google Drive folder...")
+        print(f"Folder ID: {SENS_MODELS_GDRIVE_FOLDER_ID}")
+        
+        try:
+            # Use gdown to download the entire folder
+            folder_url = f"https://drive.google.com/drive/folders/{SENS_MODELS_GDRIVE_FOLDER_ID}"
+            print(f"Downloading from: {folder_url}")
+            
+            # gdown.download_folder downloads to a subdirectory with the folder name
+            # Download to parent directory, then move files
+            output_dir = self.model_dir.parent
+            
+            # Try download_folder (available in gdown 4.0+)
+            if hasattr(gdown, 'download_folder'):
+                gdown.download_folder(
+                    id=SENS_MODELS_GDRIVE_FOLDER_ID,
+                    output=str(output_dir),
+                    quiet=False,
+                    use_cookies=False
+                )
+                
+                # Find downloaded files (they might be in a subdirectory)
+                downloaded_files = list(output_dir.glob("**/*.pt"))
+                
+                if downloaded_files:
+                    # Move files to model_dir
+                    for file_path in downloaded_files:
+                        target_path = self.model_dir / file_path.name
+                        if file_path.parent != self.model_dir:
+                            if target_path.exists():
+                                file_path.unlink()  # Remove duplicate
+                            else:
+                                file_path.rename(target_path)
+                    
+                    # Clean up empty subdirectories
+                    for subdir in output_dir.iterdir():
+                        if subdir.is_dir() and subdir != self.model_dir:
+                            try:
+                                if not any(subdir.iterdir()):
+                                    subdir.rmdir()
+                            except:
+                                pass
+                    
+                    print(f"✓ Models downloaded successfully to {self.model_dir}")
+                else:
+                    raise RuntimeError("Downloaded folder does not contain model files")
+            else:
+                # Fallback: manual download instructions
+                raise RuntimeError(
+                    "gdown version too old. Please upgrade: pip install --upgrade gdown>=4.0.0\n"
+                    "Or download manually from the link above."
+                )
+                
+        except Exception as e:
+            # If folder download fails, provide manual download instructions
+            print(f"\n⚠ Automatic download failed: {e}")
+            print("\nPlease download manually:")
+            print(f"1. Visit: https://drive.google.com/drive/folders/{SENS_MODELS_GDRIVE_FOLDER_ID}")
+            print(f"2. Download all .pt files and place them in: {self.model_dir}")
+            print(f"3. Required files: {', '.join(REQUIRED_MODEL_FILES)}")
+            raise RuntimeError(
+                f"Automatic download failed: {e}\n"
+                f"Please download manually from: https://drive.google.com/drive/folders/{SENS_MODELS_GDRIVE_FOLDER_ID}"
+            )
+    
     def _find_model_dir(self, model_dir: Optional[str]) -> Optional[Path]:
-        """Find the model directory."""
+        """Find the model directory (legacy method, kept for compatibility)."""
         if model_dir is not None:
             path = Path(model_dir)
             if path.exists() and (path / "sens_encoder.pt").exists():
@@ -81,7 +199,7 @@ class SENSStandaloneInference:
         # Search default locations
         current_file = Path(__file__).resolve()
         search_paths = [
-            current_file.parent.parent.parent.parent / "exported_sens_full",  # wsl_package/exported_sens_full
+            current_file.parent.parent.parent.parent / "exported_sens_full",
             current_file.parent / "exported_sens_full",
             Path.home() / ".cache" / "sketchkit" / "sens_models" / "torchscript",
             Path("exported_sens_full"),
@@ -435,10 +553,14 @@ def sketch_to_3d_sens_standalone(
 def is_standalone_available(model_dir: Optional[str] = None) -> bool:
     """Check if SENS standalone models are available."""
     try:
-        inference = SENSStandaloneInference.__new__(SENSStandaloneInference)
-        inference.device = torch.device('cpu')
-        path = inference._find_model_dir(model_dir)
-        return path is not None
+        if model_dir is None:
+            model_dir = str(Path.home() / ".cache" / "sketchkit" / "sens_models" / "torchscript")
+        model_path = Path(model_dir)
+        # Check integrity
+        for filename in REQUIRED_MODEL_FILES:
+            if not (model_path / filename).exists():
+                return False
+        return True
     except:
         return False
 

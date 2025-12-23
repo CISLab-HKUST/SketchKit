@@ -29,24 +29,14 @@ try:
     import teddy_sketch2model
     TEDDY_CPP_AVAILABLE = True
 except ImportError:
-    # Try to find the .so file in build_teddy directory
-    # Look for build_teddy relative to this file
+    # Try to find the .so file in build directory
     current_file = Path(__file__).resolve()
     
-    # Calculate possible paths based on file location
-    # File is in: sketchkit/sketch2model/methods/teddy_monstermash.py
-    # We need: third_party/teddy/build (new structure)
-    # Or: external/monstermash/build_teddy (legacy structure)
+    # Only search new structure: third_party/teddy/build
     possible_paths = [
-        # New structure: third_party/teddy/build
+        # New structure: third_party/teddy/build (relative to project root)
         current_file.parent.parent.parent.parent / "third_party" / "teddy" / "build",
         current_file.parent.parent.parent / "third_party" / "teddy" / "build",
-        # Legacy structure: external/monstermash/build_teddy
-        current_file.parent.parent.parent.parent / "external" / "monstermash" / "build_teddy",
-        current_file.parent.parent.parent / "external" / "monstermash" / "build_teddy",
-        # Also try the directories themselves (where .so might be)
-        current_file.parent.parent.parent.parent / "third_party" / "teddy",
-        current_file.parent.parent.parent / "external" / "monstermash",
         # Try common installation locations
         Path.home() / ".local" / "lib" / "python3.8" / "site-packages" / "teddy_sketch2model",
         Path.home() / ".local" / "lib" / "python3.9" / "site-packages" / "teddy_sketch2model",
@@ -55,6 +45,11 @@ except ImportError:
     
     for build_dir in possible_paths:
         if build_dir.exists() and build_dir.is_dir():
+            # Check if .so file exists in this directory
+            so_files = list(build_dir.glob("teddy_sketch2model*.so"))
+            if not so_files:
+                continue  # Directory exists but no .so file
+            
             # Add to sys.path
             if str(build_dir) not in sys.path:
                 sys.path.insert(0, str(build_dir))
@@ -63,10 +58,7 @@ except ImportError:
                 import teddy_sketch2model
                 TEDDY_CPP_AVAILABLE = True
                 break
-            except ImportError as e:
-                # Debug: print the error if it's not just "No module named"
-                if "No module named" not in str(e):
-                    print(f"  Debug: Import error from {build_dir}: {e}")
+            except ImportError:
                 continue
 
 if not TEDDY_CPP_AVAILABLE:
@@ -76,7 +68,13 @@ if not TEDDY_CPP_AVAILABLE:
     print(f"  Searched paths:")
     for p in possible_paths:
         exists = "✓" if p.exists() else "✗"
-        print(f"    {exists} {p}")
+        if p.exists():
+            # Check if .so file exists
+            so_files = list(p.glob("teddy_sketch2model*.so"))
+            so_status = f" (has .so: {so_files[0].name})" if so_files else " (no .so file)"
+            print(f"    {exists} {p}{so_status}")
+        else:
+            print(f"    {exists} {p}")
 
 
 def preprocess_raster_for_teddy(

@@ -114,7 +114,7 @@ if __name__ == "__main__":
     
     renderer = NPRRenderer(obj_path="media/rapid.obj")
     camera = Camera()
-    
+    #np.array([0, -1, 0, 70, 0, 0, 1, -70, -1, 0, 0, -461, 0, 0, 0, 1])
     # 创建测试草图
     sketch = Sketch()
     

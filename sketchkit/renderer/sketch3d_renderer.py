@@ -157,10 +157,16 @@ class Sketch3DRenderer(Renderer3D):
         has_width = False
         for path in sketch.paths:
             for curve in path.curves:
-                w = curve.p_start.thickness
-                if w is not None:
+                # Check if curve has 4-point width array
+                if curve.widths is not None:
                     has_width = True
-                    widths.append(w)
+                    widths.append(curve.widths)  # shape (4,)
+                # Fallback to vertex thickness
+                elif curve.p_start.thickness is not None:
+                    has_width = True
+                    # Use same width for all 4 control points
+                    w = curve.p_start.thickness
+                    widths.append(np.array([w, w, w, w], dtype=np.float32))
                 else:
                     widths.append(None)
         
@@ -170,10 +176,10 @@ class Sketch3DRenderer(Renderer3D):
         final_widths = []
         for w in widths:
             if w is None:
-                final_widths.append(2.0)
+                final_widths.append(np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float32))
             else:
                 final_widths.append(w)
-        return np.array(final_widths, dtype=np.float32)
+        return np.array(final_widths, dtype=np.float32)  # shape (N, 4)
 
     def _resolve_stroke_widths(self, sketch: Sketch3D, options: Render3DOptions, num_curves: int) -> np.ndarray | float:
         """Resolve stroke widths from options or sketch."""
@@ -186,11 +192,13 @@ class Sketch3DRenderer(Renderer3D):
                  sw = getattr(options, 'stroke_width', None)
 
         if sw is not None:
+            # Global stroke width: return scalar or expand to (N, 4)
             return float(sw)
         
         widths_arr = self._get_sketch_widths(sketch)
         if widths_arr is None:
             return 2.0
+        # widths_arr is now shape (N, 4) with per-control-point widths
         return widths_arr
 
     # Project control points into a 2D Sketch representation for Cairo
@@ -212,8 +220,18 @@ class Sketch3DRenderer(Renderer3D):
                 sw = 1.0
             elif isinstance(stroke_width, (float, int)):
                 sw = float(stroke_width)
+            elif isinstance(stroke_width, np.ndarray):
+                if stroke_width.ndim == 1:
+                    # Per-curve scalar: shape (N,)
+                    sw = float(stroke_width[curve_idx])
+                elif stroke_width.ndim == 2:
+                    # Per-curve 4-point widths: shape (N, 4)
+                    # For Cairo, use average or starting width
+                    sw = float(stroke_width[curve_idx, 0])
+                else:
+                    sw = 1.0
             else:
-                sw = float(stroke_width[curve_idx])
+                sw = 1.0
 
             v_start = Vertex(px[0], py[0], thickness=sw, color=rgb, opacity=1.0)
             v_end = Vertex(px[3], py[3], thickness=sw, color=rgb, opacity=1.0)
@@ -232,9 +250,14 @@ class Sketch3DRenderer(Renderer3D):
             raise RuntimeError("Cairo renderer not initialized.")
         sketch2d = self._sketch_from_projected(projected, colors, stroke_width)
         
-        w_arg = 2
-        if isinstance(stroke_width, (float, int)):   #directly update with render_option
-             w_arg = int(stroke_width)
+        # Pass stroke_width directly - can be scalar or array for per-curve widths
+        if isinstance(stroke_width, (float, int)):
+            w_arg = int(stroke_width)
+        elif isinstance(stroke_width, np.ndarray):
+            # Pass the array directly for per-curve width variation
+            w_arg = stroke_width
+        else:
+            w_arg = 2  # default fallback
 
         raster = self._cairo_renderer.render(sketch2d, width=w_arg)
         if raster.dtype != np.uint8:
@@ -280,15 +303,26 @@ class Sketch3DRenderer(Renderer3D):
             py = torch.tensor(ctrl[:, 1] * float(self.render_options.canvas_size[1]), dtype=torch.float32)
             canvas_points = torch.stack([px, py], dim=-1)
             
+            # Handle variable width: can be scalar or array of 4 values
             if isinstance(stroke_width, (float, int)):
-                sw = float(stroke_width)
+                # Global constant width for all curves
+                sw = torch.tensor(float(stroke_width), dtype=torch.float32)
+            elif isinstance(stroke_width, np.ndarray):
+                if stroke_width.ndim == 1:
+                    # Per-curve scalar: shape (N,)
+                    sw = torch.tensor(float(stroke_width[curve_idx]), dtype=torch.float32)
+                elif stroke_width.ndim == 2:
+                    # Per-curve 4-point widths: shape (N, 4)
+                    sw = torch.tensor(stroke_width[curve_idx], dtype=torch.float32)
+                else:
+                    raise ValueError(f"Unexpected stroke_width shape: {stroke_width.shape}")
             else:
-                sw = float(stroke_width[curve_idx])
+                sw = torch.tensor(1.0, dtype=torch.float32)
 
             path = pydiffvg.Path(
                 num_control_points=num_control_points,
                 points=canvas_points,
-                stroke_width=torch.tensor(sw, dtype=torch.float32),
+                stroke_width=sw,
                 is_closed=False,
             )
             shapes.append(path)

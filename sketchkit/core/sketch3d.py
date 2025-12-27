@@ -4,10 +4,11 @@ import torch
 
 # ================= 3D Sketch Data Structures =====================
 class Point3D:
-    def __init__(self, x: float, y: float, z: float):
+    def __init__(self, x: float, y: float, z: float, thickness: float | None = None):
         self.x = float(x)
         self.y = float(y)
         self.z = float(z)
+        self.thickness = None if thickness is None else float(thickness)
 
     def as_array(self):
         return np.array([self.x, self.y, self.z], dtype=np.float32)
@@ -33,12 +34,50 @@ class Curve3D:
     """Cubic Bézier curve in 3D defined by two vertices and two control points."""
 
     def __init__(
-        self, p_start: Vertex3D, p_end: Vertex3D, p_ctrl1: Point3D, p_ctrl2: Point3D
+        self, 
+        p_start: Vertex3D, 
+        p_end: Vertex3D, 
+        p_ctrl1: Point3D, 
+        p_ctrl2: Point3D,
     ):
         self.p_start = p_start
         self.p_end = p_end
         self.p_ctrl1 = p_ctrl1
         self.p_ctrl2 = p_ctrl2
+        
+        # Automatically collect widths from the 4 control points
+        # [width_at_p_start, width_at_p_ctrl1, width_at_p_ctrl2, width_at_p_end]
+        thicknesses = [
+            self.p_start.thickness,
+            self.p_ctrl1.thickness,
+            self.p_ctrl2.thickness,
+            self.p_end.thickness
+        ]
+        
+        # Check if any thickness is specified
+        if any(t is not None for t in thicknesses):
+            # Build width array, using default for None values
+            widths_list = []
+            for t in thicknesses:
+                if t is not None:
+                    widths_list.append(float(t))
+                else:
+                    # Use a sentinel value or fallback
+                    widths_list.append(None)
+            
+            # If we have mixed None and values, we need to decide:
+            # Option 1: Keep None entries and handle in renderer
+            # Option 2: Fill None with a default value here
+            # Let's fill with first non-None value or 1.0 as fallback
+            if all(w is None for w in widths_list):
+                self.widths = None
+            else:
+                # Find first non-None value as default
+                default_width = next((w for w in widths_list if w is not None), 1.0)
+                final_widths = [w if w is not None else default_width for w in widths_list]
+                self.widths = np.array(final_widths, dtype=np.float32)
+        else:
+            self.widths = None
 
     def sample(self, samples: int = 32) -> np.ndarray:
         t = np.linspace(0, 1, samples, dtype=np.float32)[:, None]

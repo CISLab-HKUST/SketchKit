@@ -91,7 +91,12 @@ class CairoRenderer:
         ctx.set_line_cap(cairo.LINE_CAP_ROUND)
         ctx.set_line_join(cairo.LINE_JOIN_ROUND)
         ctx.set_source_rgb(*self.canvas_color)
-        ctx.set_line_width(width)
+        
+        # Check if width is array-like for per-curve widths
+        width_is_array = isinstance(width, (list, np.ndarray))
+        if not width_is_array:
+            ctx.set_line_width(width)
+        
         ctx.paint()
 
         # 适配画布
@@ -127,15 +132,27 @@ class CairoRenderer:
             tx = lambda x: x
             ty = lambda y: y
 
-        seq_i = 0
+        curve_idx = 0
         for j, each_path in enumerate(sketch.paths):
             for curve in each_path.curves:
                 if isinstance(curve, Curve):
                     p0, p1, p2, p3 = curve.p_start, curve.p_crtl1, curve.p_crtl2, curve.p_end
+                    
+                    # Set per-curve width if width is an array
+                    if width_is_array:
+                        if isinstance(width, np.ndarray) and width.ndim == 2:
+                            # Variable width per control point (N, 4) - use first value
+                            curve_width = float(width[curve_idx, 0])
+                        else:
+                            # Per-curve scalar width (N,)
+                            curve_width = float(width[curve_idx])
+                        ctx.set_line_width(curve_width)
+                    
                     ctx.set_source_rgb(0, 0, 0)
                     ctx.move_to(tx(p0.x), ty(p0.y))
                     ctx.curve_to(tx(p1.x), ty(p1.y), tx(p2.x), ty(p2.y), tx(p3.x), ty(p3.y))
                     ctx.stroke()
+                    curve_idx += 1
                 else:
                     print("curve is something else")
         surface_data = surface.get_data()

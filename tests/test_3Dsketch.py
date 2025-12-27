@@ -50,7 +50,7 @@ def generate_orbit_views(num_frames, fov_deg=60, radius=2.0):
 
 
 # create the CIS Logo
-def make_cis_sketch3d(thicknesses=None) -> Sketch3D:
+def make_cis_sketch3d(thicknesses=None, variable_width=False) -> Sketch3D:
     """Higher-level 3D sketch for letters CIS with depth offsets."""
     if thicknesses is None:
         thicknesses = [5.0, 5.0, 5.0]
@@ -79,17 +79,34 @@ def make_cis_sketch3d(thicknesses=None) -> Sketch3D:
     ]
 
     # Helper to create a curve from control points and color
-    def make_curve(ctrls, color, thickness):
-        v0 = Vertex3D(*ctrls[0], thickness=thickness, color=color, opacity=1.0)
-        v3 = Vertex3D(*ctrls[3], thickness=thickness, color=color, opacity=1.0)
-        c1 = Point3D(*ctrls[1])
-        c2 = Point3D(*ctrls[2])
+    def make_curve(ctrls, color, thickness, use_variable=False):
+        if use_variable and isinstance(thickness, (list, tuple, np.ndarray)):
+            # Variable width mode: thickness should be array of 4 values
+            widths = list(thickness)
+            v0 = Vertex3D(*ctrls[0], thickness=widths[0], color=color, opacity=1.0)
+            v3 = Vertex3D(*ctrls[3], thickness=widths[3], color=color, opacity=1.0)
+            c1 = Point3D(*ctrls[1], thickness=widths[1])
+            c2 = Point3D(*ctrls[2], thickness=widths[2])
+        else:
+            # Constant width mode
+            v0 = Vertex3D(*ctrls[0], thickness=thickness, color=color, opacity=1.0)
+            v3 = Vertex3D(*ctrls[3], thickness=thickness, color=color, opacity=1.0)
+            c1 = Point3D(*ctrls[1], thickness=thickness)
+            c2 = Point3D(*ctrls[2], thickness=thickness)
+        
         return Curve3D(v0, v3, c1, c2)
 
     # colors: C-red, I-green, S-blue
-    pathC = Path3D([make_curve(C_ctrls, (1, 0, 0), thicknesses[0])])
-    pathI = Path3D([make_curve(I_ctrls, (0, 0.6, 0), thicknesses[1])])
-    pathS = Path3D([make_curve(S_ctrls, (0, 0, 1), thicknesses[2])])
+    if variable_width:
+        # Demonstrate variable width: thick at ends, thin in middle
+        pathC = Path3D([make_curve(C_ctrls, (1, 0, 0), [8.0, 2.0, 2.0, 8.0], use_variable=True)])
+        pathI = Path3D([make_curve(I_ctrls, (0, 0.6, 0), [1.0, 5.0, 5.0, 1.0], use_variable=True)])
+        pathS = Path3D([make_curve(S_ctrls, (0, 0, 1), [15.0, 10.0, 5.0, 2.0], use_variable=True)])
+    else:
+        pathC = Path3D([make_curve(C_ctrls, (1, 0, 0), thicknesses[0])])
+        pathI = Path3D([make_curve(I_ctrls, (0, 0.6, 0), thicknesses[1])])
+        pathS = Path3D([make_curve(S_ctrls, (0, 0, 1), thicknesses[2])])
+    
     sketch.add(pathC)
     sketch.add(pathI)
     sketch.add(pathS)
@@ -139,6 +156,7 @@ def main(
     stroke_color: tuple[int, int, int] | None = None,
     single_view: bool = False,
     varied_thickness: bool = False,
+    variable_width: bool = False,
 ):
     os.makedirs(out_dir, exist_ok=True)
     # positions, lookats, fov = load_renderlist(renderlist_path)
@@ -148,9 +166,12 @@ def main(
     if varied_thickness:
         cis3d = make_cis_sketch3d(thicknesses=[5.0, 1.0, 13.0])
     else:
-        cis3d = make_cis_sketch3d()
+        cis3d = make_cis_sketch3d(variable_width=variable_width)
 
     if varied_thickness:
+        options = Render3DOptions(canvas_size=(width, height), stroke_width=None)
+    elif variable_width:
+        # For variable width mode, don't use global stroke_width
         options = Render3DOptions(canvas_size=(width, height), stroke_width=None)
     else:
         options = Render3DOptions(canvas_size=(width, height), stroke_width=10.0)
@@ -229,6 +250,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--varied_thickness", action="store_true", help="Use varied thickness for C, I, S and no global stroke_width"
     )
+    parser.add_argument(
+        "--variable_width", action="store_true", help="Use variable width along each curve (4-point widths)"
+    )
     args = parser.parse_args()
 
     stroke_color = tuple(args.stroke_color) if args.stroke_color else None
@@ -244,4 +268,5 @@ if __name__ == "__main__":
         stroke_color=stroke_color,
         single_view=args.single_view,
         varied_thickness=args.varied_thickness,
+        variable_width=args.variable_width,
     )

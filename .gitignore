@@ -15,6 +15,7 @@ venv/
 htmlcov/
 *.png
 *.mp4
+*.gif
 .cache
 
 # IDEs

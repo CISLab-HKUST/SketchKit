@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-import av
+import cv2
 from PIL import Image
 import wget
 import hashlib
@@ -169,111 +169,66 @@ def save_seq_video(img_seq, file_path, fps, w=None, h=None):
                 raise ValueError("Cannot infer dimensions from the provided image")
             h, w = int(arr.shape[0]), int(arr.shape[1])
 
-    output = av.open(file_path, "w")
-    stream = output.add_stream("libx264", rate=fps)
-    stream.width = w
-    stream.height = h
-    stream.pix_fmt = "yuv420p"
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext == ".mp4":
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    elif ext == ".avi":
+        fourcc = cv2.VideoWriter_fourcc(*"MJPG")
+    else:
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+
+    out = cv2.VideoWriter(file_path, fourcc, fps, (w, h))
 
     for img in img_seq:
         if isinstance(img, Image.Image):
-            img = np.asarray(img.convert("RGB"))
+            frame = np.asarray(img.convert("RGB"))
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         else:
-            img = np.asarray(img)
+            frame = np.asarray(img)
+            if frame.ndim == 2:
+                frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+            else:
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
-        frame = av.VideoFrame.from_ndarray(img, format="rgb24")
+        if frame.shape[1] != w or frame.shape[0] != h:
+            frame = cv2.resize(frame, (w, h))
 
-        if frame.width != w or frame.height != h or frame.format.name != stream.pix_fmt:
-            frame = frame.reformat(width=w, height=h, format=stream.pix_fmt)
+        out.write(frame)
 
-        for packet in stream.encode(frame):
-            output.mux(packet)
-
-    for packet in stream.encode():
-        output.mux(packet)
-    output.close()
+    out.release()
     print("Saved video to", file_path)
 
 
 def save_seq_gif(img_seq, file_path, fps=10, w=None, h=None, loop=0):
     """
-    Save a sequence of images as an animated GIF using PyAV.
-    
-    Fixes segmentation fault by performing palette quantization with PIL 
-    before creating the PyAV frame.
+    Save a sequence of images as an animated GIF using PIL.
     """
-    # Make sure we can index
     if not hasattr(img_seq, "__getitem__"):
         img_seq = list(img_seq)
 
     if len(img_seq) == 0:
         raise ValueError("img_seq is empty")
 
-    # Infer size
-    if w is None or h is None:
-        first = img_seq[0]
-        if isinstance(first, Image.Image):
-            w, h = first.size
-        else:
-            arr = np.asarray(first)
-            if arr.ndim < 2:
-                raise ValueError("Cannot infer dimensions from the provided image")
-            h, w = int(arr.shape[0]), int(arr.shape[1])
-
-    # Open GIF container
-    output = av.open(file_path, mode="w", format="gif")
-
-    stream = output.add_stream("gif", rate=fps)
-    stream.width = w
-    stream.height = h
-    stream.pix_fmt = "pal8"
-
+    frames = []
     for img in img_seq:
-        # 1. Ensure we have a PIL Image
         if not isinstance(img, Image.Image):
             img = Image.fromarray(np.asarray(img))
-        
-        # 2. Resize if necessary to match the stream dimensions
-        # (Avoids PyAV trying to resize a paletted frame later)
-        if img.size != (w, h):
-            img = img.resize((w, h), Image.Resampling.LANCZOS)
 
-        # 3. Convert to 'P' mode (Palette) using PIL's adaptive quantization
-        # This generates the palette safely in Python land.
-        img_p = img.convert("P", palette=Image.ADAPTIVE, colors=256)
-        
-        # 4. Extract indices and palette for PyAV
-        # indices: numpy array of pixel values (0-255)
-        img_indices = np.asarray(img_p)
-        
-        # palette: PyAV expects shape (256, 4) in ARGB or RGBA. 
-        # PIL gives a flat list of RGB values [r, g, b, r, g, b, ...]
-        pil_palette = img_p.getpalette()
-        
-        # Pad PIL palette with zeros if it has fewer than 256 colors
-        if len(pil_palette) < 768:
-            pil_palette.extend([0] * (768 - len(pil_palette)))
-            
-        # Reshape to (256, 3) -> RGB
-        palette_rgb = np.array(pil_palette, dtype=np.uint8).reshape((256, 3))
-        
-        # Add Alpha channel (255 = Opaque) to make it (256, 4) -> RGBA/ARGB
-        # PyAV usually expects the data in the order: A, R, G, B (uint8 bytes)
-        # However, for 'pal8', PyAV handles the endianness, but providing 4 bytes is key.
-        alpha = np.full((256, 1), 255, dtype=np.uint8)
-        palette_rgba = np.hstack((alpha, palette_rgb))
+        if w is not None and h is not None:
+            if img.size != (w, h):
+                img = img.resize((w, h), Image.Resampling.LANCZOS)
 
-        # 5. Create the frame directly in 'pal8' format
-        # We pass a tuple: (pixel_indices, palette)
-        frame = av.VideoFrame.from_ndarray((img_indices, palette_rgba), format="pal8")
-        
-        # 6. Encode
-        for packet in stream.encode(frame):
-            output.mux(packet)
+        frames.append(img)
 
-    # Flush encoder
-    for packet in stream.encode():
-        output.mux(packet)
+    if not frames:
+        return
 
-    output.close()
+    duration = 1000 / fps
+    frames[0].save(
+        file_path,
+        save_all=True,
+        append_images=frames[1:],
+        duration=duration,
+        loop=loop,
+    )
     print("Saved video to", file_path)

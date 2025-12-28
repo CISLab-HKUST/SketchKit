@@ -4,16 +4,12 @@ import numpy as np
 import torch
 import argparse
 
-from sketchkit.utils.file import save_seq_gif,save_seq_video
-from sketchkit.core.camera import Camera 
+from sketchkit.renderer3d import DiffVGRenderer
+from sketchkit.renderer3d.diffvg_renderer import DiffVGRenderOptions
+from sketchkit.utils.file import save_seq_gif, save_seq_video
+from sketchkit.core.camera import Camera
 from sketchkit.utils3d.transforms import wxyz_from_look_at
-from sketchkit.renderer.renderer import Render3DOptions
-
-# Renderer availability is determined lazily inside main.
-try:
-    from sketchkit.renderer.sketch3d_renderer import Sketch3DRenderer
-except ImportError:
-    Sketch3DRenderer = None
+from sketchkit.renderer3d.renderer3d import Render3DOptions
 
 from sketchkit.core.sketch3d import Sketch3D, Path3D, Curve3D, Vertex3D, Point3D
 
@@ -33,14 +29,14 @@ def generate_orbit_views(num_frames, fov_deg=60, radius=2.0):
         y = radius * np.sin(elevation)
         x = r_xz * np.cos(azimuth)
         z = r_xz * np.sin(azimuth)
-        
+
         xyz = np.array([x, y, z])
-        
+
         camera = Camera()
         # camera.set_look_at([0, 0, 0])
         # Manually calculate wxyz with up=[0,1,0] for Y-up scene
         wxyz = wxyz_from_look_at(xyz, np.array([0, 0, 0]), up=np.array([0, 1, 0]))
-        
+
         camera.set_xyz(xyz)
         camera.set_wxyz(wxyz)
         camera.set_fov(fov=(fov_deg / 180) * np.pi)
@@ -93,20 +89,26 @@ def make_cis_sketch3d(thicknesses=None, variable_width=False) -> Sketch3D:
             v3 = Vertex3D(*ctrls[3], thickness=thickness, color=color, opacity=1.0)
             c1 = Point3D(*ctrls[1], thickness=thickness)
             c2 = Point3D(*ctrls[2], thickness=thickness)
-        
+
         return Curve3D(v0, v3, c1, c2)
 
     # colors: C-red, I-green, S-blue
     if variable_width:
         # Demonstrate variable width: thick at ends, thin in middle
-        pathC = Path3D([make_curve(C_ctrls, (1, 0, 0), [8.0, 2.0, 2.0, 8.0], use_variable=True)])
-        pathI = Path3D([make_curve(I_ctrls, (0, 0.6, 0), [1.0, 5.0, 5.0, 1.0], use_variable=True)])
-        pathS = Path3D([make_curve(S_ctrls, (0, 0, 1), [15.0, 10.0, 5.0, 2.0], use_variable=True)])
+        pathC = Path3D(
+            [make_curve(C_ctrls, (1, 0, 0), [8.0, 2.0, 2.0, 8.0], use_variable=True)]
+        )
+        pathI = Path3D(
+            [make_curve(I_ctrls, (0, 0.6, 0), [1.0, 5.0, 5.0, 1.0], use_variable=True)]
+        )
+        pathS = Path3D(
+            [make_curve(S_ctrls, (0, 0, 1), [15.0, 10.0, 5.0, 2.0], use_variable=True)]
+        )
     else:
         pathC = Path3D([make_curve(C_ctrls, (1, 0, 0), thicknesses[0])])
         pathI = Path3D([make_curve(I_ctrls, (0, 0.6, 0), thicknesses[1])])
         pathS = Path3D([make_curve(S_ctrls, (0, 0, 1), thicknesses[2])])
-    
+
     sketch.add(pathC)
     sketch.add(pathI)
     sketch.add(pathS)
@@ -131,17 +133,17 @@ def save_gif_from_dir(frames_dir, out_gif, fps=30):
     )
 
 
-def _select_renderer(
-    options: Render3DOptions
-):
-    """Return renderer matching backend preference ('cairo', 'diffvg')."""
-    if Sketch3DRenderer is None:
-        return None, None
+# def _select_renderer(
+#     options: Render3DOptions
+# ):
+#     """Return renderer matching backend preference ('cairo', 'diffvg')."""
+#     if Sketch3DRenderer is None:
+#         return None, None
 
-    renderer = Sketch3DRenderer(
-        render_options=options,
-    )
-    return options.back_end, renderer
+#     renderer = Sketch3DRenderer(
+#         render_options=options,
+#     )
+#     return options.back_end, renderer
 
 
 # Main function to render CIS logo sketch from multiple views
@@ -169,38 +171,33 @@ def main(
         cis3d = make_cis_sketch3d(variable_width=variable_width)
 
     if varied_thickness:
-        options = Render3DOptions(canvas_size=(width, height), stroke_width=None)
+        options = DiffVGRenderOptions(canvas_size=(width, height), stroke_width=None)
     elif variable_width:
         # For variable width mode, don't use global stroke_width
-        options = Render3DOptions(canvas_size=(width, height), stroke_width=None)
+        options = DiffVGRenderOptions(canvas_size=(width, height), stroke_width=None)
     else:
-        options = Render3DOptions(canvas_size=(width, height), stroke_width=10.0)
+        options = DiffVGRenderOptions(canvas_size=(width, height), stroke_width=10.0)
 
-    options.back_end = backend
+    # options.back_end = backend
     options.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     if stroke_color is not None:
         options.stroke_color = stroke_color
 
-    backend_name, renderer = _select_renderer(options)
+    # backend_name, renderer = _select_renderer(options)
+    renderer = DiffVGRenderer(render_options=options)
     if renderer is None:
         raise RuntimeError(
             "Neither CairoRenderer nor pydiffvg backends are available for Sketch3DRenderer."
         )
 
-    print(
-        f"Rendering {len(cameras)} views with Sketch3DRenderer ({backend_name} backend)..."
-    )
-
     if single_view:
         print("Testing single camera render...")
-        camera = cameras[0]
-        image_np = renderer.render(
+        img = renderer.render(
             cis3d,
-            cameras=camera,
+            cameras=cameras,
             render_options=options,
-        )
-        img = Image.fromarray(image_np)
+        )[0]
         img.save(os.path.join(out_dir, "single_view.png"))
         print(f"Saved single view to {os.path.join(out_dir, 'single_view.png')}")
         return
@@ -248,10 +245,14 @@ if __name__ == "__main__":
         "--single_view", action="store_true", help="Render a single view for testing"
     )
     parser.add_argument(
-        "--varied_thickness", action="store_true", help="Use varied thickness for C, I, S and no global stroke_width"
+        "--varied_thickness",
+        action="store_true",
+        help="Use varied thickness for C, I, S and no global stroke_width",
     )
     parser.add_argument(
-        "--variable_width", action="store_true", help="Use variable width along each curve (4-point widths)"
+        "--variable_width",
+        action="store_true",
+        help="Use variable width along each curve (4-point widths)",
     )
     args = parser.parse_args()
 

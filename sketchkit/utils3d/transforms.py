@@ -1,5 +1,4 @@
 import numpy as np
-import torch
 
 def yaw_pitch_roll_from_wxyz(wxyz: np.ndarray) -> tuple[float, float, float]:
     """Convert quaternion (w,x,y,z) to yaw, pitch, roll angles in radians."""

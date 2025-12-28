@@ -19,7 +19,7 @@ except Exception:  # pragma: no cover - optional dependency
     _HAS_DIFFVG = False
 
 
-class Sketch3DRenderer(Renderer3D):
+class CairoRenderer3D(Renderer3D):
     """Project and render 3D sketch curves with selectable renderer backend."""
 
     def __init__(

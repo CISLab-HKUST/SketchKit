@@ -1,6 +1,5 @@
 import numpy as np
 
-
 def yaw_pitch_roll_from_wxyz(wxyz: np.ndarray) -> tuple[float, float, float]:
     """Convert quaternion (w,x,y,z) to yaw, pitch, roll angles in radians."""
     w, x, y, z = wxyz
@@ -204,3 +203,4 @@ def convert_coordinate(src, src_type, dest_type="RUB"):
     src = np.array(src)
     trans_matrix = get_coordinate_trans_matrix(src_type, dest_type)
     return (src.T @ trans_matrix).T
+

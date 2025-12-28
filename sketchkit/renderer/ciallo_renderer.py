@@ -3,6 +3,8 @@ import moderngl
 import numpy as np
 from typing import List
 from PIL import Image
+from sketchkit.renderer import Renderer
+from dataclasses import dataclass
 
 try:
     from sketchkit.core.sketch import Sketch, Curve, Path, Vertex, Point
@@ -188,9 +190,27 @@ def build_stamp_instance_data(polylines: List[np.ndarray], spacing: float, base_
         
     return np.vstack(all_instances) if all_instances else np.zeros((0, 4), dtype=np.float32)
 
-class CialloRenderer:
-    def __init__(self, canvas_size: int = 512, background_color=(1, 1, 1, 0)):
-        self.size = (canvas_size, canvas_size)
+@dataclass
+class CialloRenderOptions:
+    canvas_size: tuple[int, int] = (512, 512)
+    background_color: tuple[int, int, int, int] = (1, 1, 1, 0)  # RGBA
+    stroke_color: tuple[int, int, int, int] = (0, 0, 0, 1)  # RGBA
+    brush_type: str = "textured"
+    thickness: float = 12.0
+    brush_texture_path: str = "./sketchkit/assets/stamp2.png"
+    spacing: float = 1.0
+    rotation_randomness: float = 0.0
+    noise_factor: float = 0.0
+    rng_seed: int = 42
+    output_path: str = "ciallo_stamp2_1228.png"
+
+class CialloRenderer(Renderer):
+    def __init__(self, render_options: CialloRenderOptions = None):
+        if render_options is None:
+            render_options = CialloRenderOptions()  # Default if None is passed
+        self.render_options = render_options
+        self.size = (self.render_options.canvas_size[0], self.render_options.canvas_size[1])
+
         try:
             self.ctx = moderngl.create_standalone_context()
         except:
@@ -202,7 +222,7 @@ class CialloRenderer:
         self.fbo_tex = self.ctx.texture(self.size, 4)
         self.depth_tex = self.ctx.depth_texture(self.size)
         self.fbo = self.ctx.framebuffer(self.fbo_tex, self.depth_tex)
-        self.bg_color = background_color
+        self.bg_color = self.render_options.background_color
         
         # Vanilla Shader
         self.prog_vanilla = self.ctx.program(
@@ -286,13 +306,19 @@ class CialloRenderer:
         ], dtype=np.float32)
         self.vbo_quad = self.ctx.buffer(quad_data.tobytes())
 
-    def render(self, sketch: Sketch, brush_type: str = "textured", thickness: float = 12.0,
-               color: tuple = (0,0,0,1), brush_texture_path: str = None, 
-               spacing: float = 1.0, 
-               rotation_randomness: float = 0.0,
-               noise_factor: float = 0.0,
-               rng_seed: int = 42,
-               output_path: str = "output.png"):
+    def _render(self, sketch: Sketch, render_options: CialloRenderOptions) -> np.ndarray:
+        """Renders the given sketch with the provided CialloRenderOptions."""
+
+        thickness = self.render_options.thickness
+        brush_type = self.render_options.brush_type
+        brush_texture_path = self.render_options.brush_texture_path
+        spacing = self.render_options.spacing
+        rotation_randomness = self.render_options.rotation_randomness
+        noise_factor = self.render_options.noise_factor
+        rng_seed = self.render_options.rng_seed
+        output_path = self.render_options.output_path
+        color = self.render_options.stroke_color
+
         
         self.fbo.use()
         self.fbo.clear(*self.bg_color)

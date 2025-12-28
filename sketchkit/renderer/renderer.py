@@ -4,14 +4,12 @@ from dataclasses import dataclass
 from sketchkit.core.sketch import Sketch
 from sketchkit.core.camera import Camera
 
-
 @dataclass
 class RenderOptions:
     canvas_size: tuple[int, int] = (512, 512)
     background_color: tuple[int, int, int] = (255, 255, 255)
     stroke_color: tuple[int, int, int] = (0, 0, 0)
     stroke_width: float = 1.0
-
 
 class Renderer(ABC):
     render_options = RenderOptions()

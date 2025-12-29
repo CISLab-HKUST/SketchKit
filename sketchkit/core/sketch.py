@@ -244,20 +244,8 @@ class Curve:
         path = svgpathtools.parse_path(self.to_svg_path())
         return path.length()
     
-    
-    def get_division_points(self, ts: np.ndarray) -> np.ndarray:
-        """Get points on the curve at specified parameter values.
 
-        Args:
-            ts (np.ndarray): Array of parameter values between 0 and 1.
-
-        Returns:
-            np.ndarray: Array of points on the curve at the specified parameter values.
-        """
-        svg_path = svgpathtools.parse_path(self.to_svg_path())
-        return np.array([[svg_path.point(t).real, svg_path.point(t).imag] for t in ts], dtype=np.float32)
-
-    def get_point(self, t: float) -> np.ndarray:
+    def get_division_point(self, t: float) -> np.ndarray:
         """Get a point on the curve at a specified parameter value.
 
         Args:
@@ -462,12 +450,12 @@ class Path:
         for i, curve_index in enumerate(curve_indices):
             if curve_index == 0:
                 t_on_curve = target_lengths[i] / lengths[0]
-                points[i] = self.curves[0].get_point(t_on_curve)
+                points[i] = self.curves[0].get_division_point(t_on_curve)
             elif curve_index < len(self.curves):
                 t_on_curve = (target_lengths[i] - pre_sum_lengths[curve_index - 1]) / lengths[curve_index]
-                points[i] = self.curves[curve_index].get_point(t_on_curve)
+                points[i] = self.curves[curve_index].get_division_point(t_on_curve)
             else:
-                points[i] = self.curves[-1].get_point(t_on_curve)
+                points[i] = self.curves[-1].get_division_point(t_on_curve)
         return points
 
     # 剔除掉所有长度为0的curve

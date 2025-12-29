@@ -10,26 +10,15 @@ from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extrac
 from pathlib import Path as PathLibPath
 from sketchkit.core import Sketch
 
-dataset_name = "hzy_sketch"
-dataset_filename = "hzy_sketch-samples.zip"
+dataset_filename = "hzy_sketch.zip"
 
 
 def download_and_extract_data(
     output_folder, remove_sourcefile=True, cislab_source=True
 ):
     os.makedirs(output_folder, exist_ok=True)
+    url = f"{CISLAB_CDN}/datasets/hzySketch/{dataset_filename}"
     try:
-        if cislab_source:
-            url = (
-                "https://cislab.hkust-gz.edu.cn/demos/aisketch/data/"
-                + f"{dataset_filename}"
-            )
-        else:
-            # TODO: Add another source
-            url = (
-                "https://cislab.hkust-gz.edu.cn/demos/aisketch/data/"
-                + f"{dataset_filename}"
-            )
         download_with_wget(
             url,
             os.path.join(output_folder, dataset_filename),
@@ -122,7 +111,7 @@ class hzySketch(SketchDataset):
        <sketchkit.core.sketch.Sketch object at 0x000001AB5033ACE0>
     """
 
-    md5_sum = "bb0d0fdc6eefa2e2ab41f990cc8cd5f4"
+    md5_sum = "473c51ae0259f1435994a9cea090b5e7"
 
     # def __init__(
     #     self,

@@ -8,7 +8,6 @@ import pickle
 from PIL import Image
 from .CNNVE import CNNVE
 from sketchkit.core.sketch import Sketch, Path as SketchPath, Curve, Vertex
-from sketchkit.utils.transform import line_to_cubic
 
 
 class LineDrawer:
@@ -81,7 +80,7 @@ class LineDrawer:
                         p_start = points_xy[i-1]
                         p_end = points_xy[i]
                         line = np.stack([p_start, p_end], axis=0)
-                        cubic = line_to_cubic(line)
+                        cubic = Curve.from_line(line)
                         stroke_list.append(cubic)
                     
                     if stroke_list:

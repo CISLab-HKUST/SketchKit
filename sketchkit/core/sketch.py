@@ -84,6 +84,37 @@ class Curve:
         vertices. Numeric properties are converted to np.float32 automatically.
     """
 
+    @classmethod
+    def from_line(cls, line) -> "Curve":
+        """
+        Args:
+            line: In shape (2, 2), including two points.
+
+        Returns:
+            cubic: Curve object.
+
+        """
+
+        ps, pe = line[0], line[1]
+        start_x, start_y = ps[0], ps[1]
+        end_x, end_y = pe[0], pe[1]
+
+        p_start = Vertex(start_x, start_y)
+        p_end = Vertex(end_x, end_y)
+
+        ctrl1_x = 2.0 / 3.0 * start_x + 1.0 / 3.0 * end_x
+        ctrl1_y = 2.0 / 3.0 * start_y + 1.0 / 3.0 * end_y
+        ctrl2_x = 1.0 / 3.0 * start_x + 2.0 / 3.0 * end_x
+        ctrl2_y = 1.0 / 3.0 * start_y + 2.0 / 3.0 * end_y
+
+        ctrl1 = Point(ctrl1_x, ctrl1_y)
+        ctrl2 = Point(ctrl2_x, ctrl2_y)
+        cubic = Curve(p_start, p_end, ctrl1, ctrl2)
+        # ctrl1 = np.stack([ctrl1_x, ctrl1_y])
+        # ctrl2 = np.stack([ctrl2_x, ctrl2_y])
+        # cubic = np.stack([p_start, ctrl1, ctrl2, p_end], axis=0)  # (4, 2)
+        return cubic
+
     def __init__(
         self,
         p_start: Vertex,
@@ -207,12 +238,14 @@ class Curve:
         Returns:
             np.ndarray: Array of points (shape: [4, 2]).
         """
-        return np.array([
-            [self.p_start.x, self.p_start.y],
-            [self.p_crtl1.x, self.p_crtl1.y],
-            [self.p_crtl2.x, self.p_crtl2.y],
-            [self.p_end.x, self.p_end.y],
-        ])
+        return np.array(
+            [
+                [self.p_start.x, self.p_start.y],
+                [self.p_crtl1.x, self.p_crtl1.y],
+                [self.p_crtl2.x, self.p_crtl2.y],
+                [self.p_end.x, self.p_end.y],
+            ]
+        )
 
     def to_svg_path(self) -> str:
         """Convert the curve to an SVG path string.
@@ -221,7 +254,7 @@ class Curve:
             str: SVG path representation of the curve.
         """
         p0, p1, p2, p3 = self.p_start, self.p_crtl1, self.p_crtl2, self.p_end
-        return f'M {p0.x} {p0.y} C {p1.x} {p1.y}, {p2.x} {p2.y}, {p3.x} {p3.y}'
+        return f"M {p0.x} {p0.y} C {p1.x} {p1.y}, {p2.x} {p2.y}, {p3.x} {p3.y}"
 
     @property
     def length(self) -> float:
@@ -230,11 +263,11 @@ class Curve:
         Returns:
             float: Length of the curve.
         """
-        
+
         # 将p1,p2,p3,p4整合成[1,4,2]
         points = self.np_points.reshape(1, 4, 2)
         return bezier_lengths(points)[0]
-    
+
     def svg_length(self) -> float:
         """Calculate the length of the curve in SVG path units.
 
@@ -243,24 +276,22 @@ class Curve:
         """
         path = svgpathtools.parse_path(self.to_svg_path())
         return path.length()
-    
 
-    def get_division_point(self, t: float) -> np.ndarray:
-        """Get a point on the curve at a specified parameter value.
+    def get_division_points(self, ts: np.ndarray) -> np.ndarray:
+        """Get points on the curve at specified parameter values.
 
         Args:
-            t (float): Parameter value between 0 and 1.
+            ts (np.ndarray): Array of parameter values between 0 and 1.
 
         Returns:
-            np.ndarray: Point on the curve at the specified parameter value.
+            np.ndarray: Array of points on the curve at the specified parameter values.
         """
-        m1 = self.np_points[0]
-        m2 = self.np_points[1]
-        m3 = self.np_points[2]
-        m4 = self.np_points[3]
-        p = (1-t)**3 * m1 + 3 * (1-t)**2 * t * m2 + 3 * (1-t) * t**2 * m3 + t**3 * m4
-        return p
-    
+        svg_path = svgpathtools.parse_path(self.to_svg_path())
+        return np.array(
+            [[svg_path.point(t).real, svg_path.point(t).imag] for t in ts],
+            dtype=np.float32,
+        )
+
     def is_zero_length(self) -> bool:
         """Check if the curve is zero length.
 
@@ -271,7 +302,7 @@ class Curve:
         if np.all(points[0] == points[3]) and self.is_line():
             return True
         return False
-        
+
 
 class Path:
     """Collection of curves.
@@ -414,7 +445,7 @@ class Path:
             float: Total length of the path.
         """
         return sum(self.curve_lengths())[0]
-    
+
     def svg_curve_lengths(self) -> list[float]:
         """Calculate the lengths of each curve in SVG path units.
 
@@ -430,7 +461,7 @@ class Path:
             float: Total length of the path in SVG path units.
         """
         return sum(self.svg_curve_lengths())
-    
+
     def get_division_points(self, ts: np.ndarray) -> np.ndarray:
         """Get points on the path at parameters ts.
 
@@ -440,28 +471,51 @@ class Path:
         Returns:
             np.ndarray: Array of points on the path at parameters ts.
         """
+
+        def _get_point(curve: Curve, t: float) -> np.ndarray:
+            """Get a point on the curve at a specified parameter value.
+
+            Args:
+                t (float): Parameter value between 0 and 1.
+
+            Returns:
+                np.ndarray: Point on the curve at the specified parameter value.
+            """
+            m1 = curve.np_points[0]
+            m2 = curve.np_points[1]
+            m3 = curve.np_points[2]
+            m4 = curve.np_points[3]
+            p = (
+                (1 - t) ** 3 * m1
+                + 3 * (1 - t) ** 2 * t * m2
+                + 3 * (1 - t) * t**2 * m3
+                + t**3 * m4
+            )
+            return p
+
         assert np.all((0.0 <= ts) & (ts <= 1.0)), "All t values must be in [0, 1]"
         lengths = self.svg_curve_lengths()
         pre_sum_lengths = np.cumsum(lengths)
         total_length = pre_sum_lengths[-1]
         target_lengths = ts * total_length
-        curve_indices = np.searchsorted(pre_sum_lengths, target_lengths, side='right')
+        curve_indices = np.searchsorted(pre_sum_lengths, target_lengths, side="right")
         points = np.zeros((len(ts), 2), dtype=np.float32)
         for i, curve_index in enumerate(curve_indices):
             if curve_index == 0:
                 t_on_curve = target_lengths[i] / lengths[0]
-                points[i] = self.curves[0].get_division_point(t_on_curve)
+                points[i] = _get_point(self.curves[0], t_on_curve)
             elif curve_index < len(self.curves):
-                t_on_curve = (target_lengths[i] - pre_sum_lengths[curve_index - 1]) / lengths[curve_index]
-                points[i] = self.curves[curve_index].get_division_point(t_on_curve)
+                t_on_curve = (
+                    target_lengths[i] - pre_sum_lengths[curve_index - 1]
+                ) / lengths[curve_index]
+                points[i] = _get_point(self.curves[curve_index], t_on_curve)
             else:
-                points[i] = self.curves[-1].get_division_point(t_on_curve)
+                points[i] = _get_point(self.curves[-1], t_on_curve)
         return points
 
     # 剔除掉所有长度为0的curve
-    def remove_zero_length_curves(self):
-        """Remove all curves with zero length from the path.
-        """
+    def remove_empty_curves(self):
+        """Remove all curves with zero length from the path."""
         self.curves = [curve for curve in self.curves if not curve.is_zero_length()]
 
 
@@ -594,7 +648,13 @@ class Sketch:
         opacity_value = np.float32(value) if value is not None else None
         self._set_paths_attribute("opacity", opacity_value)
 
-    def to_svg(self, size: int = 512, filename: str = None, fit_size: bool = False, is_polyline: bool = False) -> str:
+    def to_svg(
+        self,
+        size: int = 512,
+        filename: str = None,
+        fit_size: bool = False,
+        is_polyline: bool = False,
+    ) -> str:
         """Convert the sketch to an SVG string.
 
         Args:
@@ -607,15 +667,17 @@ class Sketch:
         """
         svg_parts = []
         svg_parts.append('<?xml version="1.0"?>')
-        svg_parts.append(f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{size}" height="{size}">')
-        svg_parts.append('<defs/>')
-        svg_parts.append('<g>')
+        svg_parts.append(
+            f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{size}" height="{size}">'
+        )
+        svg_parts.append("<defs/>")
+        svg_parts.append("<g>")
 
         # 计算缩放和偏移参数
         scale = 1.0
         offset_x = 0.0
         offset_y = 0.0
-        
+
         if fit_size:
             # 收集所有点以确定边界
             all_points = []
@@ -623,29 +685,37 @@ class Sketch:
                 for curve in path.curves:
                     if not isinstance(curve, Curve):
                         raise ValueError("All strokes must be of type `Curve`.")
-                    
-                    p0, p1, p2, p3 = curve.p_start, curve.p_crtl1, curve.p_crtl2, curve.p_end
+
+                    p0, p1, p2, p3 = (
+                        curve.p_start,
+                        curve.p_crtl1,
+                        curve.p_crtl2,
+                        curve.p_end,
+                    )
                     all_points.append([p0.x, p0.y])
                     all_points.append([p1.x, p1.y])
                     all_points.append([p2.x, p2.y])
                     all_points.append([p3.x, p3.y])
-            
+
             if all_points:
                 # 计算边界
                 points_array = np.array(all_points)
                 min_x, min_y = np.min(points_array, axis=0)
                 max_x, max_y = np.max(points_array, axis=0)
-                
+
                 # 计算大小和中心
                 width = max_x - min_x
                 height = max_y - min_y
                 center_x = (min_x + max_x) / 2
                 center_y = (min_y + max_y) / 2
-                
+
                 # 计算缩放因子以适应画布并留出边距
                 padding = 0.05  # 5%边距
-                scale = min((size * (1 - padding * 2)) / width, (size * (1 - padding * 2)) / height)
-                
+                scale = min(
+                    (size * (1 - padding * 2)) / width,
+                    (size * (1 - padding * 2)) / height,
+                )
+
                 # 计算平移以居中草图
                 offset_x = size / 2 - center_x * scale
                 offset_y = size / 2 - center_y * scale
@@ -655,25 +725,40 @@ class Sketch:
                 for curve in path.curves:
                     if not isinstance(curve, Curve):
                         raise ValueError("All strokes must be of type `Curve`.")
-                    p0= curve.p_start
-                    points.append(f'{p0.x * scale + offset_x},{p0.y * scale + offset_y}')
+                    p0 = curve.p_start
+                    points.append(
+                        f"{p0.x * scale + offset_x},{p0.y * scale + offset_y}"
+                    )
                 end_point = path.curves[-1].p_end
-                points.append(f'{end_point.x * scale + offset_x},{end_point.y * scale + offset_y}')
+                points.append(
+                    f"{end_point.x * scale + offset_x},{end_point.y * scale + offset_y}"
+                )
                 color = path.color[0][0] if path.color[0][0] is not None else (0, 0, 0)
 
-                color_hex = f'#{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}'
-                width = np.average(path.pressure) * (path.thickness[0][0] if path.thickness[0][0] is not None else 1.0)
-                svg_parts.append(f'<polyline points="{" ".join(points)}" stroke="{color_hex}" stroke-width="{width}" fill="none"/>')
+                color_hex = f"#{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}"
+                width = np.average(path.pressure) * (
+                    path.thickness[0][0] if path.thickness[0][0] is not None else 1.0
+                )
+                svg_parts.append(
+                    f'<polyline points="{" ".join(points)}" stroke="{color_hex}" stroke-width="{width}" fill="none"/>'
+                )
         else:
             for path in self.paths:
                 for curve in path.curves:
                     if not isinstance(curve, Curve):
                         raise ValueError("All strokes must be of type `Curve`.")
 
-                    p0, p1, p2, p3 = curve.p_start, curve.p_crtl1, curve.p_crtl2, curve.p_end
+                    p0, p1, p2, p3 = (
+                        curve.p_start,
+                        curve.p_crtl1,
+                        curve.p_crtl2,
+                        curve.p_end,
+                    )
                     color = curve.color[0] if curve.color[0] is not None else (0, 0, 0)
-                    color_hex = f'#{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}'
-                    thickness = curve.thickness[0] if curve.thickness[0] is not None else 1.0
+                    color_hex = f"#{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}"
+                    thickness = (
+                        curve.thickness[0] if curve.thickness[0] is not None else 1.0
+                    )
                     opacity = curve.opacity[0] if curve.opacity[0] is not None else 1.0
 
                     # 直接应用缩放和偏移到每个点的坐标
@@ -686,28 +771,48 @@ class Sketch:
                     x3 = p3.x * scale + offset_x
                     y3 = p3.y * scale + offset_y
 
-                    path_d = f'M {x0} {y0} C {x1} {y1}, {x2} {y2}, {x3} {y3}'
-                    svg_parts.append(f'<path d="{path_d}" stroke="{color_hex}" stroke-width="{thickness}" fill="none" stroke-opacity="{opacity}"/>')
+                    path_d = f"M {x0} {y0} C {x1} {y1}, {x2} {y2}, {x3} {y3}"
+                    svg_parts.append(
+                        f'<path d="{path_d}" stroke="{color_hex}" stroke-width="{thickness}" fill="none" stroke-opacity="{opacity}"/>'
+                    )
 
-        svg_parts.append('</g>')
-        svg_parts.append('</svg>')
-        final_str = '\n'.join(svg_parts)
-        
+        svg_parts.append("</g>")
+        svg_parts.append("</svg>")
+        final_str = "\n".join(svg_parts)
+
         if filename:
-            with open(filename, 'w') as f:
+            with open(filename, "w") as f:
                 f.write(final_str)
         return final_str
-    
-    def set_label_from_json(self, json_path: str):
-        """Set labels for paths from a JSON file.
 
-        Args:
-            json_path (str): Path to the JSON file containing labels.
-        """
-        with open(json_path, 'r') as f:
-            data = json.load(f)
-            labels = data['labels']
-            if len(labels) != len(self.paths):
-                raise ValueError("Number of labels must match number of paths.")
-            for i, label in enumerate(labels):
-                self.paths[i].label = label
+    def get_progressive_frames(self, sample_rate: int = 100) -> list["Sketch"]:
+        sketch_frames = []
+
+        ts = np.linspace(0, 1, sample_rate)
+
+        for i in range(self.path_num):
+            base_pathes = [] if i == 0 else self.paths[:i]
+            path_points = self.paths[i].get_division_points(ts)
+            path_points = path_points
+            curves = []
+            for j in range(len(path_points) - 1):
+                curves.append(Curve.from_line([path_points[j], path_points[j + 1]]))
+            for k in range(len(curves)):
+
+                sketch_frames.append(Sketch(base_pathes + [Path(curves[: k + 1])]))
+
+        return sketch_frames
+
+    # def set_label_from_json(self, json_path: str):
+    #     """Set labels for paths from a JSON file.
+
+    #     Args:
+    #         json_path (str): Path to the JSON file containing labels.
+    #     """
+    #     with open(json_path, "r") as f:
+    #         data = json.load(f)
+    #         labels = data["labels"]
+    #         if len(labels) != len(self.paths):
+    #             raise ValueError("Number of labels must match number of paths.")
+    #         for i, label in enumerate(labels):
+    #             self.paths[i].label = label

@@ -1,6 +1,6 @@
 from sketchkit.core.sketch import Sketch, Curve
 from sketchkit.core.camera import Camera
-from sketchkit.renderer.renderer import Renderer3D, Render3DOptions
+from sketchkit.renderer3d.renderer3d import Renderer3D, Render3DOptions
 import numpy as np
 import cairocffi as cairo
 import math
@@ -31,7 +31,7 @@ class NPRRenderer(Renderer3D):
         if root is None:
             root = os.path.join(
                 os.environ.get("HOME", "/"),
-                ".cache/sketchkit/bin",
+                ".sketchkit/bin",
                 self.__class__.__name__,
             )
         if isinstance(root, str):

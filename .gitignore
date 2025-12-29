@@ -15,6 +15,7 @@ venv/
 htmlcov/
 *.png
 *.mp4
+*.gif
 .cache
 
 # IDEs
@@ -31,3 +32,4 @@ docs/source/manual/generated
 media/
 *.gif
 *.ppm
+*.svg

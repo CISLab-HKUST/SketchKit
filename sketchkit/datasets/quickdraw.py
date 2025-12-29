@@ -7,9 +7,8 @@ from pathlib import Path as PathLibPath
 import pandas as pd
 
 
-from sketchkit.core.sketch import Sketch, Path
+from sketchkit.core.sketch import Sketch, Path, Curve
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.transform import line_to_cubic
 from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN
 
 
@@ -54,7 +53,7 @@ def parse_stroke3_format(stroke_data):
             p_start = xy[i]  # (2)
             p_end = xy[i + 1]  # (2)
             line = np.stack([p_start, p_end], axis=0)  # (2, 2)
-            cubic = line_to_cubic(line)  # (4, 2)
+            cubic = Curve.from_line(line)  # (4, 2)
             stroke_list.append(cubic)
             total_segment_num += 1
         elif stroke_list != []:

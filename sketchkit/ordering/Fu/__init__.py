@@ -6,7 +6,6 @@ from operator import itemgetter
 from .tsp_bnb import Node
 from queue import PriorityQueue
 from .direction import determine_direction
-from sketchkit.utils.transform import line_to_cubic
 from sketchkit.renderer.cairo_renderer import CairoRenderer
 from sketchkit.ordering import Orderer
 from tqdm import tqdm
@@ -20,31 +19,38 @@ def get_cost_bi(cost_bi, i, j):
         ii = min(i, j)
         jj = max(i, j)
         return cost_bi[ii][jj - ii - 1]
-    
+
+
 class AnimatedDrawer(Orderer):
-    def __init__(self, max_k: int = 4, w: float = 0.1111111, canvas_size: int = 800, canvas_color = (1, 1, 1), width: int = 4):
+    def __init__(
+        self,
+        max_k: int = 4,
+        w: float = 0.1111111,
+        canvas_size: int = 800,
+        canvas_color=(1, 1, 1),
+        width: int = 4,
+    ):
         self.max_k = max_k
         self.w = w
         self.canvas_size = canvas_size
         self.canvas_color = canvas_color
         self.width = width
 
-    def run(self, sketch: Sketch, gif_path: str = None) -> Sketch:
+    def run(self, sketch: Sketch) -> Sketch:
         result = self._animated_drawing(sketch)
         paths = [sketch.paths[i] for i in result["solution"]]
         ret_sketch = Sketch(paths=paths)
-        sketch_frames = self._render_animated_drawing(sketch, result)
-        renderer = CairoRenderer(canvas_size=self.canvas_size, canvas_color=self.canvas_color)
-        frames = []
-        for sketch in tqdm(sketch_frames, desc="Rendering frames"):
-            frame = renderer.render(sketch, width=self.width)
-            frames.append(Image.fromarray(frame))
+        # sketch_frames = self._render_animated_drawing(sketch, result)
+        # renderer = CairoRenderer(canvas_size=self.canvas_size, canvas_color=self.canvas_color)
+        # frames = []
+        # for sketch in tqdm(sketch_frames, desc="Rendering frames"):
+        #     frame = renderer.render(sketch, width=self.width)
+        #     frames.append(Image.fromarray(frame))
 
-        # Save as animated GIF
-        frames[0].save(gif_path, save_all=True, append_images=frames[1:], duration=100, loop=0)
+        # # Save as animated GIF
+        # frames[0].save(gif_path, save_all=True, append_images=frames[1:], duration=100, loop=0)
 
         return ret_sketch
-            
 
     def _animated_drawing(self, sketch: Sketch) -> List[int]:
         """
@@ -70,13 +76,25 @@ class AnimatedDrawer(Orderer):
                     polyline_path.append(0)
                     polyline_path.append(curve.p_start.x)
                     polyline_path.append(curve.p_start.y)
-                    
-                elif np.linalg.norm(np.array(polyline_path[-2:]) - np.array([curve.p_start.x, curve.p_start.y])) > 1:
+
+                elif (
+                    np.linalg.norm(
+                        np.array(polyline_path[-2:])
+                        - np.array([curve.p_start.x, curve.p_start.y])
+                    )
+                    > 1
+                ):
                     polyline_path.append(0)
                     polyline_path.append(curve.p_start.x)
                     polyline_path.append(curve.p_start.y)
-                    
-            if np.linalg.norm(np.array(polyline_path[-2:]) - np.array([path.curves[-1].p_end.x, path.curves[-1].p_end.y])) > 1:
+
+            if (
+                np.linalg.norm(
+                    np.array(polyline_path[-2:])
+                    - np.array([path.curves[-1].p_end.x, path.curves[-1].p_end.y])
+                )
+                > 1
+            ):
                 polyline_path.append(0)
                 polyline_path.append(path.curves[-1].p_end.x)
                 polyline_path.append(path.curves[-1].p_end.y)
@@ -123,27 +141,47 @@ class AnimatedDrawer(Orderer):
                 if [i, j] in T_junctions:
                     # add j, i
                     vertex_pair.append((j, i))
-                    edge_weight.append(w * get_cost_bi(cost_bi_pro, j, i) + (1-w) * get_cost_bi(cost_bi_col, j, i))
+                    edge_weight.append(
+                        w * get_cost_bi(cost_bi_pro, j, i)
+                        + (1 - w) * get_cost_bi(cost_bi_col, j, i)
+                    )
                 elif [j, i] in T_junctions:
                     # add i, j
                     vertex_pair.append((i, j))
-                    edge_weight.append(w * get_cost_bi(cost_bi_pro, i, j) + (1-w) * get_cost_bi(cost_bi_col, i, j))
+                    edge_weight.append(
+                        w * get_cost_bi(cost_bi_pro, i, j)
+                        + (1 - w) * get_cost_bi(cost_bi_col, i, j)
+                    )
                 else:
                     # add j, i
                     vertex_pair.append((j, i))
-                    edge_weight.append(w * get_cost_bi(cost_bi_pro, j, i) + (1-w) * get_cost_bi(cost_bi_col, j, i))
+                    edge_weight.append(
+                        w * get_cost_bi(cost_bi_pro, j, i)
+                        + (1 - w) * get_cost_bi(cost_bi_col, j, i)
+                    )
                     # add i, j
                     vertex_pair.append((i, j))
-                    edge_weight.append(w * get_cost_bi(cost_bi_pro, i, j) + (1-w) * get_cost_bi(cost_bi_col, i, j))
+                    edge_weight.append(
+                        w * get_cost_bi(cost_bi_pro, i, j)
+                        + (1 - w) * get_cost_bi(cost_bi_col, i, j)
+                    )
                 ### NOTE didn't check conflicting directed cycles, could use toposort to check
         weight_binary = {}
         for i in range(len(vertex_pair)):
-            weight_binary[str(vertex_pair[i][0]) + "," + str(vertex_pair[i][1])] = edge_weight[i]
+            weight_binary[str(vertex_pair[i][0]) + "," + str(vertex_pair[i][1])] = (
+                edge_weight[i]
+            )
         weight_unary = cost_uni
-        
+
         optim_node = None
         upper_bound = 999999999
-        root = Node(trace=[], curr=0, weight_unary=weight_unary, weight_binary=weight_binary, n=n)
+        root = Node(
+            trace=[],
+            curr=0,
+            weight_unary=weight_unary,
+            weight_binary=weight_binary,
+            n=n,
+        )
         q = PriorityQueue()
         q.put((root.cost + root.lower_bound()[1], root))
 
@@ -158,14 +196,24 @@ class AnimatedDrawer(Orderer):
             else:
                 next_nodes = []
                 for key in weight_binary.keys():
-                    if int(key.split(",")[0]) == this_node.curr and \
-                        int(key.split(",")[1]) not in this_node.trace:
+                    if (
+                        int(key.split(",")[0]) == this_node.curr
+                        and int(key.split(",")[1]) not in this_node.trace
+                    ):
                         next_nodes.append(int(key.split(",")[1]))
                 for next_node in next_nodes:
-                    next_node_q = Node(trace=this_node.trace + [this_node.curr], curr=next_node, weight_unary=weight_unary, weight_binary=weight_binary, n=n)
+                    next_node_q = Node(
+                        trace=this_node.trace + [this_node.curr],
+                        curr=next_node,
+                        weight_unary=weight_unary,
+                        weight_binary=weight_binary,
+                        n=n,
+                    )
                     next_lower_bound = next_node_q.lower_bound()
-                    if next_lower_bound[0] and \
-                        next_node_q.cost + next_lower_bound[1] <= upper_bound:
+                    if (
+                        next_lower_bound[0]
+                        and next_node_q.cost + next_lower_bound[1] <= upper_bound
+                    ):
                         q.put((next_node_q.cost + next_lower_bound[1], next_node_q))
             if print_count % 10000 == 0:
                 print(this_node.trace + [this_node.curr], upper_bound)
@@ -175,9 +223,12 @@ class AnimatedDrawer(Orderer):
             print("Solution does not exist!")
             return None
         else:
-            result = {"solution": optim_node.trace + [optim_node.curr], "cost": optim_node.cost}
+            result = {
+                "solution": optim_node.trace + [optim_node.curr],
+                "cost": optim_node.cost,
+            }
             # print("Optimal solution:", optim_node.trace + [optim_node.curr], "cost:", optim_node.cost)
-            # return result["solution"]  
+            # return result["solution"]
             directions = []
             for i in range(len(result["solution"])):
                 index = result["solution"][i]
@@ -190,39 +241,41 @@ class AnimatedDrawer(Orderer):
                 current_path = sketch.paths[index]
                 start = current_path.curves[0].p_start
                 end = current_path.curves[-1].p_end
-                
+
                 directions.append(determine_direction(prev, start, end))
             result["directions"] = directions
             print(result)
             return result
-    
-    def _render_animated_drawing(self, sketch: Sketch, result: dict, sample_rate: int = 24):
-        """
-        Render the animated drawing based on the result.
-        Args:
-            sketch (Sketch): The sketch object.
-            result (dict): The result dictionary.
-        """
-        sketch_frames = []
-        # 将sketch.paths按照result["solution"]的顺序排序
-        paths = [sketch.paths[i] for i in result["solution"]]
-        # paths = [path.remove_zero_length_curves() for path in paths]
-        
-        # 在0-1之间均匀取100个点
-        ts = np.linspace(0, 1, sample_rate)
-        
-        for i in range(len(result["solution"])-1):
-            base_pathes = [] if i == 0 else paths[:i]
-            index = result["solution"][i]
-            path_points = sketch.paths[index].get_division_points(ts)
-            # print("path_points:", path_points)
-            path_points = path_points if result["directions"][i] else path_points[::-1]
-            curves = []
-            for j in range(len(path_points) - 1):
-                curves.append(line_to_cubic([path_points[j], path_points[j+1]]))
-            for k in range(len(curves)):
-                # base_pathes.append(Path(curves[:k+1]))
-                # print("base_pathes:", base_pathes[-1].curves[-1].p_end.x, base_pathes[-1].curves[-1].p_end.y)
-                sketch_frames.append(Sketch(base_pathes+[Path(curves[:k+1])]))
-        
-        return sketch_frames
+
+    # def _render_animated_drawing(
+    #     self, sketch: Sketch, result: dict, sample_rate: int = 24
+    # ):
+    #     """
+    #     Render the animated drawing based on the result.
+    #     Args:
+    #         sketch (Sketch): The sketch object.
+    #         result (dict): The result dictionary.
+    #     """
+    #     sketch_frames = []
+    #     # 将sketch.paths按照result["solution"]的顺序排序
+    #     paths = [sketch.paths[i] for i in result["solution"]]
+    #     # paths = [path.remove_empty_curves() for path in paths]
+
+    #     # 在0-1之间均匀取100个点
+    #     ts = np.linspace(0, 1, sample_rate)
+
+    #     for i in range(len(result["solution"]) - 1):
+    #         base_pathes = [] if i == 0 else paths[:i]
+    #         index = result["solution"][i]
+    #         path_points = sketch.paths[index].get_division_points(ts)
+    #         # print("path_points:", path_points)
+    #         path_points = path_points if result["directions"][i] else path_points[::-1]
+    #         curves = []
+    #         for j in range(len(path_points) - 1):
+    #             curves.append(Curve.from_line([path_points[j], path_points[j + 1]]))
+    #         for k in range(len(curves)):
+    #             # base_pathes.append(Path(curves[:k+1]))
+    #             # print("base_pathes:", base_pathes[-1].curves[-1].p_end.x, base_pathes[-1].curves[-1].p_end.y)
+    #             sketch_frames.append(Sketch(base_pathes + [Path(curves[: k + 1])]))
+
+    #     return sketch_frames

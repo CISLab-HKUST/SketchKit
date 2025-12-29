@@ -32,3 +32,4 @@ docs/source/manual/generated
 media/
 *.gif
 *.ppm
+*.svg

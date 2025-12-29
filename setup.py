@@ -10,7 +10,7 @@ from sysconfig import get_paths
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 class CMakeExtension(Extension):
-    def __init__(self, name, sourcedir, build_with_cuda=False):
+    def __init__(self, name, sourcedir, build_with_cuda):
         Extension.__init__(self, name, sources=[])
         self.sourcedir = os.path.abspath(sourcedir)
         self.build_with_cuda = build_with_cuda

@@ -16,14 +16,10 @@ from typing import Optional, Dict, Any, Union
 try:
     from sketchkit.core.sketch import Sketch
 except ImportError:
-    Sketch = None  # Will be handled in the function
-
-# 移除 config 模块依赖，直接使用环境变量或硬编码
-# from sketchkit.config import get_api_key
-
+    Sketch = None 
 
 def sketch_to_3d_doubao_impl(
-    sketch_input: Union['Sketch', str, np.ndarray],
+    sketch_input: Union['Sketch', str, np.ndarray, Image.Image],
     output_path: Optional[str] = None,
     api_key: Optional[str] = None,
     api_base: Optional[str] = None,
@@ -33,7 +29,7 @@ def sketch_to_3d_doubao_impl(
     Convert sketch to 3D model using Doubao-Seed3D API.
     
     Args:
-        sketch_input: Input sketch, can be Sketch object, file path (str), or numpy array
+        sketch_input: Input sketch, can be Sketch object, file path (str), PIL Image, or numpy array
         output_path: Output file path (if None, will be auto-generated)
         api_key: Doubao API key (if None, will read from environment variable DOUBAO_API_KEY)
         api_base: API base URL (if None, uses default)
@@ -62,6 +58,10 @@ def sketch_to_3d_doubao_impl(
             # File path - load image
             img = Image.open(sketch_input).convert('RGB')
             raster_image = np.array(img, dtype=np.uint8)
+        elif isinstance(sketch_input, Image.Image):
+            # PIL Image - convert to RGB and then to numpy array
+            img = sketch_input.convert('RGB')
+            raster_image = np.array(img, dtype=np.uint8)
         else:
             # Assume numpy array
             raster_image = np.asarray(sketch_input, dtype=np.uint8)
@@ -69,13 +69,9 @@ def sketch_to_3d_doubao_impl(
                 # Grayscale to RGB
                 raster_image = np.stack([raster_image] * 3, axis=-1)
         
-        # Get API configuration - 直接使用环境变量或硬编码
+        # Get API configuration
         if api_key is None:
-            # 优先使用环境变量
             api_key = os.environ.get('DOUBAO_API_KEY')
-            # 如果没有环境变量，使用硬编码的默认值
-            if api_key is None:
-                api_key = '95699390-d7d0-4c54-8c94-05bdd001d850'  # 硬编码的默认 API key
         
         model_name = kwargs.get('model_name', 'doubao-seed3d-1-0-250928')
         subdivision_level = kwargs.get('subdivision_level', 'medium')

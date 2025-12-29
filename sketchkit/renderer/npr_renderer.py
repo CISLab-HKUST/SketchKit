@@ -80,7 +80,18 @@ class NPRRenderer:
         
         # 从相机参数计算变换矩阵（这里需要根据具体需求实现）
         for i, camera in enumerate(cameras):
-            transform = camera.extrinsics_for_opengl.reshape(-1)
+
+            
+            extrinsics = camera.extrinsics
+            R = extrinsics[:3, :3]
+            t = extrinsics[:3, 3]
+            T = np.diag([1, -1, 1])
+            R_gl = T @ R @ T
+            t_gl = T @ t
+            transform = np.eye(4)
+            transform[:3, :3] = R_gl
+            transform[:3, 3] = t_gl
+            
             
             if not os.path.exists(output_folder):
                 os.makedirs(output_folder)

@@ -109,8 +109,8 @@ class NPRRenderer:
             extrinsics = camera.extrinsics
             print("Camera extrinsics:\n", extrinsics)
             
-            T = np.array([[0, 1, 0, 0],
-                          [1, 0, 0, 0],
+            T = np.array([[1, 0, 0, 0],
+                          [0, -1, 0, 0],
                           [0, 0, -1, 0],
                           [0, 0, 0, 1]])  # 转换坐标系从RFU到RDF
             
@@ -121,7 +121,7 @@ class NPRRenderer:
             
             if not os.path.exists(output_folder):
                 os.makedirs(output_folder)
-            output_path = os.path.join(output_folder, f"{i}.png")
+            output_path = os.path.join(output_folder, f"{i}.ppm")
         
             if opts.method == "SuggestiveContour":
                 self.render_suggestive_countour(output_path, transform, opts.canvas_size, opts.threshold)

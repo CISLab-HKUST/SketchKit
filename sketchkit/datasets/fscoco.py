@@ -9,7 +9,6 @@ from tqdm import tqdm
 from sketchkit.core.sketch import Sketch, Path, Curve
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
-from sketchkit.utils.transform import line_to_cubic
 
 
 class FSCOCO(SketchDataset):
@@ -208,7 +207,7 @@ class FSCOCO(SketchDataset):
             for i in range(len(pts) - 1):
                 # Map each polyline edge to a cubic Bézier curve.
                 line = np.array([pts[i], pts[i + 1]], dtype=float)
-                cubic = line_to_cubic(line)
+                cubic = Curve.from_line(line)
                 curves.append(cubic)
             if curves:
                 paths.append(Path(curves=curves))

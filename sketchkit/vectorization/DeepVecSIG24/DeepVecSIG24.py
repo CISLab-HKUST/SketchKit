@@ -7,8 +7,7 @@ from PIL import Image
 from types import SimpleNamespace
 from svgpathtools import wsvg
 
-from sketchkit.core.sketch import Sketch, Path
-from sketchkit.utils.transform import line_to_cubic
+from sketchkit.core.sketch import Sketch, Curve, Path
 
 from sketchkit.vectorization.DeepVecSIG24.network.udc import CNN_2d_resnet
 from sketchkit.vectorization.DeepVecSIG24.network.keypoint import PyramidalNet
@@ -297,7 +296,7 @@ class DeepVecSIG24:
                 p_start = pts_array[i - 1]  # (2)
                 p_end = pts_array[i]  # (2)
                 line = np.stack([p_start, p_end], axis=0)  # (2, 2)
-                cubic = line_to_cubic(line)  # (4, 2)
+                cubic = Curve.from_line(line)  # (4, 2)
                 stroke_list.append(cubic)
             path_list.append(Path(stroke_list))
         return path_list

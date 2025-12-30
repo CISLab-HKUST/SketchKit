@@ -82,18 +82,15 @@ class T2IAdapterModel:
         **kwargs: Any,
     ) -> Image.Image:
         """Generate image from edge-conditioned sketch."""
-        # 从kwargs中移除已显式处理的参数和diffusers 0.35.2不支持的参数
+        # 从kwargs中移除已显式处理的参数和diffusers不支持的参数
         kwargs_copy = kwargs.copy()
-        kwargs_copy.pop('num_steps', None)
-        kwargs_copy.pop('guidance_scale', None)
-        kwargs_copy.pop('adapter_scale', None)
+        # 移除可能传入的其他方法的参数
+        kwargs_copy.pop('controlnet_conditioning_scale', None)
+        kwargs_copy.pop('image_guidance_scale', None)
         kwargs_copy.pop('adapter_conditioning_factor', None)  # 移除不支持的参数
         
         if control_image.mode != 'L':
-            raise ValueError(
-                f"T2I-Adapter requires grayscale edge images (mode='L'), "
-                f"got mode='{control_image.mode}'"
-            )
+            control_image = control_image.convert('L')
         
         generator = None
         if seed is not None:

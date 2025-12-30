@@ -68,7 +68,6 @@ class Pix2PixModel:
         guidance_scale: float = 7.5,
         image_guidance_scale: float = 1.0,
         seed: Optional[int] = None,
-        instruction_prefix: str = "Convert this sketch to",
         **kwargs: Any,
     ) -> Image.Image:
         """Generate image from sketch using instruction-based translation."""
@@ -79,12 +78,7 @@ class Pix2PixModel:
         kwargs_copy.pop('image_guidance_scale', None)
         
         if control_image.mode != 'RGB':
-            raise ValueError(
-                f"Pix2Pix requires RGB images (mode='RGB'), "
-                f"got mode='{control_image.mode}'"
-            )
-        
-        instruction_prompt = f"{instruction_prefix} {prompt}"
+            control_image = control_image.convert('RGB')
         
         generator = None
         if seed is not None:
@@ -93,7 +87,7 @@ class Pix2PixModel:
         
         try:
             result = self.pipeline(
-                prompt=instruction_prompt,
+                prompt=prompt,
                 image=control_image,
                 negative_prompt=negative_prompt,
                 num_inference_steps=num_inference_steps,

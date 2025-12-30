@@ -1,5 +1,5 @@
 """
-Sketch Colorization Models Module
+Colorization Models Module
 
 This module contains all AI model implementations for sketch colorization.
 """

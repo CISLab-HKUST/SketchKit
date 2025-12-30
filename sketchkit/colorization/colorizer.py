@@ -1,5 +1,7 @@
 """
 Colorizer for sketch colorization tasks.
+
+This class provides functionality to colorize vector sketches using various AI methods.
 """
 
 import numpy as np
@@ -20,13 +22,14 @@ class Colorizer:
 
     Attributes:
         method (str): The colorization method that is used.
-        model_params (dict): Parameters for model initialization.
-        _pipeline: The loaded AI model pipeline.
+        device (str): The device that is used.
+        _model: The loaded AI model instance.
     """
     
     def __init__(
         self, 
         method: str = "controlnet_lineart", 
+        device: str = "cuda",
         **kwargs: Any
     ):
         """
@@ -36,25 +39,19 @@ class Colorizer:
             method: The colorization method to use. Choose from:
                 - 'controlnet_lineart': ControlNet with lineart conditioning
                 - 'controlnet_scribble': ControlNet with scribble conditioning
-        
-        Keyword Args for ControlNet:
-            controlnet_model (str): ControlNet model name. Defaults vary by method.
-            sd_model (str): Stable Diffusion base model. Defaults to 
-                "runwayml/stable-diffusion-v1-5".
-            torch_dtype: Data type for model weights. Defaults to torch.float16.
+            device: The device to use (e.g., 'cuda' or 'cpu')
+            **kwargs: Additional parameters for model initialization.
         """
         self.method = method
-        self.model_params = kwargs
-        self._pipeline = None
+        self.device = device
         
         # Map method names to model classes
-        self._model_classes = {
-            "controlnet_lineart": ControlNetLineartModel,
-            "controlnet_scribble": ControlNetScribbleModel,
-        }
-        
-        if method not in self._model_classes:
-            raise ValueError(f"Unsupported method: {method}. Available methods: {list(self._model_classes.keys())}")
+        if method == "controlnet_lineart":
+            self._model = ControlNetLineartModel(device=device, **kwargs)
+        elif method == "controlnet_scribble":
+            self._model = ControlNetScribbleModel(device=device, **kwargs)
+        else:
+            raise ValueError(f"Unsupported method: {method}. Available methods: ['controlnet_lineart', 'controlnet_scribble']")
     
     def run(
         self,
@@ -67,9 +64,9 @@ class Colorizer:
         Colorize the input sketch.
 
         Args:
-            sketch (Sketch): Input vector sketch.
-            prompt (str): Text description guiding the colorization.
-            size (Union[int, Tuple[int, int]]): Output image size.
+            sketch: Input vector sketch.
+            prompt: Text description guiding the colorization.
+            size: Output image size (int for square, tuple for rectangle).
             
         Keyword Args for Generation Control:
             stroke_width (int): Stroke width for rasterization. Defaults to 2.
@@ -82,13 +79,8 @@ class Colorizer:
             seed (int): Random seed for reproducibility. Optional.
 
         Returns:
-            Image.Image: Colorized image as PIL Image.
+            Colorized image as PIL Image.
         """
-        # Lazy load pipeline
-        if self._pipeline is None:
-            model_class = self._model_classes[self.method]
-            self._pipeline = model_class(**self.model_params)
-        
         # Convert sketch to raster
         raster_sketch = self._sketch_to_raster(
             sketch,
@@ -103,40 +95,32 @@ class Colorizer:
         # Setup generator for reproducibility
         generator = None
         if 'seed' in kwargs:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = self.device if self.device != "cuda" or torch.cuda.is_available() else "cpu"
             generator = torch.Generator(device=device).manual_seed(kwargs['seed'])
         
-        # 根据方法设置默认参数
-        if self.method == 'controlnet_lineart' or self.method == 'controlnet_scribble':
-            default_steps = 20
-            scale_param = 'controlnet_conditioning_scale'
-            scale_value = kwargs.get('controlnet_conditioning_scale', 1.0)
-        else:
-            raise ValueError(f"Unsupported method: {self.method}")
-        
-        # 准备生成参数
+        # Prepare generation parameters
         gen_params = {
             'control_image': control_image,
             'prompt': prompt,
             'size': size,
             'negative_prompt': kwargs.get('negative_prompt', "blurry, low quality, distorted"),
-            'num_inference_steps': kwargs.get('num_inference_steps', default_steps),
+            'num_inference_steps': kwargs.get('num_inference_steps', 20),
             'guidance_scale': kwargs.get('guidance_scale', 7.5),
+            'controlnet_conditioning_scale': kwargs.get('controlnet_conditioning_scale', 1.0),
             'seed': generator,
-            scale_param: scale_value,
         }
         
-        # 移除已经使用的参数
-        used_keys = ['stroke_width', 'fit_canvas', 'num_inference_steps', 'guidance_scale', 
+        # Remove already used parameters
+        used_keys = ['stroke_width', 'fit_canvas', 'num_inference_steps', 'guidance_scale',
                     'controlnet_conditioning_scale', 'negative_prompt', 'seed']
         for key in used_keys:
             kwargs.pop(key, None)
         
-        # 添加剩余的参数
+        # Add remaining parameters
         gen_params.update(kwargs)
         
         # Generate colorized image
-        return self._pipeline.generate(**gen_params)
+        return self._model.generate(**gen_params)
     
     def _sketch_to_raster(
         self,

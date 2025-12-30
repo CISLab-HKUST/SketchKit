@@ -41,7 +41,7 @@ def main():
     # 加载数据集
     print("Loading QuickDraw dataset...")
     dataset = QuickDraw()
-    sketch = dataset[100]  # 假设是猫的sketch
+    sketch = dataset[100]  # Cat sketch
     
     print(f"Loaded sketch with {len(sketch.paths)} paths")
     

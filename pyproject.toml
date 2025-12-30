@@ -42,7 +42,7 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["setuptools", "wheel", "torch", "cmake", "ninja", "numpy"]
+requires = ["setuptools", "wheel", "torch", "cmake", "ninja", "numpy", "pybind11"]
 build-backend = "setuptools.build_meta"
 
 [dependency-groups]

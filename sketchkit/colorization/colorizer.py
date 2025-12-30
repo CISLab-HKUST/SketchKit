@@ -81,6 +81,21 @@ class Colorizer:
         Returns:
             Colorized image as PIL Image.
         """
+        if self.method == "controlnet_lineart":
+            return self._run_controlnet(sketch, prompt, size, **kwargs)
+        elif self.method == "controlnet_scribble":
+            return self._run_controlnet(sketch, prompt, size, **kwargs)
+        else:
+            raise ValueError(f"Unsupported method: {self.method}")
+    
+    def _run_controlnet(
+        self,
+        sketch: Sketch,
+        prompt: str,
+        size: Union[int, Tuple[int, int]],
+        **kwargs: Any,
+    ) -> Image.Image:
+        """Run ControlNet-based colorization."""
         # Convert sketch to raster
         raster_sketch = self._sketch_to_raster(
             sketch,

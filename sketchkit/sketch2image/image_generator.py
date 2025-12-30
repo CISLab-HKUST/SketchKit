@@ -86,6 +86,23 @@ class ImageGenerator:
         Returns:
             Generated image as PIL Image.
         """
+        if self.method == "controlnet":
+            return self._run_controlnet(sketch, prompt, size, **kwargs)
+        elif self.method == "t2i_adapter":
+            return self._run_t2i_adapter(sketch, prompt, size, **kwargs)
+        elif self.method == "pix2pix":
+            return self._run_pix2pix(sketch, prompt, size, **kwargs)
+        else:
+            raise ValueError(f"Unsupported method: {self.method}")
+    
+    def _run_controlnet(
+        self,
+        sketch: Sketch,
+        prompt: str,
+        size: Union[int, Tuple[int, int]],
+        **kwargs: Any,
+    ) -> Image.Image:
+        """Run ControlNet-based sketch-to-image conversion."""
         # Convert sketch to raster
         raster_sketch = self._sketch_to_raster(
             sketch,
@@ -94,11 +111,8 @@ class ImageGenerator:
             fit_canvas=kwargs.get('fit_canvas', True),
         )
         
-        # Prepare control image based on method
-        if self.method == 't2i_adapter':
-            control_image = self._prepare_t2i_adapter_image(raster_sketch)
-        else:
-            control_image = self._prepare_control_image(raster_sketch)
+        # Prepare control image
+        control_image = self._prepare_control_image(raster_sketch)
         
         # Setup generator for reproducibility
         generator = None
@@ -114,22 +128,110 @@ class ImageGenerator:
             'negative_prompt': kwargs.get('negative_prompt', ""),
             'num_inference_steps': kwargs.get('num_inference_steps', 20),
             'guidance_scale': kwargs.get('guidance_scale', 7.5),
+            'controlnet_conditioning_scale': kwargs.get('controlnet_conditioning_scale', 1.0),
             'seed': generator,
         }
         
-        # Add method-specific parameters
-        if self.method == 'controlnet':
-            gen_params['controlnet_conditioning_scale'] = kwargs.get('controlnet_conditioning_scale', 1.0)
-        elif self.method == 't2i_adapter':
-            gen_params['adapter_conditioning_scale'] = kwargs.get('adapter_conditioning_scale', 1.0)
-            gen_params['num_inference_steps'] = kwargs.get('num_inference_steps', 50)  # T2I-Adapter default is 50
-        elif self.method == 'pix2pix':
-            gen_params['image_guidance_scale'] = kwargs.get('image_guidance_scale', 1.0)
-            gen_params['num_inference_steps'] = kwargs.get('num_inference_steps', 10)  # Pix2Pix default is 10
+        # Remove already used parameters
+        used_keys = ['stroke_width', 'fit_canvas', 'num_inference_steps', 'guidance_scale',
+                    'controlnet_conditioning_scale', 'negative_prompt', 'seed']
+        for key in used_keys:
+            kwargs.pop(key, None)
+        
+        # Add remaining parameters
+        gen_params.update(kwargs)
+        
+        # Generate image
+        return self._model.generate(**gen_params)
+    
+    def _run_t2i_adapter(
+        self,
+        sketch: Sketch,
+        prompt: str,
+        size: Union[int, Tuple[int, int]],
+        **kwargs: Any,
+    ) -> Image.Image:
+        """Run T2I-Adapter-based sketch-to-image conversion."""
+        # Convert sketch to raster
+        raster_sketch = self._sketch_to_raster(
+            sketch,
+            size=size,
+            stroke_width=kwargs.get('stroke_width', 3),
+            fit_canvas=kwargs.get('fit_canvas', True),
+        )
+        
+        # Prepare edge image for T2I-Adapter
+        control_image = self._prepare_t2i_adapter_image(raster_sketch)
+        
+        # Setup generator for reproducibility
+        generator = None
+        if 'seed' in kwargs:
+            device = self.device if self.device != "cuda" or torch.cuda.is_available() else "cpu"
+            generator = torch.Generator(device=device).manual_seed(kwargs['seed'])
+        
+        # Prepare generation parameters
+        gen_params = {
+            'control_image': control_image,
+            'prompt': prompt,
+            'size': size,
+            'negative_prompt': kwargs.get('negative_prompt', ""),
+            'num_inference_steps': kwargs.get('num_inference_steps', 50),  # T2I-Adapter default is 50
+            'guidance_scale': kwargs.get('guidance_scale', 7.5),
+            'adapter_conditioning_scale': kwargs.get('adapter_conditioning_scale', 1.0),
+            'seed': generator,
+        }
         
         # Remove already used parameters
         used_keys = ['stroke_width', 'fit_canvas', 'num_inference_steps', 'guidance_scale',
-                    'controlnet_conditioning_scale', 'adapter_conditioning_scale',
+                    'adapter_conditioning_scale', 'negative_prompt', 'seed']
+        for key in used_keys:
+            kwargs.pop(key, None)
+        
+        # Add remaining parameters
+        gen_params.update(kwargs)
+        
+        # Generate image
+        return self._model.generate(**gen_params)
+    
+    def _run_pix2pix(
+        self,
+        sketch: Sketch,
+        prompt: str,
+        size: Union[int, Tuple[int, int]],
+        **kwargs: Any,
+    ) -> Image.Image:
+        """Run Pix2Pix-based sketch-to-image conversion."""
+        # Convert sketch to raster
+        raster_sketch = self._sketch_to_raster(
+            sketch,
+            size=size,
+            stroke_width=kwargs.get('stroke_width', 3),
+            fit_canvas=kwargs.get('fit_canvas', True),
+        )
+        
+        # Prepare control image
+        control_image = self._prepare_control_image(raster_sketch)
+        
+        # Setup generator for reproducibility
+        generator = None
+        if 'seed' in kwargs:
+            device = self.device if self.device != "cuda" or torch.cuda.is_available() else "cpu"
+            generator = torch.Generator(device=device).manual_seed(kwargs['seed'])
+        
+        # Prepare generation parameters
+        gen_params = {
+            'control_image': control_image,
+            'prompt': prompt,
+            'size': size,
+            'negative_prompt': kwargs.get('negative_prompt', ""),
+            'num_inference_steps': kwargs.get('num_inference_steps', 10),  # Pix2Pix default is 10
+            'guidance_scale': kwargs.get('guidance_scale', 7.5),
+            'image_guidance_scale': kwargs.get('image_guidance_scale', 1.0),
+            'seed': generator,
+        }
+        
+        # Remove already used parameters
+        used_keys = ['stroke_width', 'fit_canvas', 'num_inference_steps', 'guidance_scale',
                     'image_guidance_scale', 'negative_prompt', 'seed']
         for key in used_keys:
             kwargs.pop(key, None)
@@ -137,7 +239,7 @@ class ImageGenerator:
         # Add remaining parameters
         gen_params.update(kwargs)
         
-        # Generate image using the model
+        # Generate image
         return self._model.generate(**gen_params)
     
     def _sketch_to_raster(

@@ -1,3 +1,9 @@
+
+        
+          
+
+
+    
 from __future__ import annotations  # 如果你用的是 Python 3.11 以下，建议加上这行
 
 from abc import ABC, abstractmethod
@@ -26,7 +32,7 @@ class Orderer(ABC):
     @overload
     def create(
         method: Literal["Fu"],
-        device: str = "cuda",
+        device: str = "cpu",
     ) -> "Orderer": ...
 
     @staticmethod
@@ -42,6 +48,10 @@ class Orderer(ABC):
             from sketchkit.ordering.LineDrawer import LineDrawer
 
             return LineDrawer(device=device)
+        elif method == "Fu":
+            from sketchkit.ordering.Fu import AnimatedDrawer
+
+            return AnimatedDrawer()
         else:
             raise ValueError(f"Unknown method: {method!r}. Please add implementations.")
 

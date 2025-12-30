@@ -4,6 +4,9 @@ import cairocffi as cairo
 import math
 from PIL import Image
 import random
+from typing import List
+from tqdm import tqdm
+import os
 
 def generate_random_colors(n):
     """

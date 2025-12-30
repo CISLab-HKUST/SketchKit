@@ -1,1 +1,3 @@
 recursive-include third_party/diffvg *
+recursive-include third_party/trimesh2 *
+recursive-include third_party/rtsc-1.6 *

@@ -8,29 +8,21 @@ the full MonsterMash/Teddy skeleton-based inflation algorithm.
 import numpy as np
 import os
 from typing import Tuple, Optional, Union
-from PIL import Image, ImageDraw
+from PIL import Image
 
-# Try to import scipy for advanced image operations
+# OpenCV for image processing
 try:
-    from scipy import ndimage
-    SCIPY_AVAILABLE = True
+    import cv2
+    CV2_AVAILABLE = True
 except ImportError:
-    SCIPY_AVAILABLE = False
-    ndimage = None
+    CV2_AVAILABLE = False
+    cv2 = None
     import warnings
     warnings.warn(
-        "scipy not available. Some image processing operations may be limited. "
-        "Install with: pip install scipy",
+        "OpenCV (cv2) not available. Teddy method requires OpenCV. "
+        "Install with: pip install opencv-python",
         UserWarning
     )
-
-# Try to import skimage for contour finding (optional but helpful)
-try:
-    from skimage import measure
-    SKIMAGE_AVAILABLE = True
-except ImportError:
-    SKIMAGE_AVAILABLE = False
-    measure = None
 
 try:
     from sketchkit.core.sketch import Sketch
@@ -148,45 +140,6 @@ def preprocess_raster_for_teddy(
     return gray
 
 
-def _calculate_contour_area(contour_points: np.ndarray) -> float:
-    """Calculate area of a contour using the shoelace formula.
-    
-    Args:
-        contour_points: Array of (x, y) coordinates, shape (N, 2)
-    
-    Returns:
-        Area of the contour
-    """
-    if len(contour_points) < 3:
-        return 0.0
-    # Ensure 2D array
-    if contour_points.ndim != 2 or contour_points.shape[1] != 2:
-        return 0.0
-    x = contour_points[:, 0]
-    y = contour_points[:, 1]
-    return 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
-
-
-def _fill_contour(contour_points: np.ndarray, shape: Tuple[int, int]) -> np.ndarray:
-    """Fill a contour using PIL ImageDraw.
-    
-    Args:
-        contour_points: Array of (x, y) coordinates, shape (N, 2)
-        shape: Output image shape (height, width)
-    
-    Returns:
-        Filled binary image as uint8 array
-    """
-    img = Image.new('L', (shape[1], shape[0]), 0)
-    draw = ImageDraw.Draw(img)
-    # Convert contour points to tuple list for PIL
-    # contour_points should be (x, y) format
-    points = [(int(float(p[0])), int(float(p[1]))) for p in contour_points]
-    if len(points) > 2:
-        draw.polygon(points, fill=255)
-    return np.array(img, dtype=np.uint8)
-
-
 def generate_teddy_input_images(
     gray_sketch: np.ndarray,
     check_single_contour: bool = True
@@ -209,89 +162,66 @@ def generate_teddy_input_images(
     Raises:
         ValueError: If no contour found or multiple large contours detected
     """
-    # Step 1: Create binary image (threshold at 127)
-    # Black lines (< 127) become 0, white background (>= 127) becomes 255
-    binary = np.where(gray_sketch < 127, 255, 0).astype(np.uint8)
+    if not CV2_AVAILABLE:
+        raise RuntimeError(
+            "OpenCV (cv2) is required for Teddy method. "
+            "Install with: pip install opencv-python"
+        )
+    
+    # Step 1: Extract lines/edges from the sketch
+    # Use Canny edge detection for better edge extraction
+    edges = cv2.Canny(gray_sketch, 50, 150)
+    
+    # Also try simple thresholding as fallback
+    _, binary = cv2.threshold(gray_sketch, 127, 255, cv2.THRESH_BINARY_INV)
+    
+    # Combine both methods: use edges where available, otherwise use binary
+    # This ensures we capture the sketch lines
+    combined_lines = np.maximum(edges, binary)
     
     # Step 2: Create outline image (white background, black outline)
     outline_img = np.full_like(gray_sketch, 255, dtype=np.uint8)
-    outline_img[binary > 0] = 0
+    outline_img[combined_lines > 0] = 0
     
-    # Step 3: Find the largest connected component and create region image
-    if SCIPY_AVAILABLE:
-        # Use scipy to find connected components (most reliable method)
-        labeled, num_features = ndimage.label(binary)
-        if num_features == 0:
-            raise ValueError("No contour found in sketch. Please ensure the sketch has a closed outline.")
-        
-        # Get sizes of all components
-        sizes = ndimage.sum(binary, labeled, range(1, num_features + 1))
-        largest_label = np.argmax(sizes) + 1
-        largest_area = sizes[largest_label - 1]
-        
-        # Check for single contour constraint
-        if check_single_contour and num_features > 1:
-            second_largest_idx = np.argsort(sizes)[-2] + 1
-            second_largest_area = sizes[second_largest_idx - 1]
-            if second_largest_area > largest_area * 0.25:
+    # Step 3: Find contours and create region image
+    # Use the binary image for contour detection
+    contours, _ = cv2.findContours(
+        binary,
+        cv2.RETR_EXTERNAL,
+        cv2.CHAIN_APPROX_SIMPLE
+    )
+    
+    if len(contours) == 0:
+        raise ValueError("No contour found in sketch. Please ensure the sketch has a closed outline.")
+    
+    # Find the largest contour
+    largest_contour = max(contours, key=cv2.contourArea)
+    largest_area = cv2.contourArea(largest_contour)
+    
+    # Check for single contour constraint
+    if check_single_contour:
+        # Check if there are other significant contours
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if contour is not largest_contour and area > largest_area * 0.25:
                 raise ValueError(
                     f"Multiple significant contours detected. "
                     f"Teddy method currently only supports single connected closed contours. "
-                    f"Found {num_features} components, largest area: {largest_area:.0f}, "
-                    f"second largest: {second_largest_area:.0f}"
+                    f"Found {len(contours)} contours, largest area: {largest_area:.0f}, "
+                    f"second largest: {area:.0f}"
                 )
-        
-        # Create region image from largest component
-        region_img = np.where(labeled == largest_label, 255, 0).astype(np.uint8)
-        
-    elif SKIMAGE_AVAILABLE:
-        # Use skimage for contour finding (fallback)
-        # Note: skimage.measure.find_contours returns (row, col) coordinates as floats
-        contours = measure.find_contours(binary, 127, fully_connected='high')
-        
-        if len(contours) == 0:
-            raise ValueError("No contour found in sketch. Please ensure the sketch has a closed outline.")
-        
-        # Find the largest contour by area
-        # skimage returns contours as (row, col) = (y, x), we need (x, y)
-        contour_areas = []
-        for contour in contours:
-            # contour is (N, 2) with (row, col) = (y, x)
-            # Convert to (x, y) for area calculation
-            xy_contour = np.flip(contour, axis=1)  # Swap to (col, row) = (x, y)
-            contour_areas.append(_calculate_contour_area(xy_contour))
-        
-        largest_idx = np.argmax(contour_areas)
-        largest_contour = contours[largest_idx]
-        largest_area = contour_areas[largest_idx]
-        
-        # Check for single contour constraint
-        if check_single_contour:
-            for i, (contour, area) in enumerate(zip(contours, contour_areas)):
-                if i != largest_idx and area > largest_area * 0.25:
-                    raise ValueError(
-                        f"Multiple significant contours detected. "
-                        f"Teddy method currently only supports single connected closed contours. "
-                        f"Found {len(contours)} contours, largest area: {largest_area:.0f}, "
-                        f"second largest: {area:.0f}"
-                    )
-        
-        # Step 4: Create region image (black background, white filled region)
-        # Convert (row, col) to (x, y) for PIL
-        xy_contour = np.flip(largest_contour, axis=1)
-        region_img = _fill_contour(xy_contour, gray_sketch.shape)
-    else:
-        # Fallback: simple threshold-based approach (no scipy or skimage)
-        if binary.sum() == 0:
-            raise ValueError("No contour found in sketch. Please ensure the sketch has a closed outline.")
-        # Just use the binary image directly (may not work well for complex shapes)
-        region_img = binary
     
-    # Optional: Validate connectivity using scipy
-    if check_single_contour and SCIPY_AVAILABLE:
-        labeled, num_labels = ndimage.label(region_img)
+    # Step 4: Create region image (black background, white filled region)
+    region_img = np.zeros_like(gray_sketch, dtype=np.uint8)
+    cv2.drawContours(region_img, [largest_contour], -1, color=255, thickness=-1)
+    
+    # Optional: Validate connectivity
+    if check_single_contour:
+        num_labels, labels = cv2.connectedComponents(region_img)
         # Should have 2 components: background (0) and filled region (1)
         if num_labels > 2:
+            # Multiple disconnected regions - this might be okay for some cases
+            # but we'll warn about it
             print(f"Warning: Region image has {num_labels - 1} disconnected components. "
                   f"Expected 1 filled region.")
     

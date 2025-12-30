@@ -1,5 +1,7 @@
 """
 ImageGenerator for sketch-to-image conversion tasks.
+
+This class provides functionality to convert vector sketches to realistic images using various AI methods.
 """
 
 import numpy as np
@@ -22,13 +24,14 @@ class ImageGenerator:
 
     Attributes:
         method (str): The conversion method that is used.
-        model_params (dict): Parameters for model initialization.
-        _pipeline: The loaded AI model pipeline.
+        device (str): The device that is used.
+        _model: The loaded AI model instance.
     """
     
     def __init__(
         self, 
         method: str = "controlnet",
+        device: str = "cuda",
         **kwargs: Any
     ):
         """
@@ -39,27 +42,21 @@ class ImageGenerator:
                 - 'controlnet': ControlNet with scribble conditioning
                 - 't2i_adapter': T2I-Adapter with edge conditioning
                 - 'pix2pix': InstructPix2Pix for direct translation
-        
-        Keyword Args for ControlNet:
-            controlnet_model (str): ControlNet model name. Defaults to 
-                "lllyasviel/sd-controlnet-scribble".
-            sd_model (str): Stable Diffusion base model. Defaults to 
-                "runwayml/stable-diffusion-v1-5".
-            torch_dtype: Data type for model weights. Defaults to torch.float16.
+            device: The device to use (e.g., 'cuda' or 'cpu')
+            **kwargs: Additional parameters for model initialization.
         """
         self.method = method
-        self.model_params = kwargs
-        self._pipeline = None
+        self.device = device
         
         # Map method names to model classes
-        self._model_classes = {
-            "controlnet": ControlNetModel,
-            "t2i_adapter": T2IAdapterModel,
-            "pix2pix": Pix2PixModel,
-        }
-        
-        if method not in self._model_classes:
-            raise ValueError(f"Unsupported method: {method}. Available methods: {list(self._model_classes.keys())}")
+        if method == "controlnet":
+            self._model = ControlNetModel(device=device, **kwargs)
+        elif method == "t2i_adapter":
+            self._model = T2IAdapterModel(device=device, **kwargs)
+        elif method == "pix2pix":
+            self._model = Pix2PixModel(device=device, **kwargs)
+        else:
+            raise ValueError(f"Unsupported method: {method}. Available methods: ['controlnet', 't2i_adapter', 'pix2pix']")
     
     def run(
         self,
@@ -72,9 +69,9 @@ class ImageGenerator:
         Convert the input sketch to realistic image.
 
         Args:
-            sketch (Sketch): Input vector sketch.
-            prompt (str): Text description guiding the image generation.
-            size (Union[int, Tuple[int, int]]): Output image size.
+            sketch: Input vector sketch.
+            prompt: Text description guiding the image generation.
+            size: Output image size (int for square, tuple for rectangle).
             
         Keyword Args for Generation Control:
             stroke_width (int): Stroke width for rasterization. Defaults to 3.
@@ -87,13 +84,8 @@ class ImageGenerator:
             seed (int): Random seed for reproducibility. Optional.
 
         Returns:
-            Image.Image: Generated image as PIL Image.
+            Generated image as PIL Image.
         """
-        # Lazy load pipeline
-        if self._pipeline is None:
-            model_class = self._model_classes[self.method]
-            self._pipeline = model_class(**self.model_params)
-        
         # Convert sketch to raster
         raster_sketch = self._sketch_to_raster(
             sketch,
@@ -108,52 +100,45 @@ class ImageGenerator:
         else:
             control_image = self._prepare_control_image(raster_sketch)
         
-        # 根据方法设置默认参数
-        if self.method == 'controlnet':
-            default_steps = 20
-            scale_param = 'controlnet_conditioning_scale'
-            scale_value = kwargs.get('controlnet_conditioning_scale', 1.0)
-        elif self.method == 't2i_adapter':
-            default_steps = 50
-            scale_param = 'adapter_conditioning_scale'
-            scale_value = kwargs.get('adapter_conditioning_scale', 1.0)
-        elif self.method == 'pix2pix':
-            default_steps = 10
-            scale_param = 'image_guidance_scale'
-            scale_value = kwargs.get('image_guidance_scale', 1.0)
-        else:
-            raise ValueError(f"Unsupported method: {self.method}")
-        
         # Setup generator for reproducibility
         generator = None
         if 'seed' in kwargs:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = self.device if self.device != "cuda" or torch.cuda.is_available() else "cpu"
             generator = torch.Generator(device=device).manual_seed(kwargs['seed'])
         
-        # 准备生成参数
+        # Prepare generation parameters
         gen_params = {
             'control_image': control_image,
             'prompt': prompt,
             'size': size,
             'negative_prompt': kwargs.get('negative_prompt', ""),
-            'num_inference_steps': kwargs.get('num_inference_steps', default_steps),
+            'num_inference_steps': kwargs.get('num_inference_steps', 20),
             'guidance_scale': kwargs.get('guidance_scale', 7.5),
             'seed': generator,
-            scale_param: scale_value,
         }
         
-        # 移除已经使用的参数
+        # Add method-specific parameters
+        if self.method == 'controlnet':
+            gen_params['controlnet_conditioning_scale'] = kwargs.get('controlnet_conditioning_scale', 1.0)
+        elif self.method == 't2i_adapter':
+            gen_params['adapter_conditioning_scale'] = kwargs.get('adapter_conditioning_scale', 1.0)
+            gen_params['num_inference_steps'] = kwargs.get('num_inference_steps', 50)  # T2I-Adapter default is 50
+        elif self.method == 'pix2pix':
+            gen_params['image_guidance_scale'] = kwargs.get('image_guidance_scale', 1.0)
+            gen_params['num_inference_steps'] = kwargs.get('num_inference_steps', 10)  # Pix2Pix default is 10
+        
+        # Remove already used parameters
         used_keys = ['stroke_width', 'fit_canvas', 'num_inference_steps', 'guidance_scale',
                     'controlnet_conditioning_scale', 'adapter_conditioning_scale',
                     'image_guidance_scale', 'negative_prompt', 'seed']
         for key in used_keys:
             kwargs.pop(key, None)
         
-        # 添加剩余的参数
+        # Add remaining parameters
         gen_params.update(kwargs)
         
-        # Generate image using the appropriate pipeline
-        return self._pipeline.generate(**gen_params)
+        # Generate image using the model
+        return self._model.generate(**gen_params)
     
     def _sketch_to_raster(
         self,

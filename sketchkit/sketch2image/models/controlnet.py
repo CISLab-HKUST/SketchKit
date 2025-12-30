@@ -1,10 +1,10 @@
 """
-ControlNet Model Implementation
+ControlNet Model Implementation for Sketch-to-Image Conversion
 """
 
 import torch
 from diffusers import StableDiffusionControlNetPipeline
-from diffusers import ControlNetModel as DiffusersControlNetModel  # 重命名避免冲突
+from diffusers import ControlNetModel as DiffusersControlNetModel
 from PIL import Image
 from typing import Tuple, Union, Dict, Any, Optional
 import warnings
@@ -15,16 +15,28 @@ class ControlNetModel:
     
     def __init__(
         self,
+        device: str = "cuda",
         controlnet_model: str = "lllyasviel/sd-controlnet-scribble",
         sd_model: str = "runwayml/stable-diffusion-v1-5",
         torch_dtype: torch.dtype = torch.float16,
         safety_checker: bool = False,
         **kwargs: Any,
     ):
+        """
+        Initialize ControlNet model.
+        
+        Args:
+            device: Device to use ('cuda' or 'cpu')
+            controlnet_model: ControlNet model name
+            sd_model: Stable Diffusion base model
+            torch_dtype: Data type for model weights
+            safety_checker: Whether to use safety checker
+            **kwargs: Additional parameters for model loading
+        """
         print(f"Loading ControlNet model: {controlnet_model}")
         
         try:
-            # 使用正确的导入名称
+            # Import ControlNetModel with alias to avoid conflict
             controlnet = DiffusersControlNetModel.from_pretrained(
                 controlnet_model,
                 torch_dtype=torch_dtype,
@@ -53,12 +65,15 @@ class ControlNetModel:
             if hasattr(self.pipeline, 'enable_attention_slicing'):
                 self.pipeline.enable_attention_slicing()
             
-            if torch.cuda.is_available():
+            if device == "cuda" and torch.cuda.is_available():
                 self.pipeline = self.pipeline.to("cuda")
+            elif device == "cpu":
+                self.pipeline = self.pipeline.to("cpu")
             
             self.controlnet_model = controlnet_model
             self.sd_model = sd_model
             self.torch_dtype = torch_dtype
+            self.device = device
             
             print(f"✅ ControlNet model loaded successfully")
             print(f"   - ControlNet: {controlnet_model}")
@@ -85,7 +100,7 @@ class ControlNetModel:
         **kwargs: Any,
     ) -> Image.Image:
         """Generate image from scribble-conditioned sketch."""
-        # 从kwargs中移除已显式处理的参数
+        # Remove parameters that are already explicitly handled
         kwargs_copy = kwargs.copy()
         kwargs_copy.pop('num_steps', None)
         kwargs_copy.pop('guidance_scale', None)
@@ -93,7 +108,7 @@ class ControlNetModel:
         
         generator = None
         if seed is not None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = self.device if self.device != "cuda" or torch.cuda.is_available() else "cpu"
             generator = torch.Generator(device=device).manual_seed(seed)
         
         try:

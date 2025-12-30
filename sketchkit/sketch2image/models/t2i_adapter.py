@@ -1,5 +1,5 @@
 """
-T2I-Adapter Model Implementation
+T2I-Adapter Model Implementation for Sketch-to-Image Conversion
 """
 
 import torch
@@ -14,12 +14,24 @@ class T2IAdapterModel:
     
     def __init__(
         self,
+        device: str = "cuda",
         adapter_model: str = "TencentARC/t2iadapter_canny_sd15v2",
         sd_model: str = "runwayml/stable-diffusion-v1-5",
         torch_dtype: torch.dtype = torch.float16,
         safety_checker: bool = False,
         **kwargs: Any,
     ):
+        """
+        Initialize T2I-Adapter model.
+        
+        Args:
+            device: Device to use ('cuda' or 'cpu')
+            adapter_model: T2I-Adapter model name
+            sd_model: Stable Diffusion base model
+            torch_dtype: Data type for model weights
+            safety_checker: Whether to use safety checker
+            **kwargs: Additional parameters for model loading
+        """
         print(f"Loading T2I-Adapter model: {adapter_model}")
         
         try:
@@ -50,12 +62,15 @@ class T2IAdapterModel:
             if hasattr(self.pipeline, 'enable_attention_slicing'):
                 self.pipeline.enable_attention_slicing()
             
-            if torch.cuda.is_available():
+            if device == "cuda" and torch.cuda.is_available():
                 self.pipeline = self.pipeline.to("cuda")
+            elif device == "cpu":
+                self.pipeline = self.pipeline.to("cpu")
             
             self.adapter_model = adapter_model
             self.sd_model = sd_model
             self.torch_dtype = torch_dtype
+            self.device = device
             
             print(f"✅ T2I-Adapter model loaded successfully")
             print(f"   - Adapter: {adapter_model}")
@@ -82,19 +97,20 @@ class T2IAdapterModel:
         **kwargs: Any,
     ) -> Image.Image:
         """Generate image from edge-conditioned sketch."""
-        # 从kwargs中移除已显式处理的参数和diffusers不支持的参数
+        # Remove parameters that are already explicitly handled
         kwargs_copy = kwargs.copy()
-        # 移除可能传入的其他方法的参数
+        # Remove parameters from other methods that might be passed by mistake
         kwargs_copy.pop('controlnet_conditioning_scale', None)
         kwargs_copy.pop('image_guidance_scale', None)
-        kwargs_copy.pop('adapter_conditioning_factor', None)  # 移除不支持的参数
+        kwargs_copy.pop('adapter_conditioning_factor', None)  # Remove unsupported parameter
         
+        # Convert image to grayscale if needed
         if control_image.mode != 'L':
             control_image = control_image.convert('L')
         
         generator = None
         if seed is not None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = self.device if self.device != "cuda" or torch.cuda.is_available() else "cpu"
             generator = torch.Generator(device=device).manual_seed(seed)
         
         try:

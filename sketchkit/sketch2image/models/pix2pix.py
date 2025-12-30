@@ -1,5 +1,5 @@
 """
-Pix2Pix Model Implementation
+Pix2Pix Model Implementation for Sketch-to-Image Conversion
 """
 
 import torch
@@ -14,11 +14,22 @@ class Pix2PixModel:
     
     def __init__(
         self,
+        device: str = "cuda",
         model_name: str = "timbrooks/instruct-pix2pix",
         torch_dtype: torch.dtype = torch.float16,
         safety_checker: bool = False,
         **kwargs: Any,
     ):
+        """
+        Initialize Pix2Pix model.
+        
+        Args:
+            device: Device to use ('cuda' or 'cpu')
+            model_name: InstructPix2Pix model name
+            torch_dtype: Data type for model weights
+            safety_checker: Whether to use safety checker
+            **kwargs: Additional parameters for model loading
+        """
         print(f"Loading Pix2Pix model: {model_name}")
         
         try:
@@ -41,11 +52,14 @@ class Pix2PixModel:
             if hasattr(self.pipeline, 'enable_attention_slicing'):
                 self.pipeline.enable_attention_slicing()
             
-            if torch.cuda.is_available():
+            if device == "cuda" and torch.cuda.is_available():
                 self.pipeline = self.pipeline.to("cuda")
+            elif device == "cpu":
+                self.pipeline = self.pipeline.to("cpu")
             
             self.model_name = model_name
             self.torch_dtype = torch_dtype
+            self.device = device
             
             print(f"✅ Pix2Pix model loaded successfully")
             print(f"   - Model: {model_name}")
@@ -71,18 +85,19 @@ class Pix2PixModel:
         **kwargs: Any,
     ) -> Image.Image:
         """Generate image from sketch using instruction-based translation."""
-        # 从kwargs中移除已显式处理的参数
+        # Remove parameters that are already explicitly handled
         kwargs_copy = kwargs.copy()
         kwargs_copy.pop('num_steps', None)
         kwargs_copy.pop('guidance_scale', None)
         kwargs_copy.pop('image_guidance_scale', None)
         
+        # Convert image to RGB if needed
         if control_image.mode != 'RGB':
             control_image = control_image.convert('RGB')
         
         generator = None
         if seed is not None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = self.device if self.device != "cuda" or torch.cuda.is_available() else "cpu"
             generator = torch.Generator(device=device).manual_seed(seed)
         
         try:

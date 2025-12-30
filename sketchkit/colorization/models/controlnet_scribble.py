@@ -15,12 +15,24 @@ class ControlNetScribbleModel:
     
     def __init__(
         self,
+        device: str = "cuda",
         controlnet_model: str = "lllyasviel/sd-controlnet-scribble",
         sd_model: str = "runwayml/stable-diffusion-v1-5",
         torch_dtype: torch.dtype = torch.float16,
         safety_checker: bool = False,
         **kwargs: Any,
     ):
+        """
+        Initialize ControlNet Scribble model.
+        
+        Args:
+            device: Device to use ('cuda' or 'cpu')
+            controlnet_model: ControlNet model name
+            sd_model: Stable Diffusion base model
+            torch_dtype: Data type for model weights
+            safety_checker: Whether to use safety checker
+            **kwargs: Additional parameters for model loading
+        """
         print(f"Loading ControlNet Scribble model: {controlnet_model}")
         
         controlnet = DiffusersControlNetModel.from_pretrained(
@@ -48,8 +60,10 @@ class ControlNetScribbleModel:
                     **kwargs
                 )
         
-        if torch.cuda.is_available():
+        if device == "cuda" and torch.cuda.is_available():
             self.pipeline = self.pipeline.to("cuda")
+        elif device == "cpu":
+            self.pipeline = self.pipeline.to("cpu")
         
         if hasattr(self.pipeline, 'enable_attention_slicing'):
             self.pipeline.enable_attention_slicing()
@@ -57,6 +71,7 @@ class ControlNetScribbleModel:
         self.controlnet_model = controlnet_model
         self.sd_model = sd_model
         self.torch_dtype = torch_dtype
+        self.device = device
         
         print("✅ ControlNet Scribble model loaded successfully")
     
@@ -73,16 +88,16 @@ class ControlNetScribbleModel:
         **kwargs: Any,
     ) -> Image.Image:
         """Generate colorized image from scribble sketch."""
-        # 从kwargs中移除已显式处理的参数
+        # Remove parameters that are already explicitly handled
         kwargs_copy = kwargs.copy()
         kwargs_copy.pop('num_steps', None)
         kwargs_copy.pop('guidance_scale', None)
         kwargs_copy.pop('controlnet_scale', None)
-        kwargs_copy.pop('generator', None)  # 移除可能重复的generator
+        kwargs_copy.pop('generator', None)  # Remove duplicate generator
         
         generator = None
         if seed is not None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = self.device if self.device != "cuda" or torch.cuda.is_available() else "cpu"
             generator = torch.Generator(device=device).manual_seed(seed)
         
         return self.pipeline(

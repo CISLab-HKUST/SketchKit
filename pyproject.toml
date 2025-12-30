@@ -36,6 +36,7 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "opencv-contrib-python>=4.12.0.88",
     "hsluv>=5.0.4",
+    "moderngl>=5.12.0",
 ]
 
 [build-system]

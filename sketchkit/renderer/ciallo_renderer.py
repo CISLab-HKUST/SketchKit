@@ -3,17 +3,16 @@ import moderngl
 import numpy as np
 from typing import List
 from PIL import Image
-from sketchkit.renderer import Renderer
 from dataclasses import dataclass
 
-try:
-    from sketchkit.core.sketch import Sketch, Curve, Path, Vertex, Point
-except ImportError:
-    raise ImportError("Could not import 'sketchkit'. Please ensure the package is installed and in your PYTHONPATH.")
+from sketchkit.renderer.renderer import Renderer, RenderOptions
+from sketchkit.core.sketch import Sketch, Curve, Path, Vertex, Point
+
 
 def _sample_cubic_bezier(points: np.ndarray, num_samples: int) -> np.ndarray:
     """Vectorized sampling of a cubic Bezier curve."""
-    if num_samples < 2: return points[[0, -1]]
+    if num_samples < 2:
+        return points[[0, -1]]
     t = np.linspace(0.0, 1.0, num_samples, dtype=np.float32).reshape(-1, 1)
     mt = 1.0 - t
     P0, P1, P2, P3 = points
@@ -21,63 +20,75 @@ def _sample_cubic_bezier(points: np.ndarray, num_samples: int) -> np.ndarray:
     B = (mt**3) * P0 + 3 * (mt**2) * t * P1 + 3 * mt * (t**2) * P2 + (t**3) * P3
     return B.astype(np.float32)
 
-def sketch_to_polylines(sketch: Sketch, samples_per_curve: int = 20) -> List[np.ndarray]:
+
+def sketch_to_polylines(
+    sketch: Sketch, samples_per_curve: int = 20
+) -> List[np.ndarray]:
     """Converts a sketch into a list of polylines (N, 3) [x, y, pressure]."""
     polylines = []
     for path in sketch.paths:
         current_poly_pts = []
         for curve in path.curves:
-            if not isinstance(curve, Curve): continue
-            
+            if not isinstance(curve, Curve):
+                continue
+
             pts = curve.np_points
             p_vals = curve.pressure
             p0 = p_vals[0] if p_vals[0] is not None else 1.0
             p1 = p_vals[1] if p_vals[1] is not None else 1.0
-            
+
             positions = _sample_cubic_bezier(pts, samples_per_curve)
             t_vals = np.linspace(0.0, 1.0, samples_per_curve).reshape(-1, 1)
             pressures = (1.0 - t_vals) * p0 + t_vals * p1
-            
+
             segment = np.hstack([positions, pressures]).astype(np.float32)
             if len(current_poly_pts) > 0:
-                current_poly_pts.append(segment[1:]) # Avoid duplicating joints
+                current_poly_pts.append(segment[1:])  # Avoid duplicating joints
             else:
                 current_poly_pts.append(segment)
-        
+
         if current_poly_pts:
             polylines.append(np.vstack(current_poly_pts))
     return polylines
 
-def sample_points_by_distance(polyline: np.ndarray, spacing: float, 
-                              spacing_jitter: float = 0.0, rng: np.random.Generator = None) -> np.ndarray:
+
+def sample_points_by_distance(
+    polyline: np.ndarray,
+    spacing: float,
+    spacing_jitter: float = 0.0,
+    rng: np.random.Generator = None,
+) -> np.ndarray:
     """
     Resamples a polyline [x, y, p] to have points spaced by 'spacing' (with optional jitter).
     Returns: (N, 4) -> [x, y, pressure, angle]
     """
-    if len(polyline) < 2: return np.zeros((0, 4), dtype=np.float32)
-    if rng is None: rng = np.random.default_rng()
+    if len(polyline) < 2:
+        return np.zeros((0, 4), dtype=np.float32)
+    if rng is None:
+        rng = np.random.default_rng()
 
     # Calculate segment lengths
     diffs = polyline[1:, :2] - polyline[:-1, :2]
     dists = np.linalg.norm(diffs, axis=1)
-    
+
     total_len = np.sum(dists)
-    if total_len <= 0: return np.zeros((0, 4), dtype=np.float32)
+    if total_len <= 0:
+        return np.zeros((0, 4), dtype=np.float32)
 
     # Walk along the line
     result = []
     current_dist = 0.0
     seg_idx = 0
-    seg_progress = 0.0 # Distance into current segment
-    
+    seg_progress = 0.0  # Distance into current segment
+
     # Start at 0 (or random offset)
     current_dist = rng.uniform(0.0, spacing) if spacing_jitter > 0 else 0.0
 
     while seg_idx < len(dists):
         p0 = polyline[seg_idx]
-        p1 = polyline[seg_idx+1]
+        p1 = polyline[seg_idx + 1]
         seg_len = dists[seg_idx]
-        
+
         if seg_len < 1e-5:
             seg_idx += 1
             continue
@@ -90,140 +101,171 @@ def sample_points_by_distance(polyline: np.ndarray, spacing: float,
             pos_x = p0[0] + (p1[0] - p0[0]) * t
             pos_y = p0[1] + (p1[1] - p0[1]) * t
             pressure = p0[2] + (p1[2] - p0[2]) * t
-            
+
             result.append([pos_x, pos_y, pressure, angle])
-            
+
             # Advance
             step = spacing
             if spacing_jitter > 0:
                 # Vary spacing: spacing * (1.0 +/- jitter)
                 noise = rng.uniform(-spacing_jitter, spacing_jitter)
                 step *= max(0.1, 1.0 + noise)
-            
+
             current_dist += step
-        
+
         seg_progress += seg_len
         seg_idx += 1
-        
+
     return np.array(result, dtype=np.float32)
 
-def build_vanilla_sdf_geometry(polylines: List[np.ndarray], base_thickness: float) -> np.ndarray:
+
+def build_vanilla_sdf_geometry(
+    polylines: List[np.ndarray], base_thickness: float
+) -> np.ndarray:
     all_verts = []
-    corners = np.array([
-        [-1, -1], [ 1, -1], [ 1,  1],
-        [-1, -1], [ 1,  1], [-1,  1]
-    ], dtype=np.float32)
+    corners = np.array(
+        [[-1, -1], [1, -1], [1, 1], [-1, -1], [1, 1], [-1, 1]], dtype=np.float32
+    )
 
     for poly in polylines:
-        if len(poly) < 2: continue
+        if len(poly) < 2:
+            continue
         p0_data, p1_data = poly[:-1], poly[1:]
-        
-        r0 = (p0_data[:, 2] * base_thickness * 0.5)
-        r1 = (p1_data[:, 2] * base_thickness * 0.5)
-        
+
+        r0 = p0_data[:, 2] * base_thickness * 0.5
+        r1 = p1_data[:, 2] * base_thickness * 0.5
+
         lens = np.linalg.norm(p1_data[:, :2] - p0_data[:, :2], axis=1)
         valid = lens > 1e-5
-        
+
         p0_v, p1_v = p0_data[valid], p1_data[valid]
         r0_v, r1_v = r0[valid], r1[valid]
-        
+
         count = len(p0_v)
-        if count == 0: continue
-            
+        if count == 0:
+            continue
+
         attr_corner = np.tile(corners[None, :, :], (count, 1, 1))
         attr_p0 = np.tile(p0_v[:, None, :2], (1, 6, 1))
         attr_p1 = np.tile(p1_v[:, None, :2], (1, 6, 1))
         attr_r0 = np.tile(r0_v[:, None], (1, 6))
         attr_r1 = np.tile(r1_v[:, None], (1, 6))
-        
-        attributes = np.dstack([
-            attr_corner, attr_p0, attr_p1, attr_r0[..., None], attr_r1[..., None]
-        ]).reshape(-1, 8)
+
+        attributes = np.dstack(
+            [attr_corner, attr_p0, attr_p1, attr_r0[..., None], attr_r1[..., None]]
+        ).reshape(-1, 8)
         all_verts.append(attributes)
-        
+
     return np.vstack(all_verts) if all_verts else np.zeros((0, 8), dtype=np.float32)
 
-def build_stamp_instance_data(polylines: List[np.ndarray], spacing: float, base_thickness: float,
-                              rotation_randomness: float, noise_factor: float, seed: int) -> np.ndarray:
+
+def build_stamp_instance_data(
+    polylines: List[np.ndarray],
+    spacing: float,
+    base_thickness: float,
+    rotation_randomness: float,
+    noise_factor: float,
+    seed: int,
+) -> np.ndarray:
     """
     Builds instance buffer for glDrawArraysInstanced with randomness parameters.
     """
     rng = np.random.default_rng(seed)
     all_instances = []
-    
+
     for poly in polylines:
         # Pass jitter parameters to sampler for spacing variation
         spacing_jitter = noise_factor if noise_factor > 0 else 0.0
-        
-        samples = sample_points_by_distance(poly, spacing, spacing_jitter, rng) # (N, 4)
+
+        samples = sample_points_by_distance(
+            poly, spacing, spacing_jitter, rng
+        )  # (N, 4)
         count = len(samples)
-        if count == 0: continue
-        
+        if count == 0:
+            continue
+
         pos = samples[:, 0:2]
         pressure = samples[:, 2]
         angle = samples[:, 3]
-        
+
         # 1. Size Jitter
         # Base Size = thickness * pressure * 2.0 (diameter)
         sizes = pressure * base_thickness * 2.0
         if noise_factor > 0:
-            scale_noise = rng.uniform(1.0 - noise_factor, 1.0 + noise_factor, size=count)
+            scale_noise = rng.uniform(
+                1.0 - noise_factor, 1.0 + noise_factor, size=count
+            )
             sizes *= np.maximum(0.1, scale_noise)
 
         # 2. Angle Jitter
         if rotation_randomness > 0:
-            angle_noise = rng.uniform(-rotation_randomness, rotation_randomness, size=count)
+            angle_noise = rng.uniform(
+                -rotation_randomness, rotation_randomness, size=count
+            )
             angle += angle_noise
-            
+
         # 3. Position Jitter (Perpendicular)
         if noise_factor > 0:
             # Normal vector (-sin(a), cos(a)) relative to path direction
             # angle is atan2(dy, dx), so tangent is (cos, sin)
             normals = np.column_stack([-np.sin(angle), np.cos(angle)])
-            
+
             # Offset amount: noise_factor * thickness
-            jitter_mag = rng.uniform(-1.0, 1.0, size=count) * noise_factor * base_thickness
+            jitter_mag = (
+                rng.uniform(-1.0, 1.0, size=count) * noise_factor * base_thickness
+            )
             pos += normals * jitter_mag[:, None]
-        
+
         instances = np.column_stack([pos, sizes, angle]).astype(np.float32)
         all_instances.append(instances)
-        
-    return np.vstack(all_instances) if all_instances else np.zeros((0, 4), dtype=np.float32)
+
+    return (
+        np.vstack(all_instances)
+        if all_instances
+        else np.zeros((0, 4), dtype=np.float32)
+    )
+
 
 @dataclass
-class CialloRenderOptions:
+class CialloRenderOptions(RenderOptions):
     canvas_size: tuple[int, int] = (512, 512)
     background_color: tuple[int, int, int, int] = (1, 1, 1, 0)  # RGBA
-    stroke_color: tuple[int, int, int, int] = (0, 0, 0, 1)  # RGBA
+
+    stroke_thickness: float | None = None
+    stroke_color: tuple[float, float, float, float] | None = None
+    stroke_opacity: float | None = None
+
     brush_type: str = "textured"
-    thickness: float = 12.0
     brush_texture_path: str = "./sketchkit/assets/stamp2.png"
     spacing: float = 1.0
     rotation_randomness: float = 0.0
     noise_factor: float = 0.0
     rng_seed: int = 42
-    output_path: str = "ciallo_stamp2_1228.png"
+
 
 class CialloRenderer(Renderer):
-    def __init__(self, render_options: CialloRenderOptions = None):
+    def __init__(self, render_options: CialloRenderOptions | None = None):
         if render_options is None:
             render_options = CialloRenderOptions()  # Default if None is passed
         self.render_options = render_options
-        self.size = (self.render_options.canvas_size[0], self.render_options.canvas_size[1])
+        self.size = (
+            self.render_options.canvas_size[0],
+            self.render_options.canvas_size[1],
+        )
 
         try:
             self.ctx = moderngl.create_standalone_context()
         except:
-            self.ctx = moderngl.create_standalone_context(backend='egl')
+            self.ctx = moderngl.create_standalone_context(backend="egl")
         self.ctx.enable(moderngl.BLEND)
         self.ctx.blend_func = moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA
-        
+
         # Framebuffer with Depth
         self.fbo_tex = self.ctx.texture(self.size, 4)
         self.depth_tex = self.ctx.depth_texture(self.size)
         self.fbo = self.ctx.framebuffer(self.fbo_tex, self.depth_tex)
         self.bg_color = self.render_options.background_color
-        
+
         # Vanilla Shader
         self.prog_vanilla = self.ctx.program(
             vertex_shader="""
@@ -265,7 +307,7 @@ class CialloRenderer(Renderer):
                 if (alpha <= 0.0) discard;
                 f_color = vec4(u_color.rgb, u_color.a * alpha);
             }
-            """
+            """,
         )
 
         # Stamp Shader
@@ -297,16 +339,25 @@ class CialloRenderer(Renderer):
                 f_color = vec4(u_color.rgb, tex.a);
                 if (f_color.a < 0.01) discard;
             }
-            """
+            """,
         )
-        
-        quad_data = np.array([
-            [-0.5, -0.5, 0, 0], [ 0.5, -0.5, 1, 0], [ 0.5,  0.5, 1, 1],
-            [-0.5, -0.5, 0, 0], [ 0.5,  0.5, 1, 1], [-0.5,  0.5, 0, 1]
-        ], dtype=np.float32)
+
+        quad_data = np.array(
+            [
+                [-0.5, -0.5, 0, 0],
+                [0.5, -0.5, 1, 0],
+                [0.5, 0.5, 1, 1],
+                [-0.5, -0.5, 0, 0],
+                [0.5, 0.5, 1, 1],
+                [-0.5, 0.5, 0, 1],
+            ],
+            dtype=np.float32,
+        )
         self.vbo_quad = self.ctx.buffer(quad_data.tobytes())
 
-    def _render(self, sketch: Sketch, render_options: CialloRenderOptions) -> np.ndarray:
+    def _render(
+        self, sketch: Sketch, render_options: CialloRenderOptions
+    ) -> Image.Image:
         """Renders the given sketch with the provided CialloRenderOptions."""
 
         thickness = self.render_options.thickness
@@ -316,18 +367,16 @@ class CialloRenderer(Renderer):
         rotation_randomness = self.render_options.rotation_randomness
         noise_factor = self.render_options.noise_factor
         rng_seed = self.render_options.rng_seed
-        output_path = self.render_options.output_path
         color = self.render_options.stroke_color
 
-        
         self.fbo.use()
         self.fbo.clear(*self.bg_color)
         self.ctx.clear(depth=1.0)
         self.ctx.enable(moderngl.DEPTH_TEST)
-        self.ctx.depth_func = '<'
-        
+        self.ctx.depth_func = "<"
+
         polylines = sketch_to_polylines(sketch)
-        
+
         start_z = 0.9
         z_step = 1.8 / (len(polylines) + 1)
         current_z = start_z
@@ -336,37 +385,45 @@ class CialloRenderer(Renderer):
             print("Rendering with vanilla brush...")
 
         elif brush_type == "textured":
-            if not brush_texture_path: raise ValueError("Missing brush_texture_path")
-            
+            if not brush_texture_path:
+                raise ValueError("Missing brush_texture_path")
+
             img = Image.open(brush_texture_path).convert("RGBA")
             tex = self.ctx.texture(img.size, 4, img.tobytes())
             tex.use(0)
-            self.prog_stamp['u_tex'].value = 0
-            self.prog_stamp['u_res'].value = self.size
-            self.prog_stamp['u_color'].value = color
-            
+            self.prog_stamp["u_tex"].value = 0
+            self.prog_stamp["u_res"].value = self.size
+            self.prog_stamp["u_color"].value = color
+
             # Disable depth test for blending accumulation
-            self.ctx.disable(moderngl.DEPTH_TEST) 
+            self.ctx.disable(moderngl.DEPTH_TEST)
 
             for poly in polylines:
                 actual_spacing = spacing if spacing > 0 else thickness * 0.1
-                
+
                 instance_data = build_stamp_instance_data(
-                    [poly], actual_spacing, thickness, 
-                    rotation_randomness, noise_factor, rng_seed
+                    [poly],
+                    actual_spacing,
+                    thickness,
+                    rotation_randomness,
+                    noise_factor,
+                    rng_seed,
                 )
-                if len(instance_data) == 0: continue
-                
+                if len(instance_data) == 0:
+                    continue
+
                 vbo_inst = self.ctx.buffer(instance_data.tobytes())
-                vao = self.ctx.vertex_array(self.prog_stamp, [
-                    (self.vbo_quad, '2f 2f', 'in_vert', 'in_uv'),
-                    (vbo_inst, '2f 1f 1f /i', 'in_pos', 'in_size', 'in_angle')
-                ])
+                vao = self.ctx.vertex_array(
+                    self.prog_stamp,
+                    [
+                        (self.vbo_quad, "2f 2f", "in_vert", "in_uv"),
+                        (vbo_inst, "2f 1f 1f /i", "in_pos", "in_size", "in_angle"),
+                    ],
+                )
                 vao.render(moderngl.TRIANGLES, instances=len(instance_data))
-                vbo_inst.release(); vao.release()
+                vbo_inst.release()
+                vao.release()
 
         data = self.fbo.read(components=4)
-        img = Image.frombytes('RGBA', self.size, data).transpose(Image.FLIP_TOP_BOTTOM)
-        img.save(output_path)
-        print(f"Render saved to {output_path}")
+        img = Image.frombytes("RGBA", self.size, data).transpose(Image.FLIP_TOP_BOTTOM)
         return img

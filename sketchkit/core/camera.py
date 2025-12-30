@@ -28,7 +28,6 @@ class Object3D:
     ):
         self.xyz = np.array(xyz, dtype=float)
         self.wxyz = np.array(wxyz, dtype=float)
-        self.look_at = None
 
     @classmethod
     def from_transform_matrix(cls, transform_matrix):
@@ -119,6 +118,7 @@ class Camera(Object3D):
         self.z_far = z_far
         self.z_near = z_near
         self.coordinate_type = coordinate_type
+        self._look_at = None
 
     @property
     def intrinsics(self):
@@ -134,9 +134,9 @@ class Camera(Object3D):
             "RFU", self.coordinate_type
         )
 
-        c2w_matrix = self.transform_matrix @ coordinate_trans_matrix.T 
+        c2w_matrix = self.transform_matrix @ coordinate_trans_matrix.T
         return np.linalg.inv(c2w_matrix)
- 
+
     @extrinsics.setter
     def extrinsics(self, value):
         pass

@@ -213,10 +213,12 @@ if __name__ == "__main__":
         camera.set_xyz([2.5 * math.cos(rad), 2.5 * math.sin(rad), 0])
         cameras.append(camera)
 
+    from sketchkit.utils.file import save_seq_gif
+
     # 使用新的render方法
     images = renderer._render(cameras, sug_opt)
-    save_seq_gif(images, "npr_rendering_suggestive_contour.gif", duration=100)
+    save_seq_gif(images, "npr_rendering_suggestive_contour.gif")
     images = renderer._render(cameras, rv_opt)
-    save_seq_gif(images, "npr_rendering_ridges_and_valleys.gif", duration=100)
+    save_seq_gif(images, "npr_rendering_ridges_and_valleys.gif")
     images = renderer._render(cameras, ar_opt)
-    save_seq_gif(images, "npr_rendering_appearant_ridges.gif", duration=100)
+    save_seq_gif(images, "npr_rendering_appearant_ridges.gif")

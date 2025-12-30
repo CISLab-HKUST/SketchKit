@@ -12,6 +12,7 @@ import os
 from copy import deepcopy
 from dataclasses import dataclass
 
+
 from sketchkit.utils.file import download_with_wget, CISLAB_CDN
 
 @dataclass
@@ -26,7 +27,11 @@ class NPRRenderOptions:
 class NPRRenderer:
     def __init__(self, obj_path: str, render_options: NPRRenderOptions | None = None, root: str | None = None):
         self.render_options = render_options if render_options is not None else NPRRenderOptions()
-        self.obj_path = obj_path
+        # 将obj_path中的名加上normalized前缀
+        obj_dir, obj_name = os.path.split(obj_path)
+        normalized_obj_name = "normalized_" + obj_name
+        self.obj_path = os.path.join(obj_dir, normalized_obj_name)
+        self.normalize_obj(obj_path, self.obj_path)
         
         # Check if renderer exists in the package directory
         package_renderer = os.path.join(os.path.dirname(__file__), "nogui_contour_renderer")
@@ -38,6 +43,23 @@ class NPRRenderer:
             print(f"Using packaged renderer: {self.renderer_path}")
             return
         
+
+    def normalize_obj(self, input_path: str, output_path: str):
+        # 归一化OBJ模型到单位立方体内
+        # trimesh读取obj
+        import trimesh
+        mesh = trimesh.load(input_path)
+        vertices = mesh.vertices
+        vertices -= np.mean(vertices, axis=0)
+        # 归一化到单位立方体内
+        max_dim = np.max(np.linalg.norm(vertices, axis=1))
+        vertices /= max_dim
+        # 中心到原点
+        
+        # 写入新的obj文件
+        mesh.vertices = vertices
+        mesh.export(output_path)
+
 
     def _render(self, cameras: List[Camera], output_folder: str, render_options: NPRRenderOptions | dict | None = None,):
         """
@@ -61,17 +83,32 @@ class NPRRenderer:
                     setattr(opts, k, v)
         else:
             opts = render_options
+
+        
         # 这里应该实现具体的渲染逻辑
         # 由于 NPRRenderer 原本是基于外部可执行文件的渲染器，
         # 我们需要将相机参数转换为变换矩阵
         
         # 从相机参数计算变换矩阵（这里需要根据具体需求实现）
         for i, camera in enumerate(cameras):
-            transform = camera.extrinsics_for_opengl.reshape(-1)
+
+            
+            extrinsics = camera.extrinsics
+            print("Camera extrinsics:\n", extrinsics)
+            
+            T = np.array([[1, 0, 0, 0],
+                          [0, -1, 0, 0],
+                          [0, 0, -1, 0],
+                          [0, 0, 0, 1]])  # 转换坐标系从RFU到RDF
+            
+            transform = T @ extrinsics
+            
+            print("Transform matrix:\n", transform)
+            transform = transform.reshape(-1)
             
             if not os.path.exists(output_folder):
                 os.makedirs(output_folder)
-            output_path = os.path.join(output_folder, f"{i}.png")
+            output_path = os.path.join(output_folder, f"{i}.ppm")
         
             if opts.method == "SuggestiveContour":
                 self.render_suggestive_countour(output_path, transform, opts.canvas_size, opts.threshold)
@@ -120,16 +157,23 @@ if __name__ == "__main__":
     ar_opt = NPRRenderOptions(method="AppearantRidges", threshold=0.1)
 
     renderer = NPRRenderer(obj_path="media/rapid.obj")
-    camera = Camera()
-    camera.set_look_at([-462, -71, 70])
-    camera.set_xyz(np.array([-461, -71, 70]))
     
-
+    # camera = Camera()
+    # camera.set_look_at([0, 0, 0])
+    # camera.set_xyz([0, 2.55, 0])
     # 创建测试草图
+    cameras = []
+    r = 2.5
+    for angle in range(0, 360, 30):
+        rad = math.radians(angle)
+        camera = Camera()
+        camera.set_look_at([0, 0, 0])
+        camera.set_xyz([2.5 * math.cos(rad), 2.5 * math.sin(rad), 0])
+        cameras.append(camera)
     
     
     # 使用新的render方法
-    renderer._render([camera], "media/output/suggestive", sug_opt)
-    renderer._render([camera], "media/output/ridges_and_valleys", rv_opt)
+    renderer._render(cameras, "media/output/suggestive", sug_opt)
+    renderer._render(cameras, "media/output/ridges_and_valleys", rv_opt)
 
-    renderer._render([camera], "media/output/appearant_ridges", ar_opt)
+    renderer._render(cameras, "media/output/appearant_ridges", ar_opt)

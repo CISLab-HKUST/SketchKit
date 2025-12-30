@@ -137,18 +137,7 @@ class Camera(Object3D):
         c2w_matrix = self.transform_matrix @ coordinate_trans_matrix.T
         return np.linalg.inv(c2w_matrix)
     
-    @property
-    def extrinsics_for_opengl(self):
-        extrinsics = self.extrinsics
-        R = extrinsics[:3, :3]
-        t = extrinsics[:3, 3]
-        T = np.diag([1, -1, 1])
-        R_gl = T @ R @ T
-        t_gl = T @ t
-        extrinsics_gl = np.eye(4)
-        extrinsics_gl[:3, :3] = R_gl
-        extrinsics_gl[:3, 3] = t_gl
-        return extrinsics_gl
+    
 
     @extrinsics.setter
     def extrinsics(self, value):

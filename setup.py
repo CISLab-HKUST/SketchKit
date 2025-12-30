@@ -2,6 +2,7 @@ import os
 import sys
 import platform
 import subprocess
+import shutil
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
 from distutils.sysconfig import get_config_var
@@ -15,6 +16,9 @@ class CMakeExtension(Extension):
 
 class Build(build_ext):
     def run(self):
+        # Build rtsc and trimesh2
+        self.build_rtsc()
+
         try:
             out = subprocess.check_output(['cmake', '--version'])
         except OSError:
@@ -22,6 +26,70 @@ class Build(build_ext):
                                ", ".join(e.name for e in self.extensions))
 
         super().run()
+
+    def build_rtsc(self):
+        # Detect platform
+        system = platform.system()
+        machine = platform.machine()
+        
+        target = None
+        binary_name = 'nogui_contour_renderer'
+        
+        if system == 'Linux':
+            if machine == 'x86_64':
+                target = 'linux64'
+            else:
+                target = 'linux32'
+        elif system == 'Darwin':
+             target = 'darwin64'
+        elif system == 'Windows':
+             target = 'win32'
+             binary_name += '.exe'
+        
+        if not target:
+            print(f"Warning: Unknown platform {system} {machine}, skipping rtsc build.")
+            return
+
+        cwd = os.getcwd()
+        third_party_dir = os.path.join(cwd, 'third_party')
+        trimesh_dir = os.path.join(third_party_dir, 'trimesh2')
+        rtsc_dir = os.path.join(third_party_dir, 'rtsc-1.6')
+        
+        # Check if directories exist
+        if not os.path.exists(trimesh_dir) or not os.path.exists(rtsc_dir):
+             print("Warning: third_party directories not found, skipping rtsc build.")
+             return
+
+        # Build trimesh2
+        print(f"Building trimesh2 ({target})...")
+        try:
+            subprocess.check_call(['make', target], cwd=trimesh_dir)
+        except subprocess.CalledProcessError as e:
+            print(f"Error building trimesh2: {e}")
+            return
+
+        # Build rtsc
+        print(f"Building rtsc ({target})...")
+        try:
+            subprocess.check_call(['make', target], cwd=rtsc_dir)
+        except subprocess.CalledProcessError as e:
+            print(f"Error building rtsc: {e}")
+            return
+        
+        src_binary = os.path.join(rtsc_dir, binary_name)
+        dest_dir = os.path.join(cwd, 'sketchkit', 'renderer')
+        dest_binary = os.path.join(dest_dir, binary_name)
+        
+        if os.path.exists(src_binary):
+            print(f"Moving {src_binary} to {dest_binary}")
+            if os.path.exists(dest_binary):
+                os.remove(dest_binary)
+            shutil.copy2(src_binary, dest_binary)
+            # Make executable
+            st = os.stat(dest_binary)
+            os.chmod(dest_binary, st.st_mode | 0o111)
+        else:
+            print(f"Warning: {src_binary} not found after build.")
 
     def build_extension(self, ext):
         if isinstance(ext, CMakeExtension):
@@ -88,6 +156,7 @@ if 'DIFFVG_CUDA' in os.environ:
 setup(
     packages=find_packages(include=['sketchkit*']) + ['pydiffvg'],
     package_dir={'pydiffvg': 'third_party/diffvg/pydiffvg'},
+    package_data={'sketchkit': ['renderer/nogui_contour_renderer', 'renderer/nogui_contour_renderer.exe']},
     ext_modules=[CMakeExtension('diffvg', 'third_party/diffvg', build_with_cuda)],
     cmdclass=dict(build_ext=Build),
     zip_safe=False,

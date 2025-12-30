@@ -28,29 +28,16 @@ class NPRRenderer:
         self.render_options = render_options if render_options is not None else NPRRenderOptions()
         self.obj_path = obj_path
         
-        # 设置缓存目录
+        # Check if renderer exists in the package directory
+        package_renderer = os.path.join(os.path.dirname(__file__), "nogui_contour_renderer")
+        if os.path.exists(package_renderer):
+            self.renderer_path = package_renderer
+            # Ensure executable permission
+            st = os.stat(self.renderer_path)
+            os.chmod(self.renderer_path, st.st_mode | 0o111)
+            print(f"Using packaged renderer: {self.renderer_path}")
+            return
         
-        if root is None:
-            root = os.path.join(
-                os.environ.get("HOME", "/"),
-                ".sketchkit/bin",
-                self.__class__.__name__,
-            )
-        if isinstance(root, str):
-            root = os.path.expanduser(root)
-        os.makedirs(root, exist_ok=True)
-        self.root = root
-
-        print(f"Renderer root: {self.root}")
-        self.renderer_path = os.path.join(self.root, "nogui_contour_renderer")
-
-        try:
-            url = f"{CISLAB_CDN}/bin/SuggestiveContour/nogui_contour_renderer"
-            print(f"Downloading renderer from CISLAB CDN: {url}")
-            download_with_wget(url, file_path=self.renderer_path, pg_bar=True)
-            os.chmod(self.renderer_path, 0o755)
-        except Exception:
-            print("CISLAB mirror unavailable.")
 
     def _render(self, cameras: List[Camera], output_folder: str, render_options: NPRRenderOptions | dict | None = None,):
         """

@@ -8,7 +8,6 @@ from tqdm import tqdm
 
 from sketchkit.core.sketch import Sketch, Path
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.transform import line_to_cubic
 from sketchkit.utils.file import (
     download_with_gdown,
     download_with_wget,
@@ -265,7 +264,7 @@ class CreativeSketch(SketchDataset):
                     p_start = [seg[0], seg[1]]
                     p_end = [seg[2], seg[3]]
                     line = np.stack([p_start, p_end], axis=0)
-                    cubic = line_to_cubic(line)
+                    cubic = Curve.from_line(line)
                     cubic._set_vertices_attribute("color", stroke_color)
                     strokes.append(cubic)
             path_list.append(Path(curves=strokes))

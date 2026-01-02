@@ -22,12 +22,12 @@ class Renderer(ABC):
     ) -> Image.Image:
         if render_options is None:
             _render_options = self.render_options
-        elif type(render_options) is dict:
+        elif isinstance(render_options, dict):
             _render_options = deepcopy(self.render_options)
             for k, v in render_options.items():
                 if hasattr(_render_options, k):
                     setattr(_render_options, k, v)
-        elif type(render_options) is render_options:
+        elif isinstance(render_options, RenderOptions):
             _render_options = render_options
         else:
             raise ValueError("Invalid render options.")

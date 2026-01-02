@@ -229,15 +229,15 @@ def build_stamp_instance_data(
 @dataclass
 class CialloRenderOptions(RenderOptions):
     canvas_size: tuple[int, int] = (512, 512)
-    background_color: tuple[int, int, int, int] = (1, 1, 1, 0)  # RGBA
+    background_color: tuple[float, float, float, float] = (1.0, 1.0, 1.0, 1.0)
 
-    stroke_thickness: float | None = None
-    stroke_color: tuple[float, float, float, float] | None = None
-    stroke_opacity: float | None = None
+    stroke_thickness: float = 12.0
+    stroke_color: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)
+    # stroke_opacity: float | None = None
 
     brush_type: str = "textured"
-    brush_texture_path: str = "./sketchkit/assets/stamp2.png"
-    spacing: float = 1.0
+    brush_texture_path: str = "./assets/stamp2.png"
+    spacing: float | None = 1.0
     rotation_randomness: float = 0.0
     noise_factor: float = 0.0
     rng_seed: int = 42
@@ -248,23 +248,33 @@ class CialloRenderer(Renderer):
         if render_options is None:
             render_options = CialloRenderOptions()  # Default if None is passed
         self.render_options = render_options
-        self.size = (
-            self.render_options.canvas_size[0],
-            self.render_options.canvas_size[1],
-        )
+        self.new_ctx(render_options)
+        # self.size = (
+        #     self.render_options.canvas_size[0],
+        #     self.render_options.canvas_size[1],
+        # )
+
+    def new_ctx(self, render_options: CialloRenderOptions):
+        if hasattr(self, "ctx"):
+            del self.ctx
+        if hasattr(self, "fbo"):
+            del self.fbo
+        if hasattr(self, "fbo_tex"):
+            del self.fbo_tex
+        if hasattr(self, "depth_tex"):
+            del self.depth_tex
 
         try:
-            self.ctx = moderngl.create_standalone_context()
-        except:
             self.ctx = moderngl.create_standalone_context(backend="egl")
+        except:
+            self.ctx = moderngl.create_standalone_context()
         self.ctx.enable(moderngl.BLEND)
         self.ctx.blend_func = moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA
 
         # Framebuffer with Depth
-        self.fbo_tex = self.ctx.texture(self.size, 4)
-        self.depth_tex = self.ctx.depth_texture(self.size)
+        self.fbo_tex = self.ctx.texture(render_options.canvas_size, 4)
+        self.depth_tex = self.ctx.depth_texture(render_options.canvas_size)
         self.fbo = self.ctx.framebuffer(self.fbo_tex, self.depth_tex)
-        self.bg_color = self.render_options.background_color
 
         # Vanilla Shader
         self.prog_vanilla = self.ctx.program(
@@ -360,18 +370,25 @@ class CialloRenderer(Renderer):
     ) -> Image.Image:
         """Renders the given sketch with the provided CialloRenderOptions."""
 
-        thickness = self.render_options.thickness
-        brush_type = self.render_options.brush_type
-        brush_texture_path = self.render_options.brush_texture_path
-        spacing = self.render_options.spacing
-        rotation_randomness = self.render_options.rotation_randomness
-        noise_factor = self.render_options.noise_factor
-        rng_seed = self.render_options.rng_seed
-        color = self.render_options.stroke_color
+        if (
+            self.fbo_tex.width != render_options.canvas_size[0]
+            or self.fbo_tex.height != render_options.canvas_size[1]
+        ):
+            self.new_ctx(render_options)
+
+        thickness = render_options.stroke_thickness
+        brush_type = render_options.brush_type
+        brush_texture_path = render_options.brush_texture_path
+        spacing = render_options.spacing
+        rotation_randomness = render_options.rotation_randomness
+        noise_factor = render_options.noise_factor
+        rng_seed = render_options.rng_seed
+        color = render_options.stroke_color
 
         self.fbo.use()
-        self.fbo.clear(*self.bg_color)
-        self.ctx.clear(depth=1.0)
+        self.fbo.clear(*render_options.background_color)
+        # print(*render_options.background_color)
+        # self.ctx.clear(depth=1.0)
         self.ctx.enable(moderngl.DEPTH_TEST)
         self.ctx.depth_func = "<"
 
@@ -392,14 +409,16 @@ class CialloRenderer(Renderer):
             tex = self.ctx.texture(img.size, 4, img.tobytes())
             tex.use(0)
             self.prog_stamp["u_tex"].value = 0
-            self.prog_stamp["u_res"].value = self.size
+            self.prog_stamp["u_res"].value = render_options.canvas_size
             self.prog_stamp["u_color"].value = color
 
             # Disable depth test for blending accumulation
             self.ctx.disable(moderngl.DEPTH_TEST)
 
             for poly in polylines:
-                actual_spacing = spacing if spacing > 0 else thickness * 0.1
+                actual_spacing = (
+                    spacing if spacing is not None and spacing > 0 else thickness * 0.1
+                )
 
                 instance_data = build_stamp_instance_data(
                     [poly],
@@ -425,5 +444,7 @@ class CialloRenderer(Renderer):
                 vao.release()
 
         data = self.fbo.read(components=4)
-        img = Image.frombytes("RGBA", self.size, data).transpose(Image.FLIP_TOP_BOTTOM)
+        img = Image.frombytes("RGBA", render_options.canvas_size, data).transpose(
+            Image.FLIP_TOP_BOTTOM
+        )
         return img

@@ -18,7 +18,7 @@ from sketchkit.vectorization.DeepVecSIG24.utils.svg_tools import simplify_graph,
 
 _SAFE_GLOBALS = [argparse.Namespace, SimpleNamespace]
 
-def safe_torch_load(path: str, kw: dict = {}):
+def safe_torch_load(path: str, **kwargs):
     """Safely loads a PyTorch checkpoint with weights_only=True.
 
     PyTorch 2.6+ defaults to weights_only=True, which blocks some globals in
@@ -28,7 +28,7 @@ def safe_torch_load(path: str, kw: dict = {}):
 
     Args:
         path: Path to the checkpoint file.
-        kw: Additional keyword arguments to pass to torch.load.
+        **kwargs: Additional keyword arguments to pass to torch.load.
 
     Returns:
         The loaded checkpoint.
@@ -37,9 +37,9 @@ def safe_torch_load(path: str, kw: dict = {}):
 
     if "weights_only" in sig.parameters:
         with torch.serialization.safe_globals(_SAFE_GLOBALS):
-            return torch.load(path, **kw, weights_only=True)
+            return torch.load(path, weights_only=True, **kwargs)
     else:
-        return torch.load(path, **kw)
+        return torch.load(path, **kwargs)
 
     
 class DeepVecSIG24:
@@ -107,7 +107,7 @@ class DeepVecSIG24:
         """
         # device = 'cuda' if torch.cuda.is_available() else 'cpu'
         # checkpoint = torch.load(filepath, map_location="cpu")
-        checkpoint = safe_torch_load(filepath, {"map_location": "cpu"})
+        checkpoint = safe_torch_load(filepath, map_location="cpu")
 
         try:
             args_udf = SimpleNamespace(**checkpoint['param'])
@@ -140,7 +140,7 @@ class DeepVecSIG24:
         """
         # device = 'cuda' if torch.cuda.is_available() else 'cpu'
         # checkpoint = torch.load(filepath, map_location='cpu')
-        checkpoint = safe_torch_load(filepath, {"map_location": "cpu"})
+        checkpoint = safe_torch_load(filepath, map_location="cpu")
 
         args_ndc = checkpoint['param']
         if isinstance(args_ndc, dict) == False:

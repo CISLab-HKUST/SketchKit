@@ -2,8 +2,8 @@ import os
 import torch
 import numpy as np
 import cv2
-from PIL import Image
-
+import argparse
+import inspect
 from types import SimpleNamespace
 from svgpathtools import wsvg
 
@@ -16,7 +16,32 @@ from sketchkit.vectorization.DeepVecSIG24.utils.ndc_tools import refine_topology
 from sketchkit.vectorization.DeepVecSIG24.utils.keypt_tools import plot_udf_coord_numpy, udf_filter
 from sketchkit.vectorization.DeepVecSIG24.utils.svg_tools import simplify_graph, open_svg_flatten, ramerDouglas, flatten_paths_to_pts_array
 
+_SAFE_GLOBALS = [argparse.Namespace, SimpleNamespace]
 
+def safe_torch_load(path: str, **kwargs):
+    """Safely loads a PyTorch checkpoint with weights_only=True.
+
+    PyTorch 2.6+ defaults to weights_only=True, which blocks some globals in
+    checkpoints (e.g., argparse.Namespace, types.SimpleNamespace). This function
+    keeps weights_only=True but allowlists common ones. Falls back gracefully
+    for older torch versions.
+
+    Args:
+        path: Path to the checkpoint file.
+        **kwargs: Additional keyword arguments to pass to torch.load.
+
+    Returns:
+        The loaded checkpoint.
+    """
+    sig = inspect.signature(torch.load)
+
+    if "weights_only" in sig.parameters:
+        with torch.serialization.safe_globals(_SAFE_GLOBALS):
+            return torch.load(path, weights_only=True, **kwargs)
+    else:
+        return torch.load(path, **kwargs)
+
+    
 class DeepVecSIG24:
     """
     A class for image vectorization using the method of paper "Deep Sketch Vectorization via Implicit Surface Extraction"
@@ -81,7 +106,9 @@ class DeepVecSIG24:
         we will need the distance threshold to accruately recover the UDF for the next NDC model
         """
         # device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        checkpoint = torch.load(filepath, map_location="cpu")
+        # checkpoint = torch.load(filepath, map_location="cpu")
+        checkpoint = safe_torch_load(filepath, map_location="cpu")
+
         try:
             args_udf = SimpleNamespace(**checkpoint['param'])
         except BaseException:
@@ -112,7 +139,9 @@ class DeepVecSIG24:
         we will need the distance threshold to accruately recover the UDF for the next NDC model
         """
         # device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        checkpoint = torch.load(filepath, map_location='cpu')
+        # checkpoint = torch.load(filepath, map_location='cpu')
+        checkpoint = safe_torch_load(filepath, map_location="cpu")
+
         args_ndc = checkpoint['param']
         if isinstance(args_ndc, dict) == False:
             args_ndc = vars(args_ndc)

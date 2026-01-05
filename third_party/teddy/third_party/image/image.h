@@ -8,6 +8,7 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
+#include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <cmath>

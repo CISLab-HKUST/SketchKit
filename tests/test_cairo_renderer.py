@@ -10,22 +10,24 @@ if __name__ == "__main__":
 
     renderer = CairoRenderer()
     # raster_image = renderer.render_with_texture(sketch=my_data[0],texture='./sketchkit/assets/grid.png',width=3)
-    for i in range(10):
-        raster_image = renderer.render(
-            sketch=my_data[i],
-            render_options={
-                "canvas_size": (
-                    1024 + random.randint(0, 100),
-                    1024 + random.randint(0, 100),
-                ),
-                "stroke_width": random.randint(1, 10),
-                "background_color": (1.0, 1.0, 1.0),
-                "stroke_color": (random.random(), 0.0, 0.0),
-            },
-        )
-        outpath = f"DifferSketching_{i}.png"
-        # raster_image_png = Image.fromarray(raster_image, "RGB")
-        raster_image.save(outpath, "PNG")
+    raster_image = renderer.render(my_data[0])
+    raster_image.save("test1111111.png")
+    # for i in range(10):
+    #     raster_image = renderer.render(
+    #         sketch=my_data[i],
+    #         render_options={
+    #             "canvas_size": (
+    #                 1024 + random.randint(0, 100),
+    #                 1024 + random.randint(0, 100),
+    #             ),
+    #             "stroke_width": random.randint(1, 10),
+    #             "background_color": (1.0, 1.0, 1.0),
+    #             "stroke_color": (random.random(), 0.0, 0.0),
+    #         },
+    #     )
+    #     outpath = f"DifferSketching_{i}.png"
+    #     # raster_image_png = Image.fromarray(raster_image, "RGB")
+    #     raster_image.save(outpath, "PNG")
     # temp = renderer.render(
     #     sketch=my_data[33],
     #     render_options={

@@ -228,7 +228,6 @@ def build_stamp_instance_data(
 
 @dataclass
 class CialloRenderOptions(RenderOptions):
-    canvas_size: tuple[int, int] = (512, 512)
     background_color: tuple[float, float, float, float] = (1.0, 1.0, 1.0, 1.0)
 
     stroke_thickness: float = 12.0
@@ -271,9 +270,15 @@ class CialloRenderer(Renderer):
         self.ctx.enable(moderngl.BLEND)
         self.ctx.blend_func = moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA
 
+        canvas_size = (
+            (512, 512)
+            if render_options.canvas_size is None
+            else render_options.canvas_size
+        )
+
         # Framebuffer with Depth
-        self.fbo_tex = self.ctx.texture(render_options.canvas_size, 4)
-        self.depth_tex = self.ctx.depth_texture(render_options.canvas_size)
+        self.fbo_tex = self.ctx.texture(canvas_size, 4)
+        self.depth_tex = self.ctx.depth_texture(canvas_size)
         self.fbo = self.ctx.framebuffer(self.fbo_tex, self.depth_tex)
 
         # Vanilla Shader

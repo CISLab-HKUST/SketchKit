@@ -10,7 +10,6 @@ from sketchkit.renderer.renderer import Renderer, RenderOptions
 
 @dataclass
 class CairoRenderOptions(RenderOptions):
-    canvas_size: tuple[int, int] = (512, 512)
     background_color: tuple[float, float, float] = (1.0, 1.0, 1.0)
     stroke_color: tuple[float, float, float] | None = None
     stroke_width: float | None = None
@@ -72,10 +71,16 @@ class CairoRenderer(Renderer):
             del self.ctx
         if hasattr(self, "surface"):
             del self.surface
+
+        canvas_size = (
+            (512, 512)
+            if render_options.canvas_size is None
+            else render_options.canvas_size
+        )
         surface = cairo.ImageSurface(
             cairo.FORMAT_ARGB32,
-            render_options.canvas_size[0],
-            render_options.canvas_size[1],
+            canvas_size[0],
+            canvas_size[1],
         )
         ctx = cairo.Context(surface)
         ctx.set_antialias(cairo.ANTIALIAS_BEST)
@@ -113,7 +118,7 @@ class CairoRenderer(Renderer):
             self.new_ctx(render_options)
         else:
             self.clear_ctx()
-        
+
         # print(render_options.background_color)
         self.ctx.set_source_rgb(
             *render_options.background_color

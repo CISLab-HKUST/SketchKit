@@ -534,9 +534,7 @@ class Sketch:
         >>> sketch.thickness = 2.5          # Set all paths to thickness 2.5
     """
 
-    def __init__(
-        self, height: int = 512, width: int = 512, paths: list[Path] | None = None
-    ):
+    def __init__(self, height: int, width: int, paths: list[Path] | None = None):
         """Initialize a Sketch.
 
         Args:

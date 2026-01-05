@@ -7,9 +7,10 @@ from PIL import Image
 
 from sketchkit.core.sketch import Sketch
 
+
 @dataclass
 class RenderOptions:
-    pass
+    canvas_size: tuple[int, int] | None = None
 
 
 class Renderer(ABC):
@@ -29,6 +30,9 @@ class Renderer(ABC):
             _render_options = render_options
         else:
             raise ValueError("Invalid render options.")
+
+        if _render_options.canvas_size is None:
+            _render_options.canvas_size = (sketch.width, sketch.height)
 
         return self._render(sketch, _render_options)
 

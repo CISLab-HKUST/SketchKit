@@ -34,9 +34,7 @@ img_np = np.array(Image.open(img_path).convert("L"))
 video_path="a1-2.png.mp4"
 
 # Returns a single Sketch object with ordered paths
-sketch = orderer.run(
-    [img_path, video_path]
-)
+sketch = orderer.run(img_np, video_path)
 
 # Example: Access the paths
 print(f"Generated ordered sketch with {sketch.path_num} paths.")

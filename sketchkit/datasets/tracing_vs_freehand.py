@@ -12,8 +12,8 @@ from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
 
-CANVAS_HEIGHT = 800
-CANVAS_WIDTH = 800
+DEFAULT_CANVAS_HEIGHT = 800
+DEFAULT_CANVAS_WIDTH = 800
 
 def _parse_svg_to_sketch(svg_path: str) -> Sketch:
     """Parses an SVG file and converts its content into a Sketch object.
@@ -59,10 +59,10 @@ def _parse_svg_to_sketch(svg_path: str) -> Sketch:
             if curves:
                 sketch_paths.append(Path(curves=curves))
 
-        return Sketch(paths=sketch_paths, height=CANVAS_HEIGHT, width=CANVAS_WIDTH)
+        return Sketch(paths=sketch_paths, height=DEFAULT_CANVAS_HEIGHT, width=DEFAULT_CANVAS_WIDTH)
     except (ET.ParseError, FileNotFoundError):
         print(f"Warning: Failed to parse or find SVG file: {svg_path}")
-        return Sketch(paths=[], height=CANVAS_HEIGHT, width=CANVAS_WIDTH)
+        return Sketch(paths=[], height=DEFAULT_CANVAS_HEIGHT, width=DEFAULT_CANVAS_WIDTH)
 
 
 class TracingVsFreehand(SketchDataset):

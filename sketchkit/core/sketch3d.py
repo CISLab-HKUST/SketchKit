@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+import json
+
 
 
 # ================= 3D Sketch Data Structures =====================
@@ -138,3 +140,110 @@ class Sketch3D:
 
     def stack_tensor(self) -> torch.Tensor:
         return torch.cat([p.stack_tensor() for p in self.paths], dim=0)
+
+
+def save_sketch3d_to_json(sketch: Sketch3D, filepath: str):
+    """Save a Sketch3D object to JSON format."""
+    data = {"paths": []}
+    
+    for path in sketch.paths:
+        path_data = {"curves": []}
+        for curve in path.curves:
+            curve_data = {
+                "v_start": {
+                    "x": float(curve.p_start.x),
+                    "y": float(curve.p_start.y),
+                    "z": float(curve.p_start.z),
+                    "thickness": float(curve.p_start.thickness) if curve.p_start.thickness is not None else None,
+                    "color": curve.p_start.color.tolist() if curve.p_start.color is not None else None,
+                    "opacity": float(curve.p_start.opacity) if curve.p_start.opacity is not None else None,
+                },
+                "v_end": {
+                    "x": float(curve.p_end.x),
+                    "y": float(curve.p_end.y),
+                    "z": float(curve.p_end.z),
+                    "thickness": float(curve.p_end.thickness) if curve.p_end.thickness is not None else None,
+                    "color": curve.p_end.color.tolist() if curve.p_end.color is not None else None,
+                    "opacity": float(curve.p_end.opacity) if curve.p_end.opacity is not None else None,
+                },
+                "ctrl1": {
+                    "x": float(curve.p_ctrl1.x),
+                    "y": float(curve.p_ctrl1.y),
+                    "z": float(curve.p_ctrl1.z),
+                    "thickness": float(curve.p_ctrl1.thickness) if curve.p_ctrl1.thickness is not None else None,
+                },
+                "ctrl2": {
+                    "x": float(curve.p_ctrl2.x),
+                    "y": float(curve.p_ctrl2.y),
+                    "z": float(curve.p_ctrl2.z),
+                    "thickness": float(curve.p_ctrl2.thickness) if curve.p_ctrl2.thickness is not None else None,
+                },
+            }
+            # Add widths array if present
+            if hasattr(curve, 'widths') and curve.widths is not None:
+                curve_data["widths"] = curve.widths.tolist() if isinstance(curve.widths, np.ndarray) else list(curve.widths)
+            
+            path_data["curves"].append(curve_data)
+        data["paths"].append(path_data)
+    
+    with open(filepath, 'w') as f:
+        json.dump(data, f, indent=2)
+    print(f"Saved Sketch3D to {filepath}")
+
+
+def load_sketch3d_from_json(filepath: str) -> Sketch3D:
+    """Load a Sketch3D object from JSON format."""
+    with open(filepath, 'r') as f:
+        data = json.load(f)
+    
+    sketch = Sketch3D()
+    
+    for path_data in data["paths"]:
+        curves = []
+        for curve_data in path_data["curves"]:
+            v_start_data = curve_data["v_start"]
+            v_end_data = curve_data["v_end"]
+            ctrl1_data = curve_data["ctrl1"]
+            ctrl2_data = curve_data["ctrl2"]
+            
+            v_start = Vertex3D(
+                v_start_data["x"],
+                v_start_data["y"],
+                v_start_data["z"],
+                thickness=v_start_data.get("thickness"),
+                color=tuple(v_start_data["color"]) if v_start_data.get("color") else None,
+                opacity=v_start_data.get("opacity"),
+            )
+            v_end = Vertex3D(
+                v_end_data["x"],
+                v_end_data["y"],
+                v_end_data["z"],
+                thickness=v_end_data.get("thickness"),
+                color=tuple(v_end_data["color"]) if v_end_data.get("color") else None,
+                opacity=v_end_data.get("opacity"),
+            )
+            ctrl1 = Point3D(
+                ctrl1_data["x"],
+                ctrl1_data["y"],
+                ctrl1_data["z"],
+                thickness=ctrl1_data.get("thickness"),
+            )
+            ctrl2 = Point3D(
+                ctrl2_data["x"],
+                ctrl2_data["y"],
+                ctrl2_data["z"],
+                thickness=ctrl2_data.get("thickness"),
+            )
+            
+            curve = Curve3D(v_start, v_end, ctrl1, ctrl2)
+            
+            # Add widths if present
+            if "widths" in curve_data:
+                curve.widths = np.array(curve_data["widths"], dtype=np.float32)
+            
+            curves.append(curve)
+        
+        sketch.add(Path3D(curves))
+    
+    print(f"Loaded Sketch3D from {filepath} with {sketch.path_num} paths and {sketch.curve_num} curves")
+    return sketch

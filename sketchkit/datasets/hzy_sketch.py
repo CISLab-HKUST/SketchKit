@@ -12,7 +12,6 @@ from sketchkit.core import Sketch
 
 dataset_filename = "hzy_sketch.zip"
 
-DEFAULT_CANVAS_SIZE = 1024
 
 def download_and_extract_data(
     output_folder, remove_sourcefile=True, cislab_source=True
@@ -81,7 +80,7 @@ def load_hzy_sketch_json(drawing_path):
             path = Path(curves=curves)
             paths.append(path)
 
-    return Sketch(paths=paths, height=DEFAULT_CANVAS_SIZE, width=DEFAULT_CANVAS_SIZE)
+    return Sketch(paths=paths, height=DEFAULT_CANVAS_HEIGHT, width=DEFAULT_CANVAS_WIDTH)
 
 
 class hzySketch(SketchDataset):
@@ -111,6 +110,8 @@ class hzySketch(SketchDataset):
         >>> print(my_data[0])
        <sketchkit.core.sketch.Sketch object at 0x000001AB5033ACE0>
     """
+    DEFAULT_CANVAS_HEIGHT= 1024
+    DEFAULT_CANVAS_WIDTH = 1024
 
     md5_sum = "473c51ae0259f1435994a9cea090b5e7"
 

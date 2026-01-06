@@ -11,7 +11,6 @@ from svg.path import parse_path, path
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
-from sketchkit.utils.transform import line_to_cubic
 
 
 invalid_svg_shapes = ["rect", "circle", "ellipse", "line", "polyline", "polygon"]
@@ -73,7 +72,7 @@ def parse_single_path(path_str: str):
             line_points = [[start.real, start.imag], [end.real, end.imag]]
 
             # Convert line to cubic using transform.py function
-            cubic_curve = line_to_cubic(line_points)
+            cubic_curve = Curve.from_line(line_points)
             control_points_list.append((cubic_curve.p_crtl1.x, cubic_curve.p_crtl1.y))
             control_points_list.append((cubic_curve.p_crtl2.x, cubic_curve.p_crtl2.y))
             control_points_list.append((cubic_curve.p_end.x, cubic_curve.p_end.y))

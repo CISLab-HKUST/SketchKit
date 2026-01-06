@@ -12,7 +12,6 @@ from pathlib import Path as PathLibPath
 from svg.path import parse_path, path
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
-from sketchkit.utils.transform import line_to_cubic
 from sketchkit.utils.file import extract_files, download_with_wget, dir_md5, CISLAB_CDN
 
 
@@ -73,7 +72,7 @@ def parse_svg(svg_path: str) -> list[Path]:
                 s, e = seg.start, seg.end
                 p0 = (s.real, s.imag)
                 p1 = (e.real, e.imag)
-                cubic = line_to_cubic(np.stack([p0, p1], axis=0))
+                cubic = Curve.from_line(np.stack([p0, p1], axis=0))
                 cps.extend(
                     [
                         (cubic[1, 0], cubic[1, 1]),

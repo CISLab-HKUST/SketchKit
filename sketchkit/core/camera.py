@@ -136,6 +136,8 @@ class Camera(Object3D):
 
         c2w_matrix = self.transform_matrix @ coordinate_trans_matrix.T
         return np.linalg.inv(c2w_matrix)
+    
+    
 
     @extrinsics.setter
     def extrinsics(self, value):

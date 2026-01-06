@@ -54,7 +54,7 @@ class SwiftSketchModel:
         device: Optional[Union[str, torch.device]] = None,
         use_refine: bool = True,
         guidance_param: float = 2.5,
-        fix_scale: bool = False,
+        fix_scale: bool = True,
         checkpoint_dir: Optional[Union[str, os.PathLike]] = None,
         auto_download: bool = True,
         mask_model_factory: Optional[Callable[[torch.device], torch.nn.Module]] = None,
@@ -216,32 +216,13 @@ class SwiftSketchModel:
         ):
             target_w, target_h = target_size
 
-            # Build the sketch in the native canvas before resizing.
+            # Build the sketch at the native canvas resolution first.
             sketch = self._control_points_to_sketch(
                 ctrl, (self._canvas_width, self._canvas_height)
             )
 
-            ctrl_scaled = ctrl
-            svg_scaled = svg
-
+            # Then scale the sketch to the requested target size.
             if (target_w, target_h) != (self._canvas_width, self._canvas_height):
-                # Scale control points first, then resize the sketch to match.
-                sx = float(target_w) / float(self._canvas_width)
-                sy = float(target_h) / float(self._canvas_height)
-
-                ctrl_scaled = ctrl.clone()
-                ctrl_scaled[..., 0] = ctrl_scaled[..., 0] * sx
-                ctrl_scaled[..., 1] = ctrl_scaled[..., 1] * sy
-
-                rendered, svg_list = sketch_utils.rander_image_from_points(
-                    ctrl_scaled.unsqueeze(0),
-                    target_w,
-                    target_h,
-                    return_svg_content=True,
-                )
-                svg_scaled = svg_list[0]
-
-                # Resize the Sketch instance to reflect the target canvas.
                 sketch.resize(height=target_h, width=target_w)
 
             sketches.append(sketch)

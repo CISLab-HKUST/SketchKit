@@ -300,9 +300,9 @@ class TUBerlin(SketchDataset):
 
             for file_id in file_ids:
                 svg_path = os.path.join(class_base, str(file_id) + ".svg")
-                _, path_list = parse_svg(svg_path)
+                (sketch_width, sketch_height), path_list = parse_svg(svg_path)
                 # path_list: list of (N_curves, 4, 2)
-                self.raw_data[cnt] = path_list
+                self.raw_data[cnt] = [path_list, (sketch_width, sketch_height)]
                 cnt += 1
 
     def _get_single(self, idx: int) -> Sketch:
@@ -327,10 +327,10 @@ class TUBerlin(SketchDataset):
             item_metadata = self.items_metadata.iloc[idx]
             class_base = os.path.join(self.root, "svg", item_metadata["category"])
             svg_path = os.path.join(class_base, str(item_metadata["sub_id"]) + ".svg")
-            _, path_list = parse_svg(svg_path)
-            self.raw_data[idx] = path_list
+            (sketch_width, sketch_height), path_list = parse_svg(svg_path)
+            self.raw_data[idx] = [path_list, (sketch_width, sketch_height)]
 
-        path_list = self.raw_data[idx]
+        path_list, (width, height) = self.raw_data[idx]
         # path_list: list of (N_curves, 4, 2)
 
         paths = []
@@ -343,7 +343,7 @@ class TUBerlin(SketchDataset):
                 p_ctrl2 = Point(raw_curve[2][0], raw_curve[2][1])
                 curves.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))
             paths.append(Path(curves=curves))
-        sketch = Sketch(paths=paths)
+        sketch = Sketch(height=height, width=width, paths=paths)
         return sketch
 
     def extra_repr(self) -> str:

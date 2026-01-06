@@ -534,12 +534,12 @@ class Sketch:
         >>> sketch.thickness = 2.5          # Set all paths to thickness 2.5
     """
 
-    def __init__(self, height: int, width: int, paths: list[Path] | None = None):
+    def __init__(self, height: float, width: float, paths: list[Path] | None = None):
         """Initialize a Sketch.
 
         Args:
-            height (int, optional): Height of the sketch canvas. Defaults to 512.
-            width (int, optional): Width of the sketch canvas. Defaults to 512.
+            height (float, optional): Height of the sketch canvas. Defaults to 512.
+            width (float, optional): Width of the sketch canvas. Defaults to 512.
             paths (list[Path] | None, optional): Initial paths. Defaults to None.
         """
         self.height = height
@@ -654,10 +654,11 @@ class Sketch:
 
     def to_svg(
         self,
-        size: int = 512,
-        filename: str = None,
+        height: int | None = None,
+        width: int | None = None,
         fit_size: bool = False,
         is_polyline: bool = False,
+        filename: str | None = None,
     ) -> str:
         """Convert the sketch to an SVG string.
 
@@ -669,21 +670,22 @@ class Sketch:
         Returns:
             str: SVG representation of the sketch.
         """
+        width = self.width if width is None else width
+        height = self.height if height is None else height
+
         svg_parts = []
         svg_parts.append('<?xml version="1.0"?>')
         svg_parts.append(
-            f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{size}" height="{size}">'
+            f'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{width}" height="{height}">'
         )
         svg_parts.append("<defs/>")
         svg_parts.append("<g>")
 
-        # 计算缩放和偏移参数
         scale = 1.0
         offset_x = 0.0
         offset_y = 0.0
 
         if fit_size:
-            # 收集所有点以确定边界
             all_points = []
             for path in self.paths:
                 for curve in path.curves:
@@ -702,27 +704,23 @@ class Sketch:
                     all_points.append([p3.x, p3.y])
 
             if all_points:
-                # 计算边界
                 points_array = np.array(all_points)
                 min_x, min_y = np.min(points_array, axis=0)
                 max_x, max_y = np.max(points_array, axis=0)
 
-                # 计算大小和中心
-                width = max_x - min_x
-                height = max_y - min_y
+                t_width = max_x - min_x
+                t_height = max_y - min_y
                 center_x = (min_x + max_x) / 2
                 center_y = (min_y + max_y) / 2
 
-                # 计算缩放因子以适应画布并留出边距
                 padding = 0.05  # 5%边距
                 scale = min(
-                    (size * (1 - padding * 2)) / width,
-                    (size * (1 - padding * 2)) / height,
+                    (width * (1 - padding * 2)) / t_width,
+                    (height * (1 - padding * 2)) / t_height,
                 )
 
-                # 计算平移以居中草图
-                offset_x = size / 2 - center_x * scale
-                offset_y = size / 2 - center_y * scale
+                offset_x = width / 2 - center_x * scale
+                offset_y = height / 2 - center_y * scale
         if is_polyline:
             for path in self.paths:
                 points = []
@@ -765,7 +763,6 @@ class Sketch:
                     )
                     opacity = curve.opacity[0] if curve.opacity[0] is not None else 1.0
 
-                    # 直接应用缩放和偏移到每个点的坐标
                     x0 = p0.x * scale + offset_x
                     y0 = p0.y * scale + offset_y
                     x1 = p1.x * scale + offset_x
@@ -806,6 +803,67 @@ class Sketch:
                 sketch_frames.append(Sketch(base_pathes + [Path(curves[: k + 1])]))
 
         return sketch_frames
+
+    def resize(self, height: float, width: float):
+        """Resize the sketch canvas and scale all strokes accordingly.
+
+        This rescales all curve points (including Bezier control points) from the
+        current canvas size to the new canvas size.
+
+        Notes:
+            - X coordinates are scaled by ``width / old_width``.
+            - Y coordinates are scaled by ``height / old_height``.
+            - Stroke thickness (if present) is scaled by the average of the two
+              scale factors.
+
+        Args:
+            height (int): New height.
+            width (int): New width.
+        """
+
+        old_height = self.height
+        old_width = self.width
+
+        sx = float(width) / float(old_width)
+        sy = float(height) / float(old_height)
+        s_thickness = np.float32((sx + sy) / 2.0)
+
+        def _scale_xy(p: Point):
+            p.x = np.float32(float(p.x) * sx)
+            p.y = np.float32(float(p.y) * sy)
+
+        for path in self.paths:
+            for curve in path.curves:
+                if not isinstance(curve, Curve):
+                    raise ValueError("All strokes must be of type `Curve`.")
+
+                _scale_xy(curve.p_start)
+                _scale_xy(curve.p_crtl1)
+                _scale_xy(curve.p_crtl2)
+                _scale_xy(curve.p_end)
+
+                if curve.p_start.thickness is not None:
+                    curve.p_start.thickness = (
+                        np.float32(curve.p_start.thickness) * s_thickness
+                    )
+                if curve.p_end.thickness is not None:
+                    curve.p_end.thickness = (
+                        np.float32(curve.p_end.thickness) * s_thickness
+                    )
+        self.resize_canvas(height, width)
+
+    def resize_canvas(self, height: float, width: float):
+        """Resize the sketch canvas without scaling strokes.
+
+        This changes the canvas size but leaves all curve points and stroke
+        properties unchanged.
+
+        Args:
+            height (float): New height.
+            width (float): New width.
+        """
+        self.height = height
+        self.width = width
 
     # def set_label_from_json(self, json_path: str):
     #     """Set labels for paths from a JSON file.

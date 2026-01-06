@@ -20,7 +20,7 @@ class Renderer(ABC):
         self, sketch: Sketch, render_options: RenderOptions | dict | None = None
     ) -> Image.Image:
         if render_options is None:
-            _render_options = self.render_options
+            _render_options = deepcopy(self.render_options)
         elif isinstance(render_options, dict):
             _render_options = deepcopy(self.render_options)
             for k, v in render_options.items():
@@ -32,7 +32,7 @@ class Renderer(ABC):
             raise ValueError("Invalid render options.")
 
         if _render_options.canvas_size is None:
-            _render_options.canvas_size = (sketch.width, sketch.height)
+            _render_options.canvas_size = (int(sketch.width), int(sketch.height))
 
         return self._render(sketch, _render_options)
 

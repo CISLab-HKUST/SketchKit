@@ -12,6 +12,8 @@ from sketchkit.core import Sketch
 
 dataset_filename = "hzy_sketch.zip"
 
+DEFAULT_CANVAS_HEIGHT= 1024
+DEFAULT_CANVAS_WIDTH = 1024
 
 def download_and_extract_data(
     output_folder, remove_sourcefile=True, cislab_source=True

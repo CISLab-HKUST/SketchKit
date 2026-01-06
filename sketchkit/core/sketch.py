@@ -2,7 +2,13 @@ import numpy as np
 from sketchkit.utils.geometry import bezier_lengths, is_line
 import svgpathtools
 import json
-
+from .schema import (
+    SketchSchema,
+    PathSchema,
+    CurveArray,
+    VertexArray,
+    PointArray
+)
 
 class Point:
     """2D point.
@@ -738,14 +744,36 @@ class Sketch:
                 color = path.color[0][0] if path.color[0][0] is not None else (0, 0, 0)
 
                 color_hex = f"#{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}"
-                width = np.average(path.pressure) * (
-                    path.thickness[0][0] if path.thickness[0][0] is not None else 1.0
-                )
+
+                # width = np.average(
+                #     path.pressure if path.pressure is not None else [1.0, 1.0]
+                # ) * (path.thickness[0][0] if path.thickness[0][0] is not None else 1.0)
+                width = 0.2
                 svg_parts.append(
                     f'<polyline points="{" ".join(points)}" stroke="{color_hex}" stroke-width="{width}" fill="none"/>'
                 )
         else:
             for path in self.paths:
+                if not path.curves:
+                    continue
+
+                # Use attributes from the first curve of the path for the entire path
+                first_curve = path.curves[0]
+                color = first_curve.color[0] if first_curve.color[0] is not None else (0, 0, 0)
+                color_hex = f"#{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}"
+                thickness = (
+                    first_curve.thickness[0] if first_curve.thickness[0] is not None else 1.0
+                )
+                opacity = first_curve.opacity[0] if first_curve.opacity[0] is not None else 1.0
+
+                d_parts = []
+                
+                # Initial MoveTo
+                p0 = first_curve.p_start
+                last_x = p0.x * scale + offset_x
+                last_y = p0.y * scale + offset_y
+                d_parts.append(f"M {last_x} {last_y}")
+
                 for curve in path.curves:
                     if not isinstance(curve, Curve):
                         raise ValueError("All strokes must be of type `Curve`.")
@@ -756,12 +784,6 @@ class Sketch:
                         curve.p_crtl2,
                         curve.p_end,
                     )
-                    color = curve.color[0] if curve.color[0] is not None else (0, 0, 0)
-                    color_hex = f"#{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}"
-                    thickness = (
-                        curve.thickness[0] if curve.thickness[0] is not None else 1.0
-                    )
-                    opacity = curve.opacity[0] if curve.opacity[0] is not None else 1.0
 
                     x0 = p0.x * scale + offset_x
                     y0 = p0.y * scale + offset_y
@@ -772,10 +794,17 @@ class Sketch:
                     x3 = p3.x * scale + offset_x
                     y3 = p3.y * scale + offset_y
 
-                    path_d = f"M {x0} {y0} C {x1} {y1}, {x2} {y2}, {x3} {y3}"
-                    svg_parts.append(
-                        f'<path d="{path_d}" stroke="{color_hex}" stroke-width="{thickness}" fill="none" stroke-opacity="{opacity}"/>'
-                    )
+                    # If the start of this curve doesn't match the end of the last one, issue a MoveTo
+                    if abs(x0 - last_x) > 1e-4 or abs(y0 - last_y) > 1e-4:
+                        d_parts.append(f"M {x0} {y0}")
+
+                    d_parts.append(f"C {x1} {y1}, {x2} {y2}, {x3} {y3}")
+                    last_x, last_y = x3, y3
+                
+                path_d = " ".join(d_parts)
+                svg_parts.append(
+                    f'<path d="{path_d}" stroke="{color_hex}" stroke-width="{thickness}" fill="none" stroke-opacity="{opacity}"/>'
+                )
 
         svg_parts.append("</g>")
         svg_parts.append("</svg>")
@@ -865,16 +894,118 @@ class Sketch:
         self.height = height
         self.width = width
 
-    # def set_label_from_json(self, json_path: str):
-    #     """Set labels for paths from a JSON file.
+    def to_json(self, file_path: str):
+        """Save the sketch to a JSON file (Compact Format).
 
-    #     Args:
-    #         json_path (str): Path to the JSON file containing labels.
-    #     """
-    #     with open(json_path, "r") as f:
-    #         data = json.load(f)
-    #         labels = data["labels"]
-    #         if len(labels) != len(self.paths):
-    #             raise ValueError("Number of labels must match number of paths.")
-    #         for i, label in enumerate(labels):
-    #             self.paths[i].label = label
+        Args:
+            file_path (str): Path to the output JSON file.
+        """
+        paths_data = []
+        for path in self.paths:
+            curves_data = []
+            for curve in path.curves:
+                p_start: VertexArray = (
+                    float(curve.p_start.x),
+                    float(curve.p_start.y),
+                    float(curve.p_start.pressure)
+                    if curve.p_start.pressure is not None
+                    else None,
+                    float(curve.p_start.thickness)
+                    if curve.p_start.thickness is not None
+                    else None,
+                    tuple(curve.p_start.color.tolist())
+                    if curve.p_start.color is not None
+                    else None,
+                    float(curve.p_start.opacity)
+                    if curve.p_start.opacity is not None
+                    else None,
+                )
+                p_end: VertexArray = (
+                    float(curve.p_end.x),
+                    float(curve.p_end.y),
+                    float(curve.p_end.pressure)
+                    if curve.p_end.pressure is not None
+                    else None,
+                    float(curve.p_end.thickness)
+                    if curve.p_end.thickness is not None
+                    else None,
+                    tuple(curve.p_end.color.tolist())
+                    if curve.p_end.color is not None
+                    else None,
+                    float(curve.p_end.opacity)
+                    if curve.p_end.opacity is not None
+                    else None,
+                )
+                p_crtl1: PointArray = (
+                    float(curve.p_crtl1.x),
+                    float(curve.p_crtl1.y),
+                )
+                p_crtl2: PointArray = (
+                    float(curve.p_crtl2.x),
+                    float(curve.p_crtl2.y),
+                )
+
+                # [start, c1, c2, end]
+                curves_data.append((p_start, p_crtl1, p_crtl2, p_end))
+
+            paths_data.append(PathSchema(curves=curves_data, label=path.label))
+
+        sketch_data = SketchSchema(
+            height=float(self.height), width=float(self.width), paths=paths_data
+        )
+
+        with open(file_path, "w") as f:
+            f.write(sketch_data.model_dump_json(indent=None))  # Minified JSON
+
+    @classmethod
+    def from_json(cls, json_path: str) -> "Sketch":
+        """Load a sketch from a JSON file (Compact Format).
+
+        Args:
+            json_path (str): Path to the JSON file.
+
+        Returns:
+            Sketch: Loaded sketch object.
+        """
+        with open(json_path, "r") as f:
+            json_content = f.read()
+
+        sketch_data = SketchSchema.model_validate_json(json_content)
+
+        paths = []
+        for path_data in sketch_data.paths:
+            curves = []
+            for curve_tuple in path_data.curves:
+                # curve_tuple: [start, c1, c2, end]
+                # start/end: [x, y, p, t, c, o]
+                # c1/c2: [x, y]
+
+                start_data = curve_tuple[0]
+                c1_data = curve_tuple[1]
+                c2_data = curve_tuple[2]
+                end_data = curve_tuple[3]
+
+                p_start = Vertex(
+                    x=start_data[0],
+                    y=start_data[1],
+                    pressure=start_data[2],
+                    thickness=start_data[3],
+                    color=start_data[4],
+                    opacity=start_data[5],
+                )
+                p_end = Vertex(
+                    x=end_data[0],
+                    y=end_data[1],
+                    pressure=end_data[2],
+                    thickness=end_data[3],
+                    color=end_data[4],
+                    opacity=end_data[5],
+                )
+                p_crtl1 = Point(x=c1_data[0], y=c1_data[1])
+                p_crtl2 = Point(x=c2_data[0], y=c2_data[1])
+
+                curves.append(Curve(p_start, p_end, p_crtl1, p_crtl2))
+
+            paths.append(Path(curves=curves, label=path_data.label))
+
+        return cls(height=sketch_data.height, width=sketch_data.width, paths=paths)

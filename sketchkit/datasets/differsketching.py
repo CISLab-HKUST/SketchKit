@@ -28,19 +28,35 @@ def load_differsketching_json(json_path: str) -> Sketch:
     height = data.get("height", None)
     all_x, all_y = [], []
 
+    # Gather all points for min/max calculation
     for stroke in strokes:
-        points = stroke["path"]  # [[x,y], [x,y], ...]
-        pressures = stroke.get("pressure", [None] * len(points))
-        thickness = stroke.get("width", None)
-
-        for pt in points:
+        for pt in stroke["path"]:
             all_x.append(pt[0])
             all_y.append(pt[1])
 
+    min_x = min(all_x) if all_x else 0
+    min_y = min(all_y) if all_y else 0
+
+    # If width/height not in JSON, compute from points
+    if width is None and all_x:
+        width = max(all_x) - min_x
+    if height is None and all_y:
+        height = max(all_y) - min_y
+    width = width if width is not None else 0
+    height = height if height is not None else 0
+
+    # Now build paths, shifting all points so min_x/min_y is at (0,0)
+    for stroke in strokes:
+        points = stroke["path"]
+        pressures = stroke.get("pressure", [None] * len(points))
+        thickness = stroke.get("width", None)
+
+        shifted_points = [[x - min_x, y - min_y] for x, y in points]
+
         curves = []
-        for i in range(len(points) - 1):
-            x0, y0 = points[i]
-            x1, y1 = points[i + 1]
+        for i in range(len(shifted_points) - 1):
+            x0, y0 = shifted_points[i]
+            x1, y1 = shifted_points[i + 1]
 
             p0 = pressures[i] if pressures else None
             p1 = pressures[i + 1] if pressures else None
@@ -57,15 +73,6 @@ def load_differsketching_json(json_path: str) -> Sketch:
         if curves:
             path = Path(curves=curves)
             paths.append(path)
-
-    # If width/height not in JSON, compute from points
-    if width is None and all_x:
-        width = max(all_x) - min(all_x)
-    if height is None and all_y:
-        height = max(all_y) - min(all_y)
-    # fallback if still None
-    width = width if width is not None else 0
-    height = height if height is not None else 0
 
     return paths, (width, height)
 

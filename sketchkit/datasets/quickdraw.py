@@ -271,7 +271,7 @@ class QuickDraw(SketchDataset):
 
         single_sketch_stroke = self.raw_data[idx]
         path_list, total_segment_num = parse_stroke3_format(single_sketch_stroke)
-        sketch = Sketch(paths=path_list)
+        sketch = Sketch(height=256, width=256, paths=path_list)
         return sketch
 
     def extra_repr(self) -> str:

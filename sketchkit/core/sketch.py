@@ -322,7 +322,7 @@ class Curve:
             return A + t * (B - A)
 
         # (N, 4, 2) -> 取出 4 个控制点
-        P0, P1, P2, P3 = self.np_points.reshape(4, 2).unbind(dim=0)          # 每个 (2)
+        P0, P1, P2, P3 = self.np_points[0], self.np_points[1], self.np_points[2], self.np_points[3]          # 每个 (2)
 
         P01 = lerp(P0, P1, t)                            # (2)
         P12 = lerp(P1, P2, t)                            # (2)
@@ -333,17 +333,17 @@ class Curve:
 
         P0123 = lerp(P012, P123, t)                     # (2)
 
-        left_end = Vertex(P0123[0], P0123[1], self.p_start.pressure, self.p_start.thickness, self.p_start.color, self.p_start.opacity)
+        left_end = Vertex(P0123[0], P0123[1], self.p_start.pressure if self.p_start.pressure is not None else None, self.p_start.thickness, self.p_start.color, self.p_start.opacity)
         left_ctrl1 = Point(P01[0], P01[1])
         left_ctrl2 = Point(P012[0], P012[1])
 
-        right_start = Vertex(P0123[0], P0123[1], self.p_end.pressure, self.p_end.thickness, self.p_end.color, self.p_end.opacity)
+        right_start = Vertex(P0123[0], P0123[1], self.p_end.pressure if self.p_end.pressure is not None else None, self.p_end.thickness, self.p_end.color, self.p_end.opacity)
         right_ctrl1 = Point(P123[0], P123[1])
         right_ctrl2 = Point(P23[0], P23[1])
 
         # 组装 left/right
-        left  = Curve(self.p_start, left_ctrl1, left_ctrl2, left_end)
-        right = Curve(right_start, right_ctrl1, right_ctrl2, self.p_end)
+        left  = Curve(self.p_start, left_end, left_ctrl1, left_ctrl2)
+        right = Curve(right_start, self.p_end, right_ctrl1, right_ctrl2)
 
         return left, right
 
@@ -860,24 +860,32 @@ class Sketch:
         for i in range(self.path_num):
             base_pathes = [] if i == 0 else self.paths[:i]
             current_path = self.paths[i]
+            # print(len(current_path.curves))
             # curve_lengths = current_path.svg_curve_lengths()
             # path_length = np.sum(curve_lengths)
             segment_length = 0
             curves = current_path.curves.copy()
-            curves = curves.reverse()
+            i = 0
+            current_curve = curves[0]
             new_curves = []
-            while len(curves) > 0:
-                current_curve = curves.pop()
+            while i < len(curves):
+                
+                # print(current_curve)
                 curve_length = current_curve.svg_length()
                 if segment_length + curve_length <= length_per_frame:
                     segment_length += curve_length
-                    new_curves.append(current_curve)
+                    i += 1
+                    new_curves = []
+                    if i == len(curves):
+                        sketch_frames.append(Sketch(height=self.height, width=self.width, paths=base_pathes + [current_path]))
+                    else:
+                        current_curve = curves[i]
                 else:
                     split_t = (length_per_frame - segment_length) / curve_length
                     left_curve, right_curve = current_curve.split(split_t)
-                    curves.append(right_curve)
+                    current_curve = right_curve
                     new_curves.append(left_curve)
-                    sketch_frames.append(Sketch(base_pathes + [Path(new_curves)]))
+                    sketch_frames.append(Sketch(height=self.height, width=self.width, paths=base_pathes + [Path(curves[:i] + new_curves)]))
                     segment_length = 0
 
         return sketch_frames

@@ -178,8 +178,12 @@ if os.path.exists(os.path.join(PROJECT_ROOT, 'third_party', 'teddy')):
     ext_modules.append(CMakeExtension('teddy_sketch2model', 'third_party/teddy', False))
 
 setup(
-    packages=find_packages(include=['sketchkit*']) + ['pydiffvg'],
-    package_dir={'pydiffvg': 'third_party/diffvg/pydiffvg'},
+    packages=find_packages(include=['sketchkit*']) + ['pydiffvg', 'forger', 'thirdparty'],
+    package_dir={
+        'pydiffvg': 'third_party/diffvg/pydiffvg',
+        'forger': 'third_party/brushstroke_engine/forger',
+        'thirdparty': 'third_party/brushstroke_engine/thirdparty',
+    },
     ext_modules=ext_modules,
     package_data={'sketchkit': ['renderer/nogui_contour_renderer', 'renderer/nogui_contour_renderer.exe']},
     cmdclass=dict(build_ext=Build),

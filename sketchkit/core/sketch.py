@@ -854,7 +854,6 @@ class Sketch:
         return final_str
 
     def get_progressive_frames(self, length_per_frame: int = 10) -> list["Sketch"]:
-        import queue
         sketch_frames = []
 
         for i in range(self.path_num):

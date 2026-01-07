@@ -406,8 +406,11 @@ def sketch_to_3d_teddy_impl(
     if Sketch is not None and isinstance(sketch_input, Sketch):
         # Sketch object - render to image
         from sketchkit.renderer.cairo_renderer import CairoRenderer
-        renderer = CairoRenderer(canvas_size=512, canvas_color=(1, 1, 1))
-        raster_image = renderer.render(sketch_input, fit_canvas=True)
+        renderer = CairoRenderer()
+        raster_image = renderer.render(sketch_input)
+        # Ensure raster_image is a numpy array
+        if isinstance(raster_image, Image.Image):
+            raster_image = np.array(raster_image)
         if raster_image.ndim == 3:
             raster_image = np.dot(raster_image[...,:3], [0.299, 0.587, 0.114]).astype(np.uint8)
     elif isinstance(sketch_input, str):

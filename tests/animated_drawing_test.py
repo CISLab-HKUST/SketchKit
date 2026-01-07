@@ -15,8 +15,12 @@ if __name__ == '__main__':
     print(my_data.items_metadata.loc[10])
 
     from PIL import Image
-    from sketchkit.renderer.cairo_renderer import CairoRenderer
-    renderer = CairoRenderer(800, (1,1,1))
+    from sketchkit.renderer.cairo_renderer import CairoRenderer, CairoRenderOptions
+    render_options = CairoRenderOptions(
+        canvas_size=(800, 800),
+        background_color=(1.0, 1.0, 1.0)
+    )
+    renderer = CairoRenderer(render_options)
     raster_image = renderer.render(my_data[10], fit_canvas=False)
     sketch = my_data[10]
     outpath = 'PhotoSketch.png'
@@ -32,6 +36,6 @@ if __name__ == '__main__':
     animated_ordering = Orderer.create(method="Fu", device="cpu")
     sketch = animated_ordering.run(sketch)
 
-    sketch_frames = sketch.get_progressive_frames(sample_rate=10)
+    sketch_frames = sketch.get_progressive_frames(length_per_frame=10)
     raster_images = [renderer.render(frame, fit_canvas=False) for frame in tqdm(sketch_frames)]
     save_seq_gif(raster_images, 'animated_drawing.gif')

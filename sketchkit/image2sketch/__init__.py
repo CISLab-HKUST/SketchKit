@@ -96,7 +96,7 @@ def image2sketch(
     image: Union[ImageInput, Sequence[ImageInput]],
     *,
     method: str = _DEFAULT_METHOD,
-    size: Union[int, Tuple[int, int]] = 512,
+    size: Optional[Union[int, Tuple[int, int]]] = None,
     **model_kwargs: object,
 ) -> Image2SketchResult:
     """Generate sketch or raster outputs for the provided image using the requested method."""

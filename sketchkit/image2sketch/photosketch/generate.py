@@ -138,7 +138,7 @@ class PhotoSketchModel:
         self,
         image: Union[ImageInput, Sequence[ImageInput]],
         *,
-        size: ImageSize = 512,
+        size: Optional[ImageSize] = None,
     ) -> Union[Image.Image, List[Image.Image]]:
         """Generate sketch images for the provided image input(s)."""
 
@@ -158,23 +158,28 @@ class PhotoSketchModel:
         self,
         images: Sequence[ImageInput],
         *,
-        size: ImageSize = 512,
+        size: Optional[ImageSize] = None,
     ) -> List[Image.Image]:
         """Generate sketches for a batch of images."""
 
         if not images:
             return []
 
-        width, height = self._resolve_size(size)
+        pil_images = [self._to_pil_image(source) for source in images]
+        if size is None:
+            target_sizes = [img.size for img in pil_images]
+        else:
+            target_size = self._resolve_size(size)
+            target_sizes = [target_size] * len(pil_images)
+
         generator = self._initialise_generator()
 
         outputs: List[Image.Image] = []
         with torch.inference_mode():
-            for source in images:
-                pil_image = self._to_pil_image(source)
+            for pil_image, target_size in zip(pil_images, target_sizes):
                 tensor = self._prepare_tensor(pil_image)
                 prediction = generator(tensor)[0]
-                sketch = self._tensor_to_image(prediction, (width, height))
+                sketch = self._tensor_to_image(prediction, target_size)
                 outputs.append(sketch)
 
         return outputs

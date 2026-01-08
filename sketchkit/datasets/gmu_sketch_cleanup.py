@@ -4,7 +4,6 @@ import ssl
 
 import glob
 import xml.etree.ElementTree as ET
-from pathlib import Path as PathLibPath
 import numpy as np
 import pandas as pd
 from svg.path import parse_path, Path as SvgPath, Move, CubicBezier, Line, Arc
@@ -112,7 +111,7 @@ def parse_gmu_svg(svg_file: str) -> tuple[tuple[int, int], list[list[np.ndarray]
                 path_list.append(strokes)
                 total_segment_num += seg_num
 
-    return (width, height), path_list, total_segment_num
+    return path_list, (width, height), total_segment_num
 
 
 class GMUSketchCleanup(SketchDataset):
@@ -137,14 +136,6 @@ class GMUSketchCleanup(SketchDataset):
 
     # Only `id` is mandatory; add columns as needed.
     metadata = ["id", "split", "file_path"]
-
-    # def __init__(
-    #     self,
-    #     root: str | PathLibPath | None = None,
-    #     load_all: bool = False,
-    #     cislab_source: bool = False,
-    # ):
-    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Checks the integrity of the cached dataset by comparing MD5 checksums."""
@@ -240,7 +231,8 @@ class GMUSketchCleanup(SketchDataset):
             # (Optional) You can also perform "batch loading by split" here to reduce I/O operations.
             self.raw_data[idx] = self._load_one(idx)
 
-        (w, h), path_list, _ = self.raw_data[idx]
+        path_list, (w, h), _ = self.raw_data[idx]
+
         paths = []
         for p in path_list:
             curves = []
@@ -252,7 +244,7 @@ class GMUSketchCleanup(SketchDataset):
                 p3 = Vertex(seg[3][0], seg[3][1])
                 curves.append(Curve(p0, p3, c1, c2))
             paths.append(Path(curves=curves))
-        return Sketch(paths=paths)
+        return Sketch(paths=paths, width=w, height=h)
 
     def extra_repr(self) -> str:
         """Returns additional string representation of the dataset."""
@@ -315,3 +307,13 @@ if __name__ == "__main__":
         t0 = time.time()
         _ = [ds[i] for i in range(n)]
         console.print(f"Loaded {n} samples in {time.time() - t0:.3f}s")
+
+        from sketchkit.renderer.cairo_renderer import CairoRenderer
+
+        renderer = CairoRenderer()
+        gt_rows = ds.items_metadata[ds.items_metadata["split"] == "GT"]
+        idx = int(gt_rows.iloc[0]["id"])
+        sketch = ds[idx]
+
+        renderer = CairoRenderer()
+        renderer.render(sketch).save("gt_0.png")

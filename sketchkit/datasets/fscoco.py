@@ -134,7 +134,8 @@ class FSCOCO(SketchDataset):
         disk I/O during iteration.
         """
         for i in tqdm(range(len(self.items_metadata)), desc="Loading all FS-COCO"):
-            self.raw_data[i] = self._load_single_array(i)
+            data = self._load_single_array(i)
+            self.raw_data[i] = (data, 256, 256)
 
     def _get_single(self, idx: int) -> Sketch:
         """Get a single sketch by index.
@@ -152,8 +153,15 @@ class FSCOCO(SketchDataset):
             raise IndexError("Index out of range")
 
         if self.raw_data[idx] is None:
-            self.raw_data[idx] = self._load_single_array(idx)
-        return self._array_to_sketch(self.raw_data[idx])
+            data = self._load_single_array(idx)
+            self.raw_data[idx] = data
+ 
+        cached = self.raw_data[idx]
+        if isinstance(cached, tuple):
+            data, _, _ = cached
+        else:
+            data = cached
+        return self._array_to_sketch(data)
 
     def _load_single_array(self, idx: int) -> np.ndarray:
         """Load a single `.npy` array for the given index.
@@ -191,7 +199,6 @@ class FSCOCO(SketchDataset):
         if data.ndim != 2 or data.shape[1] != 3:
             raise ValueError("FS-COCO npy must be (N,3)")
 
-        penup = {1, 2}
         paths: list[Path] = []
         points: list[tuple[float, float]] = []
 
@@ -233,7 +240,7 @@ class FSCOCO(SketchDataset):
         # If the last stroke does not end with a pen-up flag, flush it here.
         flush_current_stroke(points)
 
-        return Sketch(paths=paths)
+        return Sketch(paths=paths, width=256, height=256)
 
     def extra_repr(self) -> str:
         """Return a short human-readable summary for debugging.
@@ -266,6 +273,16 @@ if __name__ == "__main__":
         t0 = time.time()
         _ = [ds[i] for i in range(n)]
         console.print(f"Loaded {n} samples in {time.time() - t0:.3f}s")
+
+        from sketchkit.renderer.cairo_renderer import CairoRenderer
+
+        sketch = ds[0]
+        renderer = CairoRenderer()
+        raster_image = renderer.render(sketch)
+        print(sketch.curve_num, sketch.path_num, sketch.width, sketch.height)
+        outpath = "test.png"
+        if outpath is not None:
+            raster_image.save(outpath, "PNG")
 
     # 2) Test preloading all items at once.
     # with tempfile.TemporaryDirectory() as tmpdir:

@@ -39,19 +39,12 @@ def parse_stroke3_format(stroke_data):
     # Convert to absolute coordinates
     xs, ys = np.cumsum(dx), np.cumsum(dy)
     
-    # Normalize to fit in 0-255 range (standard QuickDraw canvas size)
+    # Shift to start from 0  
     if len(xs) > 0:
         # Shift to start from 0
         min_x, min_y = np.min(xs), np.min(ys)
         xs = xs - min_x
         ys = ys - min_y
-        
-        # Scale to fit in 0-255 range
-        max_x, max_y = np.max(xs), np.max(ys)
-        if max_x > 0:
-            xs = xs * 255.0 / max_x
-        if max_y > 0:
-            ys = ys * 255.0 / max_y
     
     xy = np.stack([xs, ys], axis=1)  # (N_point, 2)
 

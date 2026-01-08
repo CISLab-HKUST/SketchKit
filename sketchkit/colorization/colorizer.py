@@ -105,12 +105,10 @@ class Colorizer:
         **kwargs: Any,
     ) -> Image.Image:
         """Run colorization with Sketch input."""
-        # Resize sketch if requested (直接修改原始对象)
+        # Resize sketch if requested 
         original_size = None
         if input_size is not None:
-            # 保存原始尺寸
             original_size = (sketch.height, sketch.width)
-            # 直接调整大小
             sketch.resize(input_size[0], input_size[1])
         
         try:
@@ -128,7 +126,6 @@ class Colorizer:
             return self._generate_with_control_image(control_image, prompt, size, **kwargs)
         
         finally:
-            # 如果调整过大小，恢复原始尺寸
             if original_size is not None:
                 sketch.resize(original_size[0], original_size[1])
     
@@ -221,8 +218,6 @@ class Colorizer:
         
         renderer = CairoRenderer(render_options=render_options)
         
-        # 直接使用原始 sketch，不再尝试复制
-        # 注意：renderer.render 不应该修改原始 sketch
         pil_image = renderer.render(sketch, render_options=render_options)
         raster_image = np.array(pil_image)
         

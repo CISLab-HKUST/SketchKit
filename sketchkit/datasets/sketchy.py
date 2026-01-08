@@ -195,7 +195,6 @@ class Sketchy(SketchDataset):
         prune: Whether to prune invalid SVGs during download.
     """
 
-    # 更新 MD5 校验和，因为 CISLAB 上的文件可能已经更新
     md5_sum = "73bb8cb745dd7945ee8c998a58bf9f0a"
     metadata = ["id", "pruned", "class_name", "filename", "path", "sketch_name"]
     gdrive_id: str = "1Qr8HhjRuGqgDONHigGszyHG_awCstivo"
@@ -218,17 +217,14 @@ class Sketchy(SketchDataset):
         print(f"Checking integrity of cached {self.__class__.__name__} dataset...")
         current_md5 = dir_md5(self.root)
         
-        # 如果 MD5 不匹配，检查目录是否存在，如果存在尝试跳过校验
         if current_md5 != self.md5_sum:
             print(f"Warning: MD5 mismatch for {self.__class__.__name__}!")
             print(f"  Expected: {self.md5_sum}")
             print(f"  Got:      {current_md5}")
             
-            # 检查目录是否存在sketches文件夹
             sketches_dir = os.path.join(self.root, "sketches")
             if os.path.exists(sketches_dir) and os.path.isdir(sketches_dir):
                 print(f"  Found sketches directory at {sketches_dir}")
-                # 检查是否有 SVG 文件
                 svg_files = []
                 for root_dir, dirs, files in os.walk(sketches_dir):
                     svg_files.extend([f for f in files if f.lower().endswith('.svg')])

@@ -13,7 +13,7 @@ from sketchkit.core.camera import Camera
 from sketchkit.utils3d.transforms import wxyz_from_look_at
 from sketchkit.renderer3d.renderer3d import Render3DOptions
 
-from sketchkit.core.sketch3d import Sketch3D, Path3D, Curve3D, Vertex3D, Point3D, save_sketch3d_to_json, load_sketch3d_from_json
+from sketchkit.core.sketch3d import Sketch3D, Path3D, Curve3D, Vertex3D, Point3D
 
 
 # for 360 views rendering (wir3d way)
@@ -181,7 +181,7 @@ def main(
         
         # Save to JSON if requested
         if save_json:
-            save_sketch3d_to_json(cis3d, save_json)
+            cis3d.to_json(save_json)
 
     if varied_thickness:
         options = DiffVGRenderOptions(canvas_size=(width, height), stroke_width=None)

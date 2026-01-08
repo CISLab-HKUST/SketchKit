@@ -38,8 +38,21 @@ def parse_stroke3_format(stroke_data):
 
     # Convert to absolute coordinates
     xs, ys = np.cumsum(dx), np.cumsum(dy)
-    xs -= np.min(xs)
-    ys -= np.min(ys)
+    
+    # Normalize to fit in 0-255 range (standard QuickDraw canvas size)
+    if len(xs) > 0:
+        # Shift to start from 0
+        min_x, min_y = np.min(xs), np.min(ys)
+        xs = xs - min_x
+        ys = ys - min_y
+        
+        # Scale to fit in 0-255 range
+        max_x, max_y = np.max(xs), np.max(ys)
+        if max_x > 0:
+            xs = xs * 255.0 / max_x
+        if max_y > 0:
+            ys = ys * 255.0 / max_y
+    
     xy = np.stack([xs, ys], axis=1)  # (N_point, 2)
 
     path_list = []  # list of (N_strokes, 4, 2)
@@ -54,9 +67,14 @@ def parse_stroke3_format(stroke_data):
             stroke_list.append(cubic)
             total_segment_num += 1
         else:
-            # path_list.append(np.stack(stroke_list, axis=0))
-            path_list.append(Path(stroke_list))
+            if stroke_list:
+                path_list.append(Path(stroke_list))
             stroke_list = []
+    
+    # Add the last path if any strokes remain
+    if stroke_list:
+        path_list.append(Path(stroke_list))
+    
     return path_list, total_segment_num
 
 
@@ -80,13 +98,13 @@ class SketchXPRIS(SketchDataset):
     # Metadata columns for each items
     metadata = ["id", "sub_id", "category"]
 
-    # def __init__(
-    #     self,
-    #     data_root: str | None = None,
-    #     load_all: bool = False,
-    #     cislab_source: bool = False,
-    # ):
-    #     super().__init__(data_root, load_all=load_all, cislab_source=cislab_source)
+    def __init__(
+        self,
+        root: str | None = None,
+        load_all: bool = False,
+        cislab_source: bool = False,
+    ):
+        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _load_items_metadata(self):
         """Load and cache metadata for all items in the dataset.
@@ -275,7 +293,8 @@ class SketchXPRIS(SketchDataset):
         path_list, total_segment_num = parse_stroke3_format(
             np.array(single_sketch_stroke)
         )
-        sketch = Sketch(paths=path_list)
+        # Create Sketch with height and width (256x256 canvas)
+        sketch = Sketch(height=256, width=256, paths=path_list)
         return sketch
 
 

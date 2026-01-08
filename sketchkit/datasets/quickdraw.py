@@ -7,10 +7,9 @@ from pathlib import Path as PathLibPath
 import pandas as pd
 
 
-from sketchkit.core.sketch import Sketch, Path
+from sketchkit.core.sketch import Sketch, Path, Curve
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.transform import line_to_cubic
-from sketchkit.utils.file import download_with_tqdm, dir_md5, CISLAB_CDN
+from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN
 
 
 def parse_stroke3_format(stroke_data):
@@ -54,11 +53,10 @@ def parse_stroke3_format(stroke_data):
             p_start = xy[i]  # (2)
             p_end = xy[i + 1]  # (2)
             line = np.stack([p_start, p_end], axis=0)  # (2, 2)
-            cubic = line_to_cubic(line)  # (4, 2)
+            cubic = Curve.from_line(line)  # (4, 2)
             stroke_list.append(cubic)
             total_segment_num += 1
-        else:
-            # path_list.append(np.stack(stroke_list, axis=0))
+        elif stroke_list != []:
             path_list.append(Path(stroke_list))
             stroke_list = []
     return path_list, total_segment_num
@@ -84,23 +82,23 @@ class QuickDraw(SketchDataset):
     # Metadata columns for each items
     metadata = ["id", "sub_id", "category", "split"]
 
-    def __init__(
-        self,
-        root: str | PathLibPath | None = None,
-        load_all: bool = False,
-        cislab_source: bool = False,
-    ):
-        """Initialize the QuickDraw dataset.
+    # def __init__(
+    #     self,
+    #     root: str | PathLibPath | None = None,
+    #     load_all: bool = False,
+    #     cislab_source: bool = False,
+    # ):
+    #     """Initialize the QuickDraw dataset.
 
-        Args:
-            root (str | PathLibPath | None): Root directory to store/load the dataset.
-                If None, uses the default dataset directory.
-            load_all (bool): If True, loads all data into memory for faster access.
-                If False, loads data on-demand. Defaults to False.
-            cislab_source (bool): If True, downloads from CISLAB CDN mirror.
-                If False, downloads from original Google storage. Defaults to False.
-        """
-        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
+    #     Args:
+    #         root (str | PathLibPath | None): Root directory to store/load the dataset.
+    #             If None, uses the default dataset directory.
+    #         load_all (bool): If True, loads all data into memory for faster access.
+    #             If False, loads data on-demand. Defaults to False.
+    #         cislab_source (bool): If True, downloads from CISLAB CDN mirror.
+    #             If False, downloads from original Google storage. Defaults to False.
+    #     """
+    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.
@@ -136,7 +134,7 @@ class QuickDraw(SketchDataset):
                 )
             else:
                 url = "https://raw.githubusercontent.com/googlecreativelab/quickdraw-dataset/refs/heads/master/categories.txt"
-            download_with_tqdm(
+            download_with_wget(
                 url,
                 file_path=category_txt,
                 pg_bar=False,
@@ -165,7 +163,7 @@ class QuickDraw(SketchDataset):
                         + category
                         + ".npz"
                     )
-                download_with_tqdm(url, npz_path, desc=f"Downloading {category}")
+                download_with_wget(url, npz_path, desc=f"Downloading {category}")
 
             except Exception as e:
                 raise e
@@ -220,7 +218,7 @@ class QuickDraw(SketchDataset):
             )
             if not set(items_metadata.columns.tolist()) == set(self.metadata):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
-                self._load_items_metadata()
+                return self._load_items_metadata()
             self.items_metadata = items_metadata
             self._all_categories = sorted(
                 self.items_metadata["category"].unique().tolist()
@@ -241,7 +239,7 @@ class QuickDraw(SketchDataset):
                 self.raw_data[cnt : cnt + data[split].shape[0]] = data[split].tolist()
                 cnt += data[split].shape[0]
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Get a sketch by index.
 
         If a sketch not in memory, load all sketches in the same category from disk.
@@ -273,7 +271,7 @@ class QuickDraw(SketchDataset):
 
         single_sketch_stroke = self.raw_data[idx]
         path_list, total_segment_num = parse_stroke3_format(single_sketch_stroke)
-        sketch = Sketch(paths=path_list)
+        sketch = Sketch(height=256, width=256, paths=path_list)
         return sketch
 
     def extra_repr(self) -> str:

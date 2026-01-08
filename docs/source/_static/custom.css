@@ -1,0 +1,7 @@
+table.fullwidth {
+    width: 100% !important;
+}
+
+table.fullwidth th, table.fullwidth td {
+    text-align: left;
+}

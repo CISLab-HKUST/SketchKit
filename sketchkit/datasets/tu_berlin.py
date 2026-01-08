@@ -1,21 +1,20 @@
 import os
 import shutil
 import re
+import math
 
 import xml.etree.ElementTree as ET
 
-import numpy as np
 from svg.path import parse_path, path
 
 from tqdm import tqdm
-from pathlib import Path as PathLibPath
 import pandas as pd
 
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import (
-    download_with_tqdm,
+    download_with_wget,
     CISLAB_CDN,
     extract_files,
     file_md5,
@@ -82,22 +81,201 @@ def parse_single_path(path_str):
         return None
 
 
-def parse_transform(svg_transform):
-    # Regular expression to find translate and scale commands
-    pattern = r"(\w+)\s*\(([^)]+)\)"
+# def parse_transform(svg_transform):
+#     # Regular expression to find translate and scale commands
+#     pattern = r"(\w+)\s*\(([^)]+)\)"
+#
+#     # Find all matches
+#     matches = re.findall(pattern, svg_transform)
+#
+#     # Parse the matches into a dictionary
+#     transformations = []
+#     for command, values in matches:
+#         # Split the values by comma and convert to float
+#         values = tuple(map(float, values.split(",")))
+#         transformations.append([command, values])
+#         assert command in ["translate", "scale"], command
+#
+#     return transformations
 
-    # Find all matches
-    matches = re.findall(pattern, svg_transform)
+class TransformMatrix:
+    def __init__(self):
+        # Initialize as the identity matrix
+        self.a, self.b, self.c, self.d, self.e, self.f = 1, 0, 0, 1, 0, 0
 
-    # Parse the matches into a dictionary
-    transformations = []
-    for command, values in matches:
-        # Split the values by comma and convert to float
-        values = tuple(map(float, values.split(",")))
-        transformations.append([command, values])
-        assert command in ["translate", "scale"], command
+    def multiply(self, a, b, c, d, e, f):
+        new_a = self.a * a + self.c * b
+        new_b = self.b * a + self.d * b
+        new_c = self.a * c + self.c * d
+        new_d = self.b * c + self.d * d
+        new_e = self.a * e + self.c * f + self.e
+        new_f = self.b * e + self.d * f + self.f
+        self.a, self.b, self.c, self.d, self.e, self.f = new_a, new_b, new_c, new_d, new_e, new_f
 
-    return transformations
+    def translate(self, tx, ty):
+        self.multiply(1, 0, 0, 1, tx, ty)
+
+    def scale(self, sx, sy=None):
+        if sy is None:
+            sy = sx
+        self.multiply(sx, 0, 0, sy, 0, 0)
+
+    def rotate(self, angle, cx=None, cy=None):
+        rad = math.radians(angle)
+        cos_a = math.cos(rad)
+        sin_a = math.sin(rad)
+
+        if cx is not None and cy is not None:
+            self.translate(cx, cy)
+            self.multiply(cos_a, sin_a, -sin_a, cos_a, 0, 0)
+            self.translate(-cx, -cy)
+        else:
+            self.multiply(cos_a, sin_a, -sin_a, cos_a, 0, 0)
+
+    def skew_x(self, angle):
+        rad = math.radians(angle)
+        tan_a = math.tan(rad)
+        self.multiply(1, 0, tan_a, 1, 0, 0)
+
+    def skew_y(self, angle):
+        rad = math.radians(angle)
+        tan_a = math.tan(rad)
+        self.multiply(1, tan_a, 0, 1, 0, 0)
+
+    def matrix(self, a, b, c, d, e, f):
+        self.multiply(a, b, c, d, e, f)
+
+    def apply_to_point(self, x, y):
+        new_x = self.a * x + self.c * y + self.e
+        new_y = self.b * x + self.d * y + self.f
+        return new_x, new_y
+
+
+def parse_transform(transform_str):
+    matrix = TransformMatrix()
+
+    transforms = re.findall(r'(\w+)\(([^)]+)\)', transform_str)
+
+    for transform_type, params_str in transforms:
+        params = [float(p) for p in re.split(r'[,\s]+', params_str) if p]
+
+        if transform_type == 'translate':
+            if len(params) == 1:
+                matrix.translate(params[0], 0)
+            else:
+                matrix.translate(params[0], params[1])
+
+        elif transform_type == 'scale':
+            if len(params) == 1:
+                matrix.scale(params[0])
+            else:
+                matrix.scale(params[0], params[1])
+
+        elif transform_type == 'rotate':
+            if len(params) == 1:
+                matrix.rotate(params[0])
+            else:
+                matrix.rotate(params[0], params[1], params[2])
+
+        elif transform_type == 'skewX':
+            matrix.skew_x(params[0])
+
+        elif transform_type == 'skewY':
+            matrix.skew_y(params[0])
+
+        elif transform_type == 'matrix':
+            matrix.matrix(*params)
+
+    return matrix
+
+
+def apply_transform_to_path(path_d, matrix):
+    path_pattern = re.compile(r'([a-zA-Z])([^a-zA-Z]*)')
+    commands = path_pattern.findall(path_d)
+
+    new_d = []
+    current_point = (0, 0)
+
+    for cmd, params_str in commands:
+        params = [float(p) for p in re.split(r'[,\s]+', params_str) if p]
+
+        if cmd in 'MmLl':
+            i = 0
+            while i < len(params):
+                x, y = params[i], params[i + 1]
+                if cmd.islower():
+                    x += current_point[0]
+                    y += current_point[1]
+                new_x, new_y = matrix.apply_to_point(x, y)
+                new_d.append(f'{cmd}{new_x:.6f},{new_y:.6f}')
+                current_point = (x, y)
+                i += 2
+
+        elif cmd in 'CcSsQqTt':
+            if cmd in 'CcSs':
+                param_count = 6
+            else:
+                param_count = 4
+
+            i = 0
+            while i < len(params):
+                segment_params = params[i:i + param_count]
+                transformed_params = []
+
+                for j in range(0, len(segment_params), 2):
+                    x, y = segment_params[j], segment_params[j + 1]
+                    if cmd.islower():
+                        x += current_point[0]
+                        y += current_point[1]
+                    new_x, new_y = matrix.apply_to_point(x, y)
+                    transformed_params.extend([new_x, new_y])
+
+                    if j == len(segment_params) - 2:
+                        current_point = (x, y)
+
+                params_str = ','.join([f'{p:.6f}' for p in transformed_params])
+                new_d.append(f'{cmd}{params_str}')
+                i += param_count
+
+        elif cmd in 'Aa':
+            i = 0
+            while i < len(params):
+                rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, x, y = params[i:i + 7]
+
+                if cmd.islower():
+                    x += current_point[0]
+                    y += current_point[1]
+
+                new_x, new_y = matrix.apply_to_point(x, y)
+
+                new_d.append(
+                    f'{cmd}{rx:.6f},{ry:.6f},{x_axis_rotation:.6f},{large_arc_flag},{sweep_flag},{new_x:.6f},{new_y:.6f}')
+                current_point = (x, y)
+                i += 7
+
+        elif cmd in 'HhVv':
+            is_horizontal = cmd in 'Hh'
+
+            for p in params:
+                if is_horizontal:
+                    x = p
+                    y = current_point[1]
+                    if cmd.islower():
+                        x += current_point[0]
+                else:
+                    x = current_point[0]
+                    y = p
+                    if cmd.islower():
+                        y += current_point[1]
+
+                new_x, new_y = matrix.apply_to_point(x, y)
+                new_d.append(f'{cmd}{new_x:.6f}' if is_horizontal else f'{cmd}{new_y:.6f}')
+                current_point = (x, y)
+
+        elif cmd == 'Z' or cmd == 'z':
+            new_d.append(cmd)
+
+    return ' '.join(new_d)
 
 
 def parse_svg(svg_file):
@@ -111,6 +289,7 @@ def parse_svg(svg_file):
     sketch_height = int(view_height) - int(view_y)
 
     path_list = []  # list of (N_curves, 4, 2)
+    matrix = None
 
     for elem in root.iter():
         try:
@@ -120,10 +299,20 @@ def parse_svg(svg_file):
 
         assert tag_suffix not in invalid_svg_shapes
 
-        if tag_suffix == "path":
+        if tag_suffix == "g":
+            if "transform" not in elem.attrib.keys():
+                continue
+
+            transform_str = elem.attrib['transform']
+            matrix = parse_transform(transform_str)
+
+        elif tag_suffix == "path":
             assert "transform" not in elem.attrib.keys()
 
             path_d = elem.attrib["d"]
+            if matrix is not None:
+                path_d = apply_transform_to_path(path_d, matrix)
+
             control_points_list = parse_single_path(path_d)  # (N, 2)
             if control_points_list is not None:
                 segment_num = (len(control_points_list) - 1) // 3
@@ -154,23 +343,23 @@ class TUBerlin(SketchDataset):
     # Metadata columns for each items
     metadata = ["id", "sub_id", "category", "split"]
 
-    def __init__(
-        self,
-        root: str | PathLibPath | None = None,
-        load_all: bool = False,
-        cislab_source: bool = False,
-    ):
-        """Initialize the TU-Berlin dataset.
+    # def __init__(
+    #     self,
+    #     root: str | PathLibPath | None = None,
+    #     load_all: bool = False,
+    #     cislab_source: bool = False,
+    # ):
+    #     """Initialize the TU-Berlin dataset.
 
-        Args:
-            root (str | PathLibPath | None): Root directory to store/load the dataset.
-                If None, uses the default dataset directory.
-            load_all (bool): If True, loads all data into memory for faster access.
-                If False, loads data on-demand. Defaults to False.
-            cislab_source (bool): If True, downloads from CISLAB CDN mirror.
-                If False, downloads from original Google storage. Defaults to False.
-        """
-        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
+    #     Args:
+    #         root (str | PathLibPath | None): Root directory to store/load the dataset.
+    #             If None, uses the default dataset directory.
+    #         load_all (bool): If True, loads all data into memory for faster access.
+    #             If False, loads data on-demand. Defaults to False.
+    #         cislab_source (bool): If True, downloads from CISLAB CDN mirror.
+    #             If False, downloads from original Google storage. Defaults to False.
+    #     """
+    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.
@@ -209,7 +398,7 @@ class TUBerlin(SketchDataset):
                 )
             else:
                 url = "http://cybertron.cg.tu-berlin.de/eitz/projects/classifysketch/sketches_svg.zip"
-            download_with_tqdm(url, file_path=svg_zip_path)
+            download_with_wget(url, file_path=svg_zip_path)
         except Exception as e:
             raise e
 
@@ -278,7 +467,7 @@ class TUBerlin(SketchDataset):
             )
             if not set(items_metadata.columns.tolist()) == set(self.metadata):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
-                self._load_items_metadata()
+                return self._load_items_metadata()
             self.items_metadata = items_metadata
             self._all_categories = sorted(
                 self.items_metadata["category"].unique().tolist()
@@ -300,12 +489,12 @@ class TUBerlin(SketchDataset):
 
             for file_id in file_ids:
                 svg_path = os.path.join(class_base, str(file_id) + ".svg")
-                _, path_list = parse_svg(svg_path)
+                (sketch_width, sketch_height), path_list = parse_svg(svg_path)
                 # path_list: list of (N_curves, 4, 2)
-                self.raw_data[cnt] = path_list
+                self.raw_data[cnt] = [path_list, (sketch_width, sketch_height)]
                 cnt += 1
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Get a sketch by index.
 
         If a sketch not in memory, load all sketches in the same category from disk.
@@ -327,10 +516,10 @@ class TUBerlin(SketchDataset):
             item_metadata = self.items_metadata.iloc[idx]
             class_base = os.path.join(self.root, "svg", item_metadata["category"])
             svg_path = os.path.join(class_base, str(item_metadata["sub_id"]) + ".svg")
-            _, path_list = parse_svg(svg_path)
-            self.raw_data[idx] = path_list
+            (sketch_width, sketch_height), path_list = parse_svg(svg_path)
+            self.raw_data[idx] = [path_list, (sketch_width, sketch_height)]
 
-        path_list = self.raw_data[idx]
+        path_list, (width, height) = self.raw_data[idx]
         # path_list: list of (N_curves, 4, 2)
 
         paths = []
@@ -343,7 +532,7 @@ class TUBerlin(SketchDataset):
                 p_ctrl2 = Point(raw_curve[2][0], raw_curve[2][1])
                 curves.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))
             paths.append(Path(curves=curves))
-        sketch = Sketch(paths=paths)
+        sketch = Sketch(height=height, width=width, paths=paths)
         return sketch
 
     def extra_repr(self) -> str:
@@ -370,12 +559,10 @@ if __name__ == "__main__":
     # Load sketches
     sketches = [dataset[row.id] for _, row in objects[:5].iterrows()]
 
-    from PIL import Image
     from sketchkit.renderer.cairo_renderer import CairoRenderer
 
-    renderer = CairoRenderer(800, (1, 1, 1))
+    renderer = CairoRenderer()
     raster_image = renderer.render(sketches[0])
     outpath = "test.png"
     if outpath is not None:
-        raster_image_png = Image.fromarray(raster_image, "RGB")
-        raster_image_png.save(outpath, "PNG")
+        raster_image.save(outpath, "PNG")

@@ -1,3 +1,6 @@
+# Individual
+zhongyue_test/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -14,6 +17,8 @@ venv/
 .coverage
 htmlcov/
 *.png
+*.mp4
+*.gif
 .cache
 
 # IDEs
@@ -27,3 +32,7 @@ htmlcov/
 docs/source/api/
 docs/source/manual/generated
 
+media/
+*.gif
+*.ppm
+*.svg

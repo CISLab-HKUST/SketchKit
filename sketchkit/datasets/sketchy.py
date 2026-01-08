@@ -1,205 +1,16 @@
 import os
-import sys
+import shutil
 import traceback
 import re
-import requests
-import xml.etree.ElementTree as ET
 
+import xml.etree.ElementTree as ET
+import pandas as pd
+import gdown
 from svg.path import parse_path, path
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
-from sketchkit.utils.general_utils.md5sum import calculate_md5
-from sketchkit.core import Sketch as SketchCore
-import py7zr
-import gdown
-
-
-def _get_confirm_token(response) -> str | None:
-    """Return Google Drive confirm token if the first request needs confirmation."""
-    # Check special cookie first
-    for k, v in response.cookies.items():
-        if k.startswith("download_warning"):
-            return v
-    # Fallback: parse HTML for confirm token
-    try:
-        text = response.text
-    except Exception:
-        return None
-    m = re.search(r"confirm=([0-9A-Za-z_]+)&amp;", text)
-    if not m:
-        m = re.search(r"confirm=([0-9A-Za-z_]+)&", text)
-    return m.group(1) if m else None
-
-
-def _save_response_content(response, destination: str, chunk_size: int = 32768) -> None:
-    """Stream HTTP response content to disk."""
-    response.raise_for_status()
-    with open(destination, "wb") as f:
-        for chunk in response.iter_content(chunk_size):
-            if chunk:  # filter out keep-alive chunks
-                f.write(chunk)
-
-
-def _download_from_gdrive(file_id: str, destination: str) -> None:
-    """Download a file from Google Drive by file ID, handling confirm token."""
-    URL = "https://drive.google.com/uc?export=download"
-    with requests.Session() as session:
-        # First request: may return a small HTML that requires confirmation
-        response = session.get(
-            URL, params={"id": file_id}, stream=True, allow_redirects=True
-        )
-        token = _get_confirm_token(response)
-        if token:
-            response.close()
-            response = session.get(
-                URL,
-                params={"id": file_id, "confirm": token},
-                stream=True,
-                allow_redirects=True,
-            )
-        _save_response_content(response, destination)
-    # Basic sanity check
-    if not os.path.exists(destination) or os.path.getsize(destination) == 0:
-        raise RuntimeError(
-            "Downloaded file is empty; Google Drive may have blocked the request."
-        )
-
-
-def download_sketchy_database(
-    output_folder: str,
-    remove_sourcefile: bool = True,
-    expected_md5: str | None = None,
-    gdrive_id: str = "1Qr8HhjRuGqgDONHigGszyHG_awCstivo",
-    filename: str = "sketches-06-04.7z",
-    prune_invalid: bool = True,
-):
-    """Download and extract The Sketchy Database (SVG version).
-
-    Downloads the 7z archive from Google Drive by file ID (preferred),
-    verifies MD5 if provided, and extracts it into a ``sketches/`` directory.
-
-    Args:
-        output_folder: Directory where the archive will be saved and extracted.
-        remove_sourcefile: If True, delete the downloaded 7z after extraction.
-        expected_md5: Optional MD5 checksum string. If provided, the file's MD5
-            will be verified and an AssertionError is raised on mismatch.
-        gdrive_id: Google Drive file ID for the archive.
-        filename: Local filename to save the downloaded 7z.
-
-    Raises:
-        AssertionError: If `expected_md5` is provided and the digest mismatches.
-        FileNotFoundError: If extraction target is not created after extraction.
-        RuntimeError: If extraction fails or download returns an empty file.
-    """
-    print("Downloading Sketchy Database...")
-
-    os.makedirs(output_folder, exist_ok=True)
-    archive_path = os.path.join(output_folder, filename)
-
-    try:
-        print("Using gdown for Google Drive download...")
-        # Prefer gdown when available, it handles confirm tokens and cookies internally.
-        gdown.download(id=gdrive_id, output=archive_path, quiet=False)
-        print("\nDownload finished!")
-    except Exception as e:
-        traceback.print_exc()
-        print("Download failed.")
-        return
-
-    # Optional MD5 check
-    if expected_md5 is not None:
-        print("Verifying MD5 checksum...")
-        md5_val = calculate_md5(archive_path)
-        assert md5_val == expected_md5, f"MD5 mismatch: {md5_val} != {expected_md5}"
-        print("MD5 checksum passed!")
-
-    print("Extracting archive...")
-    extract_target = os.path.join(output_folder, "sketches")
-
-    try:
-        with py7zr.SevenZipFile(archive_path, mode="r") as zf:
-            zf.extractall(path=output_folder)
-    except Exception:
-        traceback.print_exc()
-        print("Extraction failed.")
-        return
-
-    # Expect a folder named "sketches" after extraction.
-    if not os.path.isdir(extract_target):
-        raise FileNotFoundError(
-            f'Expected directory "{extract_target}" not found after extraction.'
-        )
-
-    print("Extraction finished!")
-
-    # Optionally remove invalid sketches listed in per-class invalid.txt files
-    if prune_invalid:
-        try:
-            pruned_total, pruned_detail = prune_invalid_svgs(extract_target)
-            print(f"Pruned {pruned_total} invalid SVGs as listed by invalid.txt files.")
-        except Exception:
-            traceback.print_exc()
-            print("Warning: failed to prune invalid SVGs; continuing.")
-
-    if remove_sourcefile:
-        try:
-            os.remove(archive_path)
-            print("Removed source archive.")
-        except Exception as e:
-            print(f"Warning: could not remove archive: {e}")
-
-
-# Helper function to prune SVGs listed in invalid.txt per class
-def prune_invalid_svgs(sketches_dir: str) -> tuple[int, dict]:
-    """Delete SVGs listed in each class folder's ``invalid.txt``.
-
-    Assumes every class folder contains ``invalid.txt`` with one basename per line
-    (without extension), and corresponding files always exist as ``.svg``.
-    """
-    total_deleted = 0
-    per_class_counts: dict[str, int] = {}
-
-    if not os.path.isdir(sketches_dir):
-        raise FileNotFoundError(f"Directory not found: {sketches_dir}")
-
-    for class_name in sorted(os.listdir(sketches_dir)):
-        class_dir = os.path.join(sketches_dir, class_name)
-        if not os.path.isdir(class_dir):
-            continue
-
-        invalid_path = os.path.join(class_dir, "invalid.txt")
-        deleted_here = 0
-
-        try:
-            with open(invalid_path, "r", encoding="utf-8", errors="ignore") as f:
-                lines = [ln.strip() for ln in f if ln.strip()]
-        except Exception:
-            traceback.print_exc()
-            continue
-
-        for base in lines:
-            # Skip headings or section markers
-            if base.lower() in {
-                "invalid/error",
-                "unidentifiable/ambiguous",
-                "context",
-                "perspective",
-            }:
-                continue
-
-            target = os.path.join(class_dir, f"{base}.svg")
-            try:
-                if os.path.exists(target):
-                    os.remove(target)
-                    deleted_here += 1
-                    total_deleted += 1
-            except Exception:
-                traceback.print_exc()
-
-        if deleted_here > 0:
-            per_class_counts[class_name] = deleted_here
-
-    return total_deleted, per_class_counts
+from sketchkit.utils.dataset import SketchDataset
+from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
 
 
 invalid_svg_shapes = ["rect", "circle", "ellipse", "line", "polyline", "polygon"]
@@ -252,23 +63,19 @@ def parse_single_path(path_str: str):
             raise Exception("Arc is not supported")
 
         elif path_type == path.Line:
-            # Convert a line segment to a cubic by interpolation between start and end.
-            # Do not assume a previous Move; add the start anchor if missing.
+            # Use line_to_cubic from transform.py for line segment conversion
             if len(control_points_list) == 0:
                 s = path_item.start
                 control_points_list.append((s.real, s.imag))
+
             start, end = path_item.start, path_item.end
-            start_x, start_y = start.real, start.imag
-            end_x, end_y = end.real, end.imag
+            line_points = [[start.real, start.imag], [end.real, end.imag]]
 
-            control1_x = 2.0 / 3.0 * start_x + 1.0 / 3.0 * end_x
-            control1_y = 2.0 / 3.0 * start_y + 1.0 / 3.0 * end_y
-            control2_x = 1.0 / 3.0 * start_x + 2.0 / 3.0 * end_x
-            control2_y = 1.0 / 3.0 * start_y + 2.0 / 3.0 * end_y
-
-            control_points_list.append((control1_x, control1_y))
-            control_points_list.append((control2_x, control2_y))
-            control_points_list.append((end_x, end_y))
+            # Convert line to cubic using transform.py function
+            cubic_curve = Curve.from_line(line_points)
+            control_points_list.append((cubic_curve.p_crtl1.x, cubic_curve.p_crtl1.y))
+            control_points_list.append((cubic_curve.p_crtl2.x, cubic_curve.p_crtl2.y))
+            control_points_list.append((cubic_curve.p_end.x, cubic_curve.p_end.y))
 
         else:
             raise Exception("Unknown path_type", path_type)
@@ -360,11 +167,11 @@ def parse_svg(svg_file: str):
     return (sketch_width, sketch_height), path_list, total_segment_num
 
 
-class Sketchy:
+class Sketchy(SketchDataset):
     """The Sketchy Database (https://sketchy.eye.gatech.edu/), SVG subset.
 
     This loader expects the archive ``sketches-06-04.7z`` to extract into a
-    ``sketches/`` directory whose immediate subfolders are category names,
+    ``sketchy/`` directory whose immediate subfolders are category names,
     each containing multiple ``.svg`` files. Any ``checked.txt`` or
     ``invalid.txt`` files present in category folders are ignored.
 
@@ -375,7 +182,7 @@ class Sketchy:
     The data is represented using cubic Bézier curves consistent with SketchKit.
 
     Example:
-        >>> data = SketchyDatabase()
+        >>> data = Sketchy()
         >>> len(data)
         20000
         >>> s = data[0]
@@ -383,87 +190,148 @@ class Sketchy:
         True
 
     Args:
-        data_base: Relative base under $HOME where the dataset will be stored.
-            If the expected directory does not exist, it will be downloaded
-            and extracted automatically.
-        gdrive_url: Direct Google Drive download URL for the archive.
-        archive_name: Local filename for the 7z archive.
-        md5: Optional MD5 checksum string to verify archive integrity.
-        remove_sourcefile: If True, delete the archive after extraction.
+        root: Root directory where the dataset will be stored.
+        load_all: Whether to load all data into memory at initialization.
+        prune: Whether to prune invalid SVGs during download.
     """
 
-    def __init__(
-        self,
-        data_base: str = ".cache/sketchkit/datasets",
-        file_id: str = "1Qr8HhjRuGqgDONHigGszyHG_awCstivo",
-        archive_name: str = "sketches-06-04.7z",
-        md5: str | None = None,
-        remove_sourcefile: bool = True,
-        prune: bool = True,
-    ):
-        data_root = os.path.join(os.environ.get("HOME"), data_base)
-        os.makedirs(data_root, exist_ok=True)
+    md5_sum = "b0277b8d9413d7914971f1dae909f324"
+    metadata = ["id", "pruned", "class_name", "filename", "path", "sketch_name"]
+    gdrive_id: str = "1Qr8HhjRuGqgDONHigGszyHG_awCstivo"
+    filename: str = "sketches-06-04.7z"
 
-        # Download & extract if needed.
-        if not os.path.isdir(os.path.join(data_root, "sketches")):
-            download_sketchy_database(
-                output_folder=data_root,
-                remove_sourcefile=remove_sourcefile,
-                expected_md5=md5,
-                gdrive_id=file_id,
-                filename=archive_name,
-                prune_invalid=prune,
-            )
+    # def __init__(
+    #     self,
+    #     root: str | None = None,
+    #     load_all: bool = False,
+    #     cislab_source: bool = False,
+    # ):
 
-        # Build index of classes and svg files.
-        self.svg_base = os.path.join(data_root, "sketches")
-        if not os.path.isdir(self.svg_base):
-            raise FileNotFoundError(f'Expected directory "{self.svg_base}" not found.')
+    #     super().__init__(root=root, load_all=load_all, cislab_source=cislab_source)
 
-        class_names = [
-            d
-            for d in os.listdir(self.svg_base)
-            if os.path.isdir(os.path.join(self.svg_base, d))
-        ]
-        class_names.sort()
-        self.class_names = class_names
-
-        sketch_names = []
-        for class_name in self.class_names:
-            class_base = os.path.join(self.svg_base, class_name)
-            files = os.listdir(class_base)
-            # Ignore marker TXT files, keep only .svg
-            svg_files = sorted([f for f in files if f.lower().endswith(".svg")])
-            sketch_names += [class_name + "/" + f for f in svg_files]
-
-        if len(sketch_names) == 0:
-            raise RuntimeError(
-                f"No SVG files found under '{self.svg_base}'. "
-                "Please ensure the correct archive is downloaded."
-            )
-
-        self.sketch_names = sketch_names
-
-    def __len__(self) -> int:
-        return len(self.sketch_names)
-
-    def __getitem__(self, idx: int) -> Sketch:
-        """Load a single sketch as a `Sketch` instance.
-
-        Args:
-            idx: Index into the dataset.
+    def _check_integrity(self) -> bool:
+        """Check the integrity of the cached dataset using MD5 checksum.
 
         Returns:
-            A `Sketch` object composed of cubic Bézier `Path`/`Curve`s.
+            bool: True if the dataset integrity is verified, False otherwise.
         """
-        sketch_name = self.sketch_names[idx]  # e.g., "cat/12345.svg"
-        class_name, file_name = sketch_name.split("/")
-        svg_path = os.path.join(self.svg_base, class_name, file_name)
+        print(f"Checking integrity of cached {self.__class__.__name__} dataset...")
+        current_md5 = dir_md5(self.root)
+        return current_md5 == self.md5_sum
+
+    def _download(self):
+        """Download and extract The Sketchy Database (SVG version)."""
+
+        if os.path.exists(self.root):
+            shutil.rmtree(self.root)
+        os.makedirs(self.root, exist_ok=True)
+
+        print("Downloading Sketchy Database...")
+
+        archive_path = os.path.join(self.root, self.filename)
+
+        try:
+            if self.cislab_source:
+                cislab_url = f"{CISLAB_CDN}/datasets/Sketchy/{self.filename}"
+                print(f"Attempting download from CISLAB: {cislab_url}")
+                download_with_wget(
+                    cislab_url, archive_path, desc="Downloading from CISLAB CDN"
+                )
+                print("CISLAB download completed successfully!")
+            else:
+                print("Using gdown for Google Drive download...")
+                gdown.download(id=self.gdrive_id, output=archive_path, quiet=False)
+                print("Google Drive download completed successfully!")
+        except Exception:
+            traceback.print_exc()
+            print("Download failed.")
+            return
+
+        extract_files(archive_path, self.root, remove_sourcefile=True)
+        print("MD5 Checksum:", dir_md5(self.root))
+
+    def _load_items_metadata(self):
+        """Load metadata for all items in the dataset into a pandas DataFrame."""
+        self.src_dir = os.path.join(self.root, "sketches")
+        if not os.path.exists(os.path.join(self.root, ".metadata.parquet")):
+            class_names = [
+                d
+                for d in os.listdir(self.src_dir)
+                # if os.path.isdir(os.path.join(self.root, d))
+            ]
+            class_names.sort()
+            self.class_names = class_names
+
+            metadata_list = []
+            cnt = 0
+            for class_name in self.class_names:
+                class_base = os.path.join(self.src_dir, class_name)
+                files = os.listdir(class_base)
+                svg_files = sorted([f for f in files if f.lower().endswith(".svg")])
+
+                invalid_files = []
+                invalid_path = os.path.join(class_base, "invalid.txt")
+                with open(invalid_path, "r", encoding="utf-8", errors="ignore") as f:
+                    lines = [ln.strip() for ln in f if ln.strip()]
+                for base in lines:
+                    # Skip headings or section markers
+                    if base.lower() in {
+                        "invalid/error",
+                        "unidentifiable/ambiguous",
+                        "context",
+                        "perspective",
+                    }:
+                        continue
+
+                    invalid_files.append(os.path.join(class_name, f"{base}.svg"))
+
+                for svg_file in svg_files:
+                    sketch_name = f"{class_name}/{svg_file}"
+                    metadata_list.append(
+                        {
+                            "id": cnt,
+                            "pruned": sketch_name in invalid_files,
+                            "class_name": class_name,
+                            "filename": svg_file,
+                            "path": os.path.join(class_base, svg_file),
+                            "sketch_name": sketch_name,
+                        }
+                    )
+                    cnt += 1
+
+            if len(metadata_list) == 0:
+                raise RuntimeError(
+                    f"No SVG files found under '{self.svg_base}'. "
+                    "Please ensure the correct archive is downloaded."
+                )
+            self.items_metadata = pd.DataFrame(metadata_list)
+            self.items_metadata.to_parquet(
+                os.path.join(self.root, ".metadata.parquet"), compression="zstd"
+            )
+        else:
+            items_metadata = pd.read_parquet(
+                os.path.join(self.root, ".metadata.parquet")
+            )
+            if not set(items_metadata.columns.tolist()) == set(self.metadata):
+                os.remove(os.path.join(self.root, ".metadata.parquet"))
+                return self._load_items_metadata()
+            self.items_metadata = items_metadata
+
+        self.raw_data = [None] * len(self.items_metadata)
+
+    def _load_all(self):
+        """Load all dataset items into memory."""
+        for idx in range(len(self.items_metadata)):
+            if self.raw_data[idx] is None:
+                self.raw_data[idx] = self._load_sketch(idx)
+
+    def _load_sketch(self, idx: int) -> Sketch:
+        """Load a single sketch by index."""
+        row = self.items_metadata.iloc[idx]
+        svg_path = row["path"]
 
         # Parse original SVG into SketchVG-compatible parts
         image_sizes, path_list, total_segment_num = parse_svg(svg_path)
-        # image_sizes: (width, height)
-        # path_list: list of (N_curves, 4, 2)
 
         paths = []
         for path_item in path_list:
@@ -478,3 +346,40 @@ class Sketchy:
 
         sketch = Sketch(paths=paths)
         return sketch
+
+    def _get_single(self, idx: int) -> Sketch:
+        """Load a single sketch as a `Sketch` instance.
+
+        Args:
+            idx: Index into the dataset.
+
+        Returns:
+            A `Sketch` object composed of cubic Bézier `Path`/`Curve`s.
+        """
+        if idx < 0 or idx >= len(self):
+            raise IndexError("Index out of range")
+
+        if self.raw_data[idx] is None:
+            self.raw_data[idx] = self._load_sketch(idx)
+        return self.raw_data[idx]
+
+
+if __name__ == "__main__":
+    my_data = Sketchy()
+    print(len(my_data))
+    print(my_data[0])
+    index = 10
+    print(
+        f"The file name of the {index}th sketch is: {my_data.items_metadata.iloc[index]['sketch_name']}"
+    )
+
+    print(my_data.items_metadata[my_data.items_metadata["pruned"] == True])
+    from PIL import Image
+    from sketchkit.renderer.cairo_renderer import CairoRenderer
+
+    renderer = CairoRenderer(512, (1, 1, 1))
+    raster_image = renderer.render(my_data[index])
+    outpath = f"test_{index}.png"
+    if outpath is not None:
+        raster_image_png = Image.fromarray(raster_image, "RGB")
+        raster_image_png.save(outpath, "PNG")

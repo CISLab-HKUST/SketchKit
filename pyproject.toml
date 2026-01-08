@@ -1,23 +1,51 @@
 [project]
 name = "sketchkit"
-version = "0.1.0"
+version = "0.0.1"
 description = "An universal toolkit for sketching"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "cairocffi>=1.7.1",
+    "cairosvg>=2.7.0",
     "fastparquet>=2024.11.0",
     "gdown>=5.2.0",
+    "matplotlib>=3.9.0",
+    "ndjson>=0.3.1",
     "pandas>=2.3.2",
     "patool>=4.0.1",
+    "pyunpack>=0.3",
     "py7zr>=1.0.0",
     "pyunpack>=0.3",
     "rich>=14.1.0",
     "svg-path>=7.0",
+    "svgpathtools>=1.7.1",
+    "scipy>=1.13.1",
     "torch>=2.8.0",
     "torchvision>=0.23.0",
+    "transformers>=4.44.2",
+    "wandb>=0.18.0",
     "wget>=3.2",
+    "clip @ git+https://github.com/openai/CLIP.git",
+    "scikit-image>=0.25.2",
+    "ffmpeg>=1.4",
+    "svgwrite>=1.4.3",
+    "cssutils>=2.11.1",
+    "numba>=0.62.1",
+    "torch-tools>=0.1.5",
+    "visdom>=0.2.4",
+    "python-dotenv>=1.2.1",
+    "av>=16.0.1",
+    "hsluv>=5.0.4",
+    "moderngl>=5.12.0",
+    "trimesh>=4.10.1",
+    "diffusers>=0.36.0",
+    "opencv-contrib-python>=4.12.0.88",
+    "pydantic>=2.12.4",
 ]
+
+[build-system]
+requires = ["setuptools", "wheel", "torch", "cmake", "ninja", "numpy", "pybind11"]
+build-backend = "setuptools.build_meta"
 
 [dependency-groups]
 dev = [

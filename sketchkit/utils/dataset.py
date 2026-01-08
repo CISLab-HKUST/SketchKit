@@ -1,10 +1,12 @@
-from abc import ABC, abstractmethod
 import os
+from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from pathlib import Path as PathLibPath
 from sketchkit.core.sketch import Sketch
+from typing import overload
 
 
-class SketchDataset(ABC):
+class SketchDataset(ABC, Sequence):
     """Abstract base class for sketch datasets.
 
     This class provides a common interface for all sketch datasets in SketchKit.
@@ -30,12 +32,13 @@ class SketchDataset(ABC):
         root: str | PathLibPath | None = None,
         load_all: bool = False,
         cislab_source: bool = False,
+        skip_integrity_check: bool = False,
     ):
         """
         Initialize the dataset.
         Args:
             root (str | PathLibPath | None, optional): Root directory for the dataset.
-                If None, defaults to ~/.cache/sketchkit/datasets/{ClassName}/. Defaults to None.
+                If None, defaults to ~/.sketchkit/datasets/{ClassName}/. Defaults to None.
             load_all (bool, optional): Whether to load all data into memory at initialization.
                 Defaults to False.
             cislab_source (bool, optional): Whether to use CISLAB as the data source.
@@ -50,7 +53,7 @@ class SketchDataset(ABC):
         if root is None:
             root = os.path.join(
                 os.environ.get("HOME", "/"),
-                ".cache/sketchkit/datasets",
+                ".sketchkit/datasets",
                 self.__class__.__name__,
             )
         if isinstance(root, str):
@@ -62,14 +65,16 @@ class SketchDataset(ABC):
         self.load_all = load_all
         self.cislab_source = cislab_source
         self.raw_data = None
+        self.skip_integrity_check = skip_integrity_check
 
-        if not self._check_integrity():
-            print(
-                f"Cache not found or corrupted. Start downloading the dataset to {self.root}."
-            )
-            self._download()
+        if not self.skip_integrity_check:
             if not self._check_integrity():
-                raise RuntimeError("Dataset not found or corrupted.")
+                print(
+                    f"Cache not found or corrupted. Start downloading the dataset to {self.root}."
+                )
+                self._download()
+                if not self._check_integrity():
+                    raise RuntimeError("Dataset not found or corrupted.")
         self._load_items_metadata()
         if self.load_all:
             self._load_all()
@@ -147,8 +152,41 @@ class SketchDataset(ABC):
         """
         return len(self.items_metadata)
 
+    @overload
+    def __getitem__(self, idx: int) -> "Sketch": ...
+    @overload
+    def __getitem__(self, idx: slice) -> list["Sketch"]: ...
+    @overload
+    def __getitem__(self, idx: list[int]) -> list["Sketch"]: ...
+
+    def __getitem__(self, idx):
+        n = len(self)
+
+        if isinstance(idx, int):
+            if idx < 0:
+                idx += n
+            if not (0 <= idx < n):
+                raise IndexError(f"Index {idx} out of range (0-{n-1})")
+            return self._get_single(idx)
+
+        if isinstance(idx, slice):
+            start, stop, step = idx.indices(n)
+            return [self._get_single(i) for i in range(start, stop, step)]
+
+        if isinstance(idx, list):
+            out: list["Sketch"] = []
+            for j in idx:
+                if j < 0:
+                    j += n
+                if not (0 <= j < n):
+                    raise IndexError(f"Index {j} out of range (0-{n-1})")
+                out.append(self._get_single(j))
+            return out
+
+        raise TypeError("Index must be int, slice, or list[int]")
+
     @abstractmethod
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Retrieve a sketch item by index.
 
         Args:

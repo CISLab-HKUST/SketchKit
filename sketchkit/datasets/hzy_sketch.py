@@ -6,31 +6,22 @@ import json
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_tqdm, dir_md5, CISLAB_CDN, extract_files
+from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
 from pathlib import Path as PathLibPath
 from sketchkit.core import Sketch
 
-dataset_name = "hzy_sketch"
-dataset_filename = "hzy_sketch-samples.zip"
+dataset_filename = "hzy_sketch.zip"
 
+DEFAULT_CANVAS_HEIGHT= 1024
+DEFAULT_CANVAS_WIDTH = 1024
 
 def download_and_extract_data(
     output_folder, remove_sourcefile=True, cislab_source=True
 ):
     os.makedirs(output_folder, exist_ok=True)
+    url = f"{CISLAB_CDN}/datasets/hzySketch/{dataset_filename}"
     try:
-        if cislab_source:
-            url = (
-                "https://cislab.hkust-gz.edu.cn/demos/aisketch/data/"
-                + f"{dataset_filename}"
-            )
-        else:
-            # TODO: Add another source
-            url = (
-                "https://cislab.hkust-gz.edu.cn/demos/aisketch/data/"
-                + f"{dataset_filename}"
-            )
-        download_with_tqdm(
+        download_with_wget(
             url,
             os.path.join(output_folder, dataset_filename),
         )
@@ -91,7 +82,7 @@ def load_hzy_sketch_json(drawing_path):
             path = Path(curves=curves)
             paths.append(path)
 
-    return Sketch(paths=paths)
+    return Sketch(paths=paths, height=DEFAULT_CANVAS_HEIGHT, width=DEFAULT_CANVAS_WIDTH)
 
 
 class hzySketch(SketchDataset):
@@ -121,26 +112,28 @@ class hzySketch(SketchDataset):
         >>> print(my_data[0])
        <sketchkit.core.sketch.Sketch object at 0x000001AB5033ACE0>
     """
+    DEFAULT_CANVAS_HEIGHT= 1024
+    DEFAULT_CANVAS_WIDTH = 1024
 
-    md5_sum = "bb0d0fdc6eefa2e2ab41f990cc8cd5f4"
+    md5_sum = "473c51ae0259f1435994a9cea090b5e7"
 
-    def __init__(
-        self,
-        root: str | PathLibPath | None = None,
-        load_all: bool = False,
-        cislab_source: bool = False,
-    ):
-        """Initializes the hzy dataset loader.
+    # def __init__(
+    #     self,
+    #     root: str | PathLibPath | None = None,
+    #     load_all: bool = False,
+    #     cislab_source: bool = False,
+    # ):
+    #     """Initializes the hzy dataset loader.
 
-        Checks if the dataset exists locally. If not, it triggers the download
-        and extraction process. It then scans the SVG directories to populate a
-        list of all available sketch file paths.
+    #     Checks if the dataset exists locally. If not, it triggers the download
+    #     and extraction process. It then scans the SVG directories to populate a
+    #     list of all available sketch file paths.
 
-        Args:
-            data_base: The base directory for storing all datasets.
-                Defaults to '~/.cache/sketchkit/datasets'.
-        """
-        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
+    #     Args:
+    #         data_base: The base directory for storing all datasets.
+    #             Defaults to '~/.sketchkit/datasets'.
+    #     """
+    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.
@@ -199,7 +192,7 @@ class hzySketch(SketchDataset):
     def __len__(self) -> int:
         return len(self.raw_data)
 
-    def __getitem__(self, idx: int) -> Sketch:
+    def _get_single(self, idx: int) -> Sketch:
         """Retrieves a sketch by its index.
 
         Args:

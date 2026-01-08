@@ -34,13 +34,17 @@ dependencies = [
     "torch-tools>=0.1.5",
     "visdom>=0.2.4",
     "python-dotenv>=1.2.1",
-    "opencv-contrib-python>=4.12.0.88",
     "av>=16.0.1",
     "hsluv>=5.0.4",
+    "moderngl>=5.12.0",
+    "trimesh>=4.10.1",
+    "diffusers>=0.36.0",
+    "opencv-contrib-python>=4.12.0.88",
+    "pydantic>=2.12.4",
 ]
 
 [build-system]
-requires = ["setuptools", "wheel", "torch", "cmake", "ninja", "numpy"]
+requires = ["setuptools", "wheel", "torch", "cmake", "ninja", "numpy", "pybind11"]
 build-backend = "setuptools.build_meta"
 
 [dependency-groups]

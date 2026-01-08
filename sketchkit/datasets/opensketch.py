@@ -239,6 +239,7 @@ class OpenSketch(SketchDataset):
                 return self._load_items_metadata()
             self.items_metadata = items_metadata
         self.raw_data = [None] * len(self.items_metadata)  # type: list[list | None]
+        self.size = [None] * len(self.items_metadata)  # type: list[list | None]
 
     def _load_all(self):
         """Load all sketch data into memory if load_all is enabled.
@@ -253,9 +254,10 @@ class OpenSketch(SketchDataset):
             total=len(self.items_metadata),
         ):
             svg_path = os.path.join(class_base, str(row["file_name"]) + ".svg")
-            _, path_list = parse_svg(svg_path)
+            (sketch_width, sketch_height), path_list = parse_svg(svg_path)
             # path_list: list of (N_curves, 4, 2)
             self.raw_data[row["id"]] = path_list
+            self.size[row["id"]] = (sketch_width, sketch_height)
 
     def _get_single(self, idx: int) -> Sketch:
         """Get a sketch by index.
@@ -280,11 +282,13 @@ class OpenSketch(SketchDataset):
             svg_path = os.path.join(
                 class_base, str(item_metadata["file_name"]) + ".svg"
             )
-            _, path_list = parse_svg(svg_path)
+            (sketch_width, sketch_height), path_list = parse_svg(svg_path)
             self.raw_data[idx] = path_list
+            self.size[idx] = (sketch_width, sketch_height)
 
         path_list = self.raw_data[idx]
         # path_list: list of (N_curves, 4, 2)
+        canvas_width, canvas_height = self.size[idx]
 
         paths = []
         for path in path_list:
@@ -296,7 +300,7 @@ class OpenSketch(SketchDataset):
                 p_ctrl2 = Point(raw_curve[2][0], raw_curve[2][1])
                 curves.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))
             paths.append(Path(curves=curves))
-        sketch = Sketch(paths=paths)
+        sketch = Sketch(height=canvas_height, width=canvas_width, paths=paths)
         return sketch
 
 
@@ -315,9 +319,11 @@ if __name__ == "__main__":
     from PIL import Image
     from sketchkit.renderer.cairo_renderer import CairoRenderer
 
-    renderer = CairoRenderer(800, (1, 1, 1))
+    renderer = CairoRenderer()
     raster_image = renderer.render(dataset[100])
+    
     outpath = "opensketch-test.png"
-    if outpath is not None:
-        raster_image_png = Image.fromarray(raster_image, "RGB")
-        raster_image_png.save(outpath, "PNG")
+    raster_image.save(outpath)
+    # if outpath is not None:
+    #     raster_image_png = Image.fromarray(raster_image, "RGB")
+    #     raster_image_png.save(outpath, "PNG")

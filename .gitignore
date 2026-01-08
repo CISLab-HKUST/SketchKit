@@ -1,3 +1,6 @@
+# Individual
+zhongyue_test/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -28,3 +31,8 @@ htmlcov/
 # Docs
 docs/source/api/
 docs/source/manual/generated
+
+media/
+*.gif
+*.ppm
+*.svg

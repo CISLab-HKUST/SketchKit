@@ -39,7 +39,7 @@ class AnimatedDrawer(Orderer):
     def run(self, sketch: Sketch) -> Sketch:
         result = self._animated_drawing(sketch)
         paths = [sketch.paths[i] for i in result["solution"]]
-        ret_sketch = Sketch(paths=paths)
+        ret_sketch = Sketch(height=sketch.height, width=sketch.width, paths=paths)
         # sketch_frames = self._render_animated_drawing(sketch, result)
         # renderer = CairoRenderer(canvas_size=self.canvas_size, canvas_color=self.canvas_color)
         # frames = []

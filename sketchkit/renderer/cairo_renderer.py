@@ -1,6 +1,7 @@
 import numpy as np
 import cairocffi as cairo
 import math
+import hsluv
 from PIL import Image
 from dataclasses import dataclass
 
@@ -14,6 +15,7 @@ class CairoRenderOptions(RenderOptions):
     stroke_color: tuple[float, float, float] | None = None
     stroke_width: float | None = None
     stroke_opacity: float | None = None
+    random_color: bool = False
 
 
 # ---- Bézier helpers ----
@@ -127,6 +129,9 @@ class CairoRenderer(Renderer):
 
         # Rendering the sketch on the canvas
         for each_path in sketch.paths:
+            if render_options.random_color:
+                hue = np.random.rand() * 360
+                r, g, b = hsluv.hsluv_to_rgb((hue, 90, 60))
             for curve in each_path.curves:
                 if isinstance(curve, Curve):
                     p0, p1, p2, p3 = (
@@ -136,13 +141,14 @@ class CairoRenderer(Renderer):
                         curve.p_end,
                     )
 
-                    # Determine color
-                    if render_options.stroke_color is not None:
-                        r, g, b = render_options.stroke_color
-                    elif curve.p_start.color is not None:
-                        r, g, b = curve.p_start.color
-                    else:
-                        r, g, b = (0, 0, 0)
+                    if not render_options.random_color:
+                        # Determine color
+                        if render_options.stroke_color is not None:
+                            r, g, b = render_options.stroke_color
+                        elif curve.p_start.color is not None:
+                            r, g, b = curve.p_start.color
+                        else:
+                            r, g, b = (0, 0, 0)
 
                     # Determine opacity
                     if render_options.stroke_opacity is not None:

@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     renderer = CairoRenderer()
     # raster_image = renderer.render_with_texture(sketch=my_data[0],texture='./sketchkit/assets/grid.png',width=3)
-    raster_image = renderer.render(my_data[0])
+    raster_image = renderer.render(my_data[0], {"random_color": True})
     raster_image.save("test1111111.png")
     # for i in range(10):
     #     raster_image = renderer.render(

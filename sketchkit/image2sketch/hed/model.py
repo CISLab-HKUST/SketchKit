@@ -114,7 +114,7 @@ class HEDModel:
         self,
         image: Union[ImageInput, Sequence[ImageInput]],
         *,
-        size: ImageSize = 512,
+        size: Optional[ImageSize] = None,
     ) -> Union[Image.Image, List[Image.Image]]:
         """Generate edge maps for the provided image(s)."""
 
@@ -129,10 +129,10 @@ class HEDModel:
         net = self._initialise_net()
 
         results: List[Image.Image] = []
-        width, height = _resolve_size(size)
         for source in images:
             pil_image = self._to_pil_image(source)
-            edge_map = self._infer_single(net, pil_image, (width, height))
+            target_size = pil_image.size if size is None else _resolve_size(size)
+            edge_map = self._infer_single(net, pil_image, target_size)
             results.append(edge_map)
 
         return results if len(results) > 1 else results[0]

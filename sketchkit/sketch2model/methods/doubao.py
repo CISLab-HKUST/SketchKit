@@ -48,12 +48,15 @@ def sketch_to_3d_doubao_impl(
         if Sketch is not None and isinstance(sketch_input, Sketch):
             # Sketch object - render to image
             from sketchkit.renderer.cairo_renderer import CairoRenderer
-            renderer = CairoRenderer(canvas_size=512, canvas_color=(1, 1, 1))
-            raster_image = renderer.render(sketch_input, fit_canvas=True)
+            renderer = CairoRenderer()
+            raster_image = renderer.render(sketch_input)
+            # Ensure raster_image is a numpy array
+            if isinstance(raster_image, Image.Image):
+                raster_image = np.array(raster_image)
             if raster_image.ndim == 3:
-                raster_image = (raster_image[...,:3] * 255).astype(np.uint8)
+                raster_image = (raster_image[...,:3] * 255).astype(np.uint8) if raster_image.dtype != np.uint8 else raster_image[...,:3]
             else:
-                raster_image = (raster_image * 255).astype(np.uint8)
+                raster_image = (raster_image * 255).astype(np.uint8) if raster_image.dtype != np.uint8 else raster_image
         elif isinstance(sketch_input, str):
             # File path - load image
             img = Image.open(sketch_input).convert('RGB')

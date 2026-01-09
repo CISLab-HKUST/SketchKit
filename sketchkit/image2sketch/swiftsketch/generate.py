@@ -11,7 +11,6 @@ from __future__ import annotations
 import io
 import json
 import os
-from dataclasses import dataclass
 from pathlib import Path as FsPath
 from types import SimpleNamespace
 from typing import Callable, List, Optional, Sequence, Tuple, Union
@@ -46,20 +45,6 @@ DEFAULT_CACHE_DIR = FsPath.home() / ".cache" / "sketchkit" / "image2sketch" / "s
 ImageInput = Union[Image.Image, np.ndarray, str, os.PathLike]
 
 
-@dataclass
-class SwiftSketchArtifacts:
-    """Auxiliary outputs generated alongside a SwiftSketch `Sketch`."""
-
-    svg: str
-    image: Image.Image
-    control_points: torch.Tensor
-    diffusion_control_points: torch.Tensor
-    compute_device: torch.device
-
-
-SWIFTSKETCH_METADATA_ATTR = "_swift_artifacts"
-
-
 class SwiftSketchModel:
     """High level wrapper around the SwiftSketch diffusion pipeline."""
 
@@ -69,7 +54,7 @@ class SwiftSketchModel:
         device: Optional[Union[str, torch.device]] = None,
         use_refine: bool = True,
         guidance_param: float = 2.5,
-        fix_scale: bool = False,
+        fix_scale: bool = True,
         checkpoint_dir: Optional[Union[str, os.PathLike]] = None,
         auto_download: bool = True,
         mask_model_factory: Optional[Callable[[torch.device], torch.nn.Module]] = None,
@@ -130,7 +115,7 @@ class SwiftSketchModel:
     def generate(
         self,
         image: Union[ImageInput, Sequence[ImageInput]],
-        size: Union[int, Tuple[int, int]] = 512,
+        size: Union[int, Tuple[int, int], None] = None,
     ) -> Union[Sketch, List[Sketch]]:
         """Generate sketches for the provided image(s)."""
 
@@ -141,14 +126,26 @@ class SwiftSketchModel:
         else:
             images = [image]
 
-        results = self.generate_batch(images)
+        results = self.generate_batch(images, size=size)
         return results if len(images) > 1 else results[0]
 
-    def generate_batch(self, images: Sequence[ImageInput]) -> List[Sketch]:
+    def generate_batch(
+        self,
+        images: Sequence[ImageInput],
+        *,
+        size: Union[int, Tuple[int, int], None] = None,
+    ) -> List[Sketch]:
         if not images:
             return []
 
         pil_images = [self._to_pil_image(img) for img in images]
+        target_sizes: List[Tuple[int, int]] = []
+        if size is None:
+            target_sizes = [img.size for img in pil_images]
+        else:
+            resolved = self._resolve_size(size)
+            target_sizes = [resolved for _ in pil_images]
+
         self._initialise_pipeline()
 
         image_features: List[torch.Tensor] = []
@@ -208,28 +205,26 @@ class SwiftSketchModel:
             )
 
         control_points_cpu = control_points.detach().cpu()
-        diffusion_cpu = diffusion_control_points.detach().cpu()
 
         _, svg_content_list = sketch_utils.rander_image_from_points(
             control_points_cpu, self._canvas_width, self._canvas_height, return_svg_content=True
         )
 
-        pil_images = [sketch_utils.svg_to_pil(svg).convert("RGB") for svg in svg_content_list]
-
         sketches: List[Sketch] = []
-        for ctrl, diff_ctrl, svg, pil_img in zip(control_points_cpu, diffusion_cpu, svg_content_list, pil_images):
-            sketch = self._control_points_to_sketch(ctrl)
-            setattr(
-                sketch,
-                SWIFTSKETCH_METADATA_ATTR,
-                SwiftSketchArtifacts(
-                    svg=svg,
-                    image=pil_img,
-                    control_points=ctrl,
-                    diffusion_control_points=diff_ctrl,
-                    compute_device=self.device,
-                ),
+        for ctrl, svg, target_size in zip(
+            control_points_cpu, svg_content_list, target_sizes
+        ):
+            target_w, target_h = target_size
+
+            # Build the sketch at the native canvas resolution first.
+            sketch = self._control_points_to_sketch(
+                ctrl, (self._canvas_width, self._canvas_height)
             )
+
+            # Then scale the sketch to the requested target size.
+            if (target_w, target_h) != (self._canvas_width, self._canvas_height):
+                sketch.resize(height=target_h, width=target_w)
+
             sketches.append(sketch)
 
         return sketches
@@ -238,12 +233,16 @@ class SwiftSketchModel:
     # internal helpers
     # ------------------------------------------------------------------
     @staticmethod
-    def _control_points_to_sketch(control_points: torch.Tensor) -> Sketch:
+    def _control_points_to_sketch(
+        control_points: torch.Tensor,
+        canvas_size: Tuple[int, int],
+    ) -> Sketch:
         if control_points.ndim != 3 or control_points.shape[-1] != 2:
             raise ValueError(
                 "SwiftSketch expected control points with shape (num_paths, 4, 2)."
             )
 
+        canvas_w, canvas_h = canvas_size
         paths: List[SketchPath] = []
         for path_points in control_points:
             points = path_points.detach().cpu().numpy()
@@ -261,7 +260,20 @@ class SwiftSketchModel:
             path = SketchPath(curves=[curve])
             paths.append(path)
 
-        return Sketch(paths=paths)
+        return Sketch(height=float(canvas_h), width=float(canvas_w), paths=paths)
+
+    @staticmethod
+    def _resolve_size(size: Union[int, Tuple[int, int]]) -> Tuple[int, int]:
+        if isinstance(size, int):
+            if size <= 0:
+                raise ValueError("size must be a positive integer.")
+            return size, size
+        if len(size) != 2:
+            raise ValueError("size tuple must contain exactly two integers (width, height).")
+        width, height = size
+        if width <= 0 or height <= 0:
+            raise ValueError("size dimensions must be positive integers.")
+        return int(width), int(height)
 
     @property
     def model_archive_path(self) -> FsPath:

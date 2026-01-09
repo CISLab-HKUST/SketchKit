@@ -11,7 +11,6 @@ class SwiftSketch(nn.Module):
                  cond_mode="no_cond", cond_mask_prob=0, arch='trans_dec',  emb_trans_dec=0, scaling_factor=2):
         super().__init__()
 
-        print(f'initial SwiftSketch model', flush=True)
 
         self.arch= arch
         self.ncpoints = 4 #control points

@@ -158,7 +158,12 @@ class PhotoSketching(SketchDataset):
     """
 
     # MD5 of the dataset directory (excluding hidden files). Support multiple sources.
-    md5_sum = "8f1b44299a3023276f169b658793a1ab"
+    # md5_sum = "8f1b44299a3023276f169b658793a1ab"
+    # NOTE: This must match the value printed after extraction in _download().
+    # For the official PhotoSketching release, the correct MD5 is:
+    #   0f7848c91a2298e0bcd9e243ccc9327f
+    md5_sum = "0f7848c91a2298e0bcd9e243ccc9327f"
+    
     # Metadata columns for each item
     metadata = ["id", "svg_path", "png_path", "photo_path"]
 
@@ -317,7 +322,8 @@ class PhotoSketching(SketchDataset):
                 paths.append(path)
 
             # create Sketch
-            sketch = Sketch(paths=paths)
+            # sketch = Sketch(paths=paths)
+            sketch = Sketch(height=h, width=w, paths=paths)
             return sketch
 
         except Exception as e:
@@ -366,7 +372,11 @@ if __name__ == "__main__":
 
     # Show sketch information
     for i, sketch in enumerate(sketches):
-        console.print(f"Sketch {i}: {sketch.path_num} paths, {sketch.curve_num} curves")
+        # console.print(f"Sketch {i}: {sketch.path_num} paths, {sketch.curve_num} curves")
+        console.print(
+            f"Sketch {i}: {sketch.path_num} paths, {sketch.curve_num} curves, "
+            f"height={sketch.height}, width={sketch.width}"
+        )
 
     del dataset, sketches
 

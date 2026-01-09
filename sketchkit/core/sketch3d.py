@@ -1,6 +1,8 @@
 import numpy as np
 import torch
+import json
 
+from .schema import Sketch3DSchema, Path3DSchema, Vertex3DArray, Point3DArray
 
 # ================= 3D Sketch Data Structures =====================
 class Point3D:
@@ -138,3 +140,109 @@ class Sketch3D:
 
     def stack_tensor(self) -> torch.Tensor:
         return torch.cat([p.stack_tensor() for p in self.paths], dim=0)
+
+    def to_json(self, file_path: str):
+        """Save the 3D sketch to a JSON file (Compact Format).
+
+        Args:
+            file_path (str): Path to the output JSON file.
+        """
+        paths_data = []
+        for path in self.paths:
+            curves_data = []
+            for curve in path.curves:
+                v_start: Vertex3DArray = (
+                    float(curve.p_start.x),
+                    float(curve.p_start.y),
+                    float(curve.p_start.z),
+                    float(curve.p_start.thickness) if curve.p_start.thickness is not None else None,
+                    tuple(curve.p_start.color.tolist()) if curve.p_start.color is not None else None,
+                    float(curve.p_start.opacity) if curve.p_start.opacity is not None else None,
+                )
+                v_end: Vertex3DArray = (
+                    float(curve.p_end.x),
+                    float(curve.p_end.y),
+                    float(curve.p_end.z),
+                    float(curve.p_end.thickness) if curve.p_end.thickness is not None else None,
+                    tuple(curve.p_end.color.tolist()) if curve.p_end.color is not None else None,
+                    float(curve.p_end.opacity) if curve.p_end.opacity is not None else None,
+                )
+                p_ctrl1: Point3DArray = (
+                    float(curve.p_ctrl1.x),
+                    float(curve.p_ctrl1.y),
+                    float(curve.p_ctrl1.z),
+                    float(curve.p_ctrl1.thickness) if curve.p_ctrl1.thickness is not None else None,
+                )
+                p_ctrl2: Point3DArray = (
+                    float(curve.p_ctrl2.x),
+                    float(curve.p_ctrl2.y),
+                    float(curve.p_ctrl2.z),
+                    float(curve.p_ctrl2.thickness) if curve.p_ctrl2.thickness is not None else None,
+                )
+                
+                widths = curve.widths.tolist() if hasattr(curve, 'widths') and curve.widths is not None else None
+                
+                curves_data.append((v_start, p_ctrl1, p_ctrl2, v_end, widths))
+            
+            paths_data.append(Path3DSchema(curves=curves_data))
+            
+        sketch_data = Sketch3DSchema(paths=paths_data)
+        
+        with open(file_path, "w") as f:
+            f.write(sketch_data.model_dump_json(indent=None))
+
+    @classmethod
+    def from_json(cls, json_path: str) -> "Sketch3D":
+        """Load a 3D sketch from a JSON file (Compact Format).
+
+        Args:
+            json_path (str): Path to the JSON file.
+
+        Returns:
+            Sketch3D: Loaded sketch object.
+        """
+        with open(json_path, "r") as f:
+            json_content = f.read()
+            
+        sketch_data = Sketch3DSchema.model_validate_json(json_content)
+        
+        sketch = cls()
+        for path_data in sketch_data.paths:
+            curves = []
+            for curve_tuple in path_data.curves:
+                # curve_tuple: [v_start, ctrl1, ctrl2, v_end, widths]
+                v_start_arr = curve_tuple[0]
+                ctrl1_arr = curve_tuple[1]
+                ctrl2_arr = curve_tuple[2]
+                v_end_arr = curve_tuple[3]
+                widths = curve_tuple[4]
+                
+                v_start = Vertex3D(
+                    x=v_start_arr[0], y=v_start_arr[1], z=v_start_arr[2],
+                    thickness=v_start_arr[3],
+                    color=v_start_arr[4],
+                    opacity=v_start_arr[5]
+                )
+                ctrl1 = Point3D(
+                    x=ctrl1_arr[0], y=ctrl1_arr[1], z=ctrl1_arr[2],
+                    thickness=ctrl1_arr[3]
+                )
+                ctrl2 = Point3D(
+                    x=ctrl2_arr[0], y=ctrl2_arr[1], z=ctrl2_arr[2],
+                    thickness=ctrl2_arr[3]
+                )
+                v_end = Vertex3D(
+                    x=v_end_arr[0], y=v_end_arr[1], z=v_end_arr[2],
+                    thickness=v_end_arr[3],
+                    color=v_end_arr[4],
+                    opacity=v_end_arr[5]
+                )
+                
+                curve = Curve3D(v_start, v_end, ctrl1, ctrl2)
+                if widths is not None:
+                     curve.widths = np.array(widths, dtype=np.float32)
+
+                curves.append(curve)
+            sketch.add(Path3D(curves))
+            
+        return sketch

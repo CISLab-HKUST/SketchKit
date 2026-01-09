@@ -200,13 +200,14 @@ class Sketchy(SketchDataset):
     gdrive_id: str = "1Qr8HhjRuGqgDONHigGszyHG_awCstivo"
     filename: str = "sketches-06-04.7z"
 
-    def __init__(
-        self,
-        root: str | None = None,
-        load_all: bool = False,
-        cislab_source: bool = False,
-    ):
-        super().__init__(root=root, load_all=load_all, cislab_source=cislab_source)
+    # def __init__(
+    #     self,
+    #     root: str | None = None,
+    #     load_all: bool = False,
+    #     cislab_source: bool = False,
+    # ):
+
+    #     super().__init__(root=root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.
@@ -216,23 +217,6 @@ class Sketchy(SketchDataset):
         """
         print(f"Checking integrity of cached {self.__class__.__name__} dataset...")
         current_md5 = dir_md5(self.root)
-        
-        if current_md5 != self.md5_sum:
-            print(f"Warning: MD5 mismatch for {self.__class__.__name__}!")
-            print(f"  Expected: {self.md5_sum}")
-            print(f"  Got:      {current_md5}")
-            
-            sketches_dir = os.path.join(self.root, "sketches")
-            if os.path.exists(sketches_dir) and os.path.isdir(sketches_dir):
-                print(f"  Found sketches directory at {sketches_dir}")
-                svg_files = []
-                for root_dir, dirs, files in os.walk(sketches_dir):
-                    svg_files.extend([f for f in files if f.lower().endswith('.svg')])
-                
-                if len(svg_files) > 0:
-                    print(f"  Found {len(svg_files)} SVG files, assuming dataset is valid")
-                    return True
-        
         return current_md5 == self.md5_sum
 
     def _download(self):
@@ -273,7 +257,7 @@ class Sketchy(SketchDataset):
             class_names = [
                 d
                 for d in os.listdir(self.src_dir)
-                if os.path.isdir(os.path.join(self.src_dir, d))
+                # if os.path.isdir(os.path.join(self.root, d))
             ]
             class_names.sort()
             self.class_names = class_names
@@ -287,20 +271,19 @@ class Sketchy(SketchDataset):
 
                 invalid_files = []
                 invalid_path = os.path.join(class_base, "invalid.txt")
-                if os.path.exists(invalid_path):
-                    with open(invalid_path, "r", encoding="utf-8", errors="ignore") as f:
-                        lines = [ln.strip() for ln in f if ln.strip()]
-                    for base in lines:
-                        # Skip headings or section markers
-                        if base.lower() in {
-                            "invalid/error",
-                            "unidentifiable/ambiguous",
-                            "context",
-                            "perspective",
-                        }:
-                            continue
+                with open(invalid_path, "r", encoding="utf-8", errors="ignore") as f:
+                    lines = [ln.strip() for ln in f if ln.strip()]
+                for base in lines:
+                    # Skip headings or section markers
+                    if base.lower() in {
+                        "invalid/error",
+                        "unidentifiable/ambiguous",
+                        "context",
+                        "perspective",
+                    }:
+                        continue
 
-                        invalid_files.append(os.path.join(class_name, f"{base}.svg"))
+                    invalid_files.append(os.path.join(class_name, f"{base}.svg"))
 
                 for svg_file in svg_files:
                     sketch_name = f"{class_name}/{svg_file}"
@@ -318,7 +301,7 @@ class Sketchy(SketchDataset):
 
             if len(metadata_list) == 0:
                 raise RuntimeError(
-                    f"No SVG files found under '{self.src_dir}'. "
+                    f"No SVG files found under '{self.svg_base}'. "
                     "Please ensure the correct archive is downloaded."
                 )
             self.items_metadata = pd.DataFrame(metadata_list)
@@ -349,7 +332,6 @@ class Sketchy(SketchDataset):
 
         # Parse original SVG into SketchVG-compatible parts
         image_sizes, path_list, total_segment_num = parse_svg(svg_path)
-        sketch_width, sketch_height = image_sizes
 
         paths = []
         for path_item in path_list:
@@ -362,7 +344,7 @@ class Sketchy(SketchDataset):
                 curves.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))
             paths.append(Path(curves=curves))
 
-        sketch = Sketch(height=sketch_height, width=sketch_width, paths=paths)
+        sketch = Sketch(height=float(image_sizes[1]), width=float(image_sizes[0]), paths=paths)
         return sketch
 
     def _get_single(self, idx: int) -> Sketch:

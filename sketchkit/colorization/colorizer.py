@@ -57,7 +57,7 @@ class Colorizer:
         self,
         input_data: Union[Sketch, Image.Image, np.ndarray],
         prompt: str = "vibrant colors, anime style",
-        size: Union[int, Tuple[int, int]] = 512,
+        size: Optional[Union[int, Tuple[int, int]]] = None,
         input_size: Optional[Tuple[int, int]] = None,
         **kwargs: Any,
     ) -> Image.Image:
@@ -70,7 +70,9 @@ class Colorizer:
                 - Image.Image: PIL Image object
                 - np.ndarray: Numpy array image
             prompt: Text description guiding the colorization.
-            size: Output image size (int for square, tuple for rectangle).
+            size: Output image size (int for square, tuple for rectangle). If None,
+                for Sketch input, uses sketch's height and width; for Image input,
+                uses the image size.
             input_size: Optional input resize dimensions (height, width). If provided,
                 the input will be resized before processing.
             
@@ -100,7 +102,7 @@ class Colorizer:
         self,
         sketch: Sketch,
         prompt: str,
-        size: Union[int, Tuple[int, int]],
+        size: Optional[Union[int, Tuple[int, int]]],
         input_size: Optional[Tuple[int, int]],
         **kwargs: Any,
     ) -> Image.Image:
@@ -112,6 +114,10 @@ class Colorizer:
             sketch.resize(input_size[0], input_size[1])
         
         try:
+            # If size is not provided, use sketch's dimensions
+            if size is None:
+                size = (int(sketch.height), int(sketch.width))
+            
             # Convert sketch to raster
             raster_sketch = self._sketch_to_raster(
                 sketch,
@@ -133,7 +139,7 @@ class Colorizer:
         self,
         image: Union[Image.Image, np.ndarray],
         prompt: str,
-        size: Union[int, Tuple[int, int]],
+        size: Optional[Union[int, Tuple[int, int]]],
         input_size: Optional[Tuple[int, int]],
         **kwargs: Any,
     ) -> Image.Image:
@@ -152,6 +158,10 @@ class Colorizer:
         # Resize image if requested
         if input_size is not None:
             pil_image = pil_image.resize((input_size[1], input_size[0]), Image.Resampling.LANCZOS)
+        
+        # If size is not provided, use image's dimensions
+        if size is None:
+            size = (pil_image.height, pil_image.width)
         
         # Prepare control image
         control_image = self._prepare_control_image(pil_image)

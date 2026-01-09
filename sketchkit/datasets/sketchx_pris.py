@@ -31,6 +31,8 @@ def parse_stroke3_format(stroke_data):
               stroke segments as cubic Bezier curves.
             - total_segment_num (int): Total number of stroke segments across
               all paths.
+            - width (float): Canvas width.
+            - height (float): Canvas height.
     """
     dx = stroke_data[:, 0]  # (N_point)
     dy = stroke_data[:, 1]  # (N_point)
@@ -38,14 +40,8 @@ def parse_stroke3_format(stroke_data):
 
     # Convert to absolute coordinates
     xs, ys = np.cumsum(dx), np.cumsum(dy)
-    
-    # Shift to start from 0  
-    if len(xs) > 0:
-        # Shift to start from 0
-        min_x, min_y = np.min(xs), np.min(ys)
-        xs = xs - min_x
-        ys = ys - min_y
-    
+    xs -= np.min(xs)
+    ys -= np.min(ys)
     xy = np.stack([xs, ys], axis=1)  # (N_point, 2)
 
     path_list = []  # list of (N_strokes, 4, 2)
@@ -60,15 +56,35 @@ def parse_stroke3_format(stroke_data):
             stroke_list.append(cubic)
             total_segment_num += 1
         else:
-            if stroke_list:
-                path_list.append(Path(stroke_list))
+            path_list.append(Path(stroke_list))
             stroke_list = []
     
-    # Add the last path if any strokes remain
-    if stroke_list:
-        path_list.append(Path(stroke_list))
+    # Calculate canvas size based on bounding box
+    if path_list:
+        all_points = []
+        for path in path_list:
+            for curve in path.curves:
+                all_points.extend([
+                    [curve.p_start.x, curve.p_start.y],
+                    [curve.p_crtl1.x, curve.p_crtl1.y],
+                    [curve.p_crtl2.x, curve.p_crtl2.y],
+                    [curve.p_end.x, curve.p_end.y]
+                ])
+        
+        if all_points:
+            all_points_array = np.array(all_points)
+            width = float(np.max(all_points_array[:, 0]) - np.min(all_points_array[:, 0]))
+            height = float(np.max(all_points_array[:, 1]) - np.min(all_points_array[:, 1]))
+            
+            # Add a small margin and ensure minimum size
+            width = max(width * 1.1, 100.0)
+            height = max(height * 1.1, 100.0)
+        else:
+            width, height = 512.0, 512.0
+    else:
+        width, height = 512.0, 512.0
     
-    return path_list, total_segment_num
+    return path_list, total_segment_num, width, height
 
 
 class SketchXPRIS(SketchDataset):
@@ -91,13 +107,13 @@ class SketchXPRIS(SketchDataset):
     # Metadata columns for each items
     metadata = ["id", "sub_id", "category"]
 
-    def __init__(
-        self,
-        root: str | None = None,
-        load_all: bool = False,
-        cislab_source: bool = False,
-    ):
-        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
+    # def __init__(
+    #     self,
+    #     data_root: str | None = None,
+    #     load_all: bool = False,
+    #     cislab_source: bool = False,
+    # ):
+    #     super().__init__(data_root, load_all=load_all, cislab_source=cislab_source)
 
     def _load_items_metadata(self):
         """Load and cache metadata for all items in the dataset.
@@ -283,11 +299,10 @@ class SketchXPRIS(SketchDataset):
             self.raw_data[cnt : cnt + len(samples)] = samples
             cnt += len(samples)
         single_sketch_stroke = self.raw_data[idx]
-        path_list, total_segment_num = parse_stroke3_format(
+        path_list, total_segment_num, width, height = parse_stroke3_format(
             np.array(single_sketch_stroke)
         )
-        # Create Sketch with height and width (256x256 canvas)
-        sketch = Sketch(height=256, width=256, paths=path_list)
+        sketch = Sketch(height=height, width=width, paths=path_list)
         return sketch
 
 

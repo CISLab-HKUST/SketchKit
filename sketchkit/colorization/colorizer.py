@@ -6,11 +6,11 @@ This class provides functionality to colorize vector sketches using various AI m
 
 import numpy as np
 from PIL import Image
-from typing import Union, Tuple, Dict, Any
+from typing import Union, Tuple, Dict, Any, Optional
 import torch
 
 from sketchkit.core.sketch import Sketch
-from sketchkit.renderer.cairo_renderer import CairoRenderer
+from sketchkit.renderer.cairo_renderer import CairoRenderer, CairoRenderOptions
 from .models import ControlNetLineartModel, ControlNetScribbleModel
 
 
@@ -55,18 +55,26 @@ class Colorizer:
     
     def run(
         self,
-        sketch: Sketch,
+        input_data: Union[Sketch, Image.Image, np.ndarray],
         prompt: str = "vibrant colors, anime style",
-        size: Union[int, Tuple[int, int]] = 512,
+        size: Optional[Union[int, Tuple[int, int]]] = None,
+        input_size: Optional[Tuple[int, int]] = None,
         **kwargs: Any,
     ) -> Image.Image:
         """
-        Colorize the input sketch.
+        Colorize the input sketch or image.
 
         Args:
-            sketch: Input vector sketch.
+            input_data: Input can be:
+                - Sketch: Vector sketch object
+                - Image.Image: PIL Image object
+                - np.ndarray: Numpy array image
             prompt: Text description guiding the colorization.
-            size: Output image size (int for square, tuple for rectangle).
+            size: Output image size (int for square, tuple for rectangle). If None,
+                for Sketch input, uses sketch's height and width; for Image input,
+                uses the image size.
+            input_size: Optional input resize dimensions (height, width). If provided,
+                the input will be resized before processing.
             
         Keyword Args for Generation Control:
             stroke_width (int): Stroke width for rasterization. Defaults to 2.
@@ -81,32 +89,93 @@ class Colorizer:
         Returns:
             Colorized image as PIL Image.
         """
-        if self.method == "controlnet_lineart":
-            return self._run_controlnet(sketch, prompt, size, **kwargs)
-        elif self.method == "controlnet_scribble":
-            return self._run_controlnet(sketch, prompt, size, **kwargs)
+        # Determine input type and process accordingly
+        if isinstance(input_data, Sketch):
+            return self._run_with_sketch(input_data, prompt, size, input_size, **kwargs)
+        elif isinstance(input_data, (Image.Image, np.ndarray)):
+            return self._run_with_image(input_data, prompt, size, input_size, **kwargs)
         else:
-            raise ValueError(f"Unsupported method: {self.method}")
+            raise TypeError(f"Unsupported input type: {type(input_data)}. "
+                          f"Expected Sketch, Image.Image, or np.ndarray.")
     
-    def _run_controlnet(
+    def _run_with_sketch(
         self,
         sketch: Sketch,
+        prompt: str,
+        size: Optional[Union[int, Tuple[int, int]]],
+        input_size: Optional[Tuple[int, int]],
+        **kwargs: Any,
+    ) -> Image.Image:
+        """Run colorization with Sketch input."""
+        # Resize sketch if requested 
+        original_size = None
+        if input_size is not None:
+            original_size = (sketch.height, sketch.width)
+            sketch.resize(input_size[0], input_size[1])
+        
+        try:
+            # If size is not provided, use sketch's dimensions
+            if size is None:
+                size = (int(sketch.height), int(sketch.width))
+            
+            # Convert sketch to raster
+            raster_sketch = self._sketch_to_raster(
+                sketch,
+                size=size,
+                stroke_width=kwargs.get('stroke_width', 2),
+                fit_canvas=kwargs.get('fit_canvas', True),
+            )
+            
+            # Prepare control image
+            control_image = self._prepare_control_image(raster_sketch)
+            
+            return self._generate_with_control_image(control_image, prompt, size, **kwargs)
+        
+        finally:
+            if original_size is not None:
+                sketch.resize(original_size[0], original_size[1])
+    
+    def _run_with_image(
+        self,
+        image: Union[Image.Image, np.ndarray],
+        prompt: str,
+        size: Optional[Union[int, Tuple[int, int]]],
+        input_size: Optional[Tuple[int, int]],
+        **kwargs: Any,
+    ) -> Image.Image:
+        """Run colorization with Image input."""
+        # Convert to PIL Image if numpy array
+        if isinstance(image, np.ndarray):
+            if image.ndim == 3 and image.shape[2] == 3:
+                pil_image = Image.fromarray(image.astype(np.uint8)).convert("RGB")
+            elif image.ndim == 2:
+                pil_image = Image.fromarray(image.astype(np.uint8)).convert("L")
+            else:
+                raise ValueError(f"Unsupported image shape: {image.shape}")
+        else:
+            pil_image = image
+        
+        # Resize image if requested
+        if input_size is not None:
+            pil_image = pil_image.resize((input_size[1], input_size[0]), Image.Resampling.LANCZOS)
+        
+        # If size is not provided, use image's dimensions
+        if size is None:
+            size = (pil_image.height, pil_image.width)
+        
+        # Prepare control image
+        control_image = self._prepare_control_image(pil_image)
+        
+        return self._generate_with_control_image(control_image, prompt, size, **kwargs)
+    
+    def _generate_with_control_image(
+        self,
+        control_image: Image.Image,
         prompt: str,
         size: Union[int, Tuple[int, int]],
         **kwargs: Any,
     ) -> Image.Image:
-        """Run ControlNet-based colorization."""
-        # Convert sketch to raster
-        raster_sketch = self._sketch_to_raster(
-            sketch,
-            size=size,
-            stroke_width=kwargs.get('stroke_width', 2),
-            fit_canvas=kwargs.get('fit_canvas', True),
-        )
-        
-        # Prepare control image
-        control_image = self._prepare_control_image(raster_sketch)
-        
+        """Generate colorized image using control image."""
         # Setup generator for reproducibility
         generator = None
         if 'seed' in kwargs:
@@ -147,32 +216,36 @@ class Colorizer:
     ) -> np.ndarray:
         """Convert sketch to rasterized image using CairoRenderer."""
         if isinstance(size, int):
-            canvas_size = size
+            canvas_size = (size, size)
         else:
-            canvas_size = max(size)
-            
-        renderer = CairoRenderer(
+            canvas_size = size
+                
+        render_options = CairoRenderOptions(
             canvas_size=canvas_size,
-            canvas_color=background_color
+            background_color=background_color,
+            stroke_width=stroke_width
         )
         
-        raster_image = renderer.render(sketch, width=stroke_width, fit_canvas=fit_canvas)
+        renderer = CairoRenderer(render_options=render_options)
         
-        if isinstance(size, tuple) and size[0] != size[1]:
-            pil_image = Image.fromarray(raster_image)
-            pil_image = pil_image.resize(size, Image.Resampling.LANCZOS)
-            raster_image = np.array(pil_image)
+        pil_image = renderer.render(sketch, render_options=render_options)
+        raster_image = np.array(pil_image)
         
         return raster_image
     
-    def _prepare_control_image(self, raster_sketch: np.ndarray) -> Image.Image:
-        """Prepare control image from rasterized sketch."""
-        if len(raster_sketch.shape) == 3:
-            if raster_sketch.shape[2] == 3:
-                pil_image = Image.fromarray(raster_sketch).convert("RGB")
+    def _prepare_control_image(self, image: Union[np.ndarray, Image.Image]) -> Image.Image:
+        """Prepare control image from rasterized sketch or PIL image."""
+        if isinstance(image, np.ndarray):
+            if len(image.shape) == 3:
+                if image.shape[2] == 3:
+                    pil_image = Image.fromarray(image).convert("RGB")
+                else:
+                    pil_image = Image.fromarray(image[:, :, 0]).convert("L")
             else:
-                pil_image = Image.fromarray(raster_sketch[:, :, 0]).convert("L")
+                pil_image = Image.fromarray(image).convert("L")
+        elif isinstance(image, Image.Image):
+            pil_image = image
         else:
-            pil_image = Image.fromarray(raster_sketch).convert("L")
+            raise TypeError(f"Unsupported image type: {type(image)}")
         
         return pil_image

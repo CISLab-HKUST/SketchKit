@@ -136,9 +136,10 @@ class CNNVE:
                  
                  res[padded_mask > MASK_TH] = 255
                  
+                 
                  # Collect points
                  if 'point_list' in mask_dic[kk]:
-                     merged_points.extend(mask_dic[kk]['point_list'])
+                     merged_points.append(mask_dic[kk]['point_list'])
              
              m_list_ids[cnt] = res # We still need masks for matching
              point_list_map[cnt] = merged_points
@@ -150,7 +151,7 @@ class CNNVE:
         )
         
         sketch = self._generate_ordered_sketch(
-             msort, point_list_map
+             msort, point_list_map, h, w
         )
         
         print(f'✓ Generated ordered sketch with {sketch.path_num} paths')
@@ -192,7 +193,7 @@ class CNNVE:
              
         return Path(curves)
 
-    def _generate_ordered_sketch(self, msort, point_list_map):
+    def _generate_ordered_sketch(self, msort, point_list_map, height, width):
         """
         Generate a single Sketch object with paths ordered by frame appearance.
         """
@@ -204,10 +205,11 @@ class CNNVE:
              stroke_ids = msort[idx_frame]
             
              for sid in stroke_ids:
-                 pts = point_list_map[sid]
-                 path = self._points_to_path(pts)
-                 if path:
-                     ordered_paths.append(path)
+                 pts_list = point_list_map[sid]
+                 for pts in pts_list:
+                     path = self._points_to_path(pts)
+                     if path:
+                         ordered_paths.append(path)
              
-        return Sketch(paths=ordered_paths)
+        return Sketch(height, width, paths=ordered_paths)
 

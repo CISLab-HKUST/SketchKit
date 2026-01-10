@@ -195,7 +195,7 @@ class Sketchy(SketchDataset):
         prune: Whether to prune invalid SVGs during download.
     """
 
-    md5_sum = "b0277b8d9413d7914971f1dae909f324"
+    md5_sum = "73bb8cb745dd7945ee8c998a58bf9f0a"
     metadata = ["id", "pruned", "class_name", "filename", "path", "sketch_name"]
     gdrive_id: str = "1Qr8HhjRuGqgDONHigGszyHG_awCstivo"
     filename: str = "sketches-06-04.7z"
@@ -344,7 +344,7 @@ class Sketchy(SketchDataset):
                 curves.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))
             paths.append(Path(curves=curves))
 
-        sketch = Sketch(paths=paths)
+        sketch = Sketch(height=float(image_sizes[1]), width=float(image_sizes[0]), paths=paths)
         return sketch
 
     def _get_single(self, idx: int) -> Sketch:

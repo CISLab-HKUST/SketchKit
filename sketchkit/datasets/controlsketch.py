@@ -8,6 +8,7 @@ import gdown
 import xml.etree.ElementTree as ET
 import pandas as pd
 from pathlib import Path as PathLibPath
+from typing import List, Tuple
 
 from svg.path import parse_path, path
 from sketchkit.utils.dataset import SketchDataset
@@ -18,14 +19,40 @@ from sketchkit.utils.file import extract_files, download_with_wget, dir_md5, CIS
 _INVALID = {"rect", "circle", "ellipse", "line", "polyline", "polygon"}
 
 
-def parse_svg(svg_path: str) -> list[Path]:
-    """Parse an SVG file into a list of Path objects.
+def _parse_svg_canvas_size(root: ET.Element) -> Tuple[float | None, float | None]:
+    """Extract canvas width/height from SVG root attributes if available."""
+
+    view_box = root.attrib.get("viewBox")
+    if view_box:
+        parts = view_box.replace(",", " ").split()
+        if len(parts) == 4:
+            try:
+                return float(parts[2]), float(parts[3])
+            except Exception:
+                pass
+
+    width_attr = root.attrib.get("width")
+    height_attr = root.attrib.get("height")
+    if width_attr and height_attr:
+        try:
+            return float("".join(ch for ch in width_attr if (ch.isdigit() or ch == "."))), float(
+                "".join(ch for ch in height_attr if (ch.isdigit() or ch == "."))
+            )
+        except Exception:
+            pass
+
+    return None, None
+
+
+def parse_svg(svg_path: str) -> tuple[list[Path], float, float]:
+    """Parse an SVG file into a list of Path objects and canvas size.
 
     Args:
         svg_path (str): Path to the SVG file to parse.
 
     Returns:
-        list[Path]: Parsed sketch represented as a list of Path objects.
+        tuple[list[Path], float, float]: Parsed sketch represented as a list of
+        Path objects, along with (width, height) canvas size.
 
     Raises:
         AssertionError: If a transform attribute is encountered.
@@ -35,6 +62,7 @@ def parse_svg(svg_path: str) -> list[Path]:
     root = tree.getroot()
 
     paths: list[Path] = []
+    canvas_w, canvas_h = _parse_svg_canvas_size(root)
 
     for elem in root.iter():
         tag = elem.tag.split("}", 1)[-1]
@@ -103,7 +131,24 @@ def parse_svg(svg_path: str) -> list[Path]:
             if curves:
                 paths.append(Path(curves=curves))
 
-    return paths
+    # Fallback canvas size from content bounds if not provided in SVG.
+    if canvas_w is None or canvas_h is None:
+        xs: List[float] = []
+        ys: List[float] = []
+        for p in paths:
+            for c in p.curves:
+                for pt in (c.p_start, c.p_crtl1, c.p_crtl2, c.p_end):
+                    xs.append(float(pt.x))
+                    ys.append(float(pt.y))
+        if xs and ys:
+            min_x, max_x = min(xs), max(xs)
+            min_y, max_y = min(ys), max(ys)
+            canvas_w = max(max_x - min_x, 1.0)
+            canvas_h = max(max_y - min_y, 1.0)
+        else:
+            canvas_w = canvas_h = 512.0
+
+    return paths, float(canvas_w), float(canvas_h)
 
 
 class ControlSketch(SketchDataset):
@@ -295,8 +340,8 @@ class ControlSketch(SketchDataset):
             fp = self.items_metadata.iloc[idx]["filepath"]
             self.raw_data[idx] = parse_svg(fp)
 
-        paths = self.raw_data[idx]
-        return Sketch(paths=paths)
+        paths, canvas_w, canvas_h = self.raw_data[idx]
+        return Sketch(height=canvas_h, width=canvas_w, paths=paths)
 
     def extra_repr(self) -> str:
         """Return dataset summary.
@@ -399,4 +444,3 @@ if __name__ == "__main__":
         if outpath is not None:
             raster_image_png = Image.fromarray(raster_image, "RGB")
             raster_image_png.save(outpath, "PNG")
-

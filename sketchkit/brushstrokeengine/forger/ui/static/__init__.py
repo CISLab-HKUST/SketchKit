@@ -1,1 +1,0 @@
-# forger/ui/static package

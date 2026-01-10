@@ -330,7 +330,7 @@ class BrushstrokeStylizer:
             import forger.ui.brush
             import forger.util.img_proc as img_proc
             import forger.viz.style_transfer as style_transfer
-            import forger.viz.visualize as visualize
+            # visualize module not used, removed for minimal implementation
             
             if hasattr(forger, "ui") and hasattr(forger.ui, "brush") and hasattr(forger.ui, "library"):
                 return forger

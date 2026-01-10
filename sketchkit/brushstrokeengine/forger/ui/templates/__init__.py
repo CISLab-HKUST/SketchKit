@@ -1,1 +1,0 @@
-# forger/ui/templates package

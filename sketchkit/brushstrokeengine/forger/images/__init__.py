@@ -1,1 +1,0 @@
-# forger/images package

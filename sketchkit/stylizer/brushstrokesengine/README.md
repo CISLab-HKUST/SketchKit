@@ -14,7 +14,7 @@ This module provides integration with the Neural Brushstroke Engine (NeuBE) for 
 ### Basic Usage
 
 ```python
-from sketchkit.brushstrokeengine import BrushstrokeStylizer
+from sketchkit.stylizer import BrushstrokeStylizer
 from sketchkit.datasets import PhotoSketching
 
 # Initialize stylizer (will auto-download models if needed)
@@ -38,7 +38,7 @@ stylized_image.save("output.png")
 ### Manual Model Download
 
 ```python
-from sketchkit.brushstrokeengine.models import download_models
+from sketchkit.stylizer.brushstrokesengine.models import download_models
 
 # Download models to default location
 download_models()
@@ -103,7 +103,7 @@ The `forger` and `thirdparty` modules will be automatically included via `setup.
 
 After downloading, models are stored in:
 ```
-sketchkit/brushstrokeengine/models/
+sketchkit/stylizer/brushstrokesengine/models/
 └── neube/
     ├── style1/
     │   ├── snapshot.pkl

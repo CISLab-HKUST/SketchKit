@@ -19,7 +19,7 @@ def get_models_dir() -> Path:
     """Get the default models directory path.
     
     Returns:
-        Path to the models directory (sketchkit/brushstrokeengine/models/)
+        Path to the models directory (sketchkit/stylizer/brushstrokesengine/models/)
     """
     current_dir = Path(__file__).parent
     return current_dir / "models"

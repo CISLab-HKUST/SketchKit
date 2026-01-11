@@ -5,7 +5,7 @@ import traceback
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from sketchkit.brushstrokeengine import BrushstrokeStylizer
+from sketchkit.stylizer import BrushstrokeStylizer, Stylizer
 from sketchkit.datasets import PhotoSketching
 
 """
@@ -24,10 +24,10 @@ Optional parameters you can override (via kwargs in test functions, or at Brushs
 """
 
 
-def test_brushstroke_from_png(png_path: Path, output_dir: Path, **kwargs) -> bool:
-    """Run stylization from an input PNG."""
+def test_brushstroke_from_png_old_api(png_path: Path, output_dir: Path, **kwargs) -> bool:
+    """Run stylization from an input PNG using BrushstrokeStylizer (old API, backward compatible)."""
     try:
-        print("\nTesting brushstroke from PNG...")
+        print("\nTesting brushstroke from PNG (BrushstrokeStylizer - old API)...")
         stylizer = BrushstrokeStylizer(
             model_name="style2",
             style_id=kwargs.get("style_id", "playdoh10"),
@@ -35,7 +35,7 @@ def test_brushstroke_from_png(png_path: Path, output_dir: Path, **kwargs) -> boo
         )
 
         output_dir.mkdir(parents=True, exist_ok=True)
-        out_path = output_dir / f"from_png_{stylizer.model_name}_{stylizer.style_id}.png"
+        out_path = output_dir / f"from_png_old_api_{stylizer.model_name}_{stylizer.style_id}.png"
 
         stylizer.run_from_png(
             png_path,
@@ -46,19 +46,51 @@ def test_brushstroke_from_png(png_path: Path, output_dir: Path, **kwargs) -> boo
             on_white=kwargs.get("on_white", True),
         )
 
-        print(f"✅ PNG stylization succeeded! Saved to {out_path}")
+        print(f"✅ PNG stylization succeeded (old API)! Saved to {out_path}")
         return True
 
     except Exception as e:
-        print(f"❌ PNG stylization failed: {e}")
+        print(f"❌ PNG stylization failed (old API): {e}")
         traceback.print_exc()
         return False
 
 
-def test_brushstroke_from_sketch(sketch, output_dir: Path, **kwargs) -> bool:
-    """Render a Sketch via CairoRenderer, then stylize."""
+def test_brushstroke_from_png_new_api(png_path: Path, output_dir: Path, **kwargs) -> bool:
+    """Run stylization from an input PNG using Stylizer wrapper (new API)."""
     try:
-        print("\nTesting brushstroke from Sketch...")
+        print("\nTesting brushstroke from PNG (Stylizer wrapper - new API)...")
+        stylizer = Stylizer(
+            method="brushstrokesengine",
+            model_name="style2",
+            style_id=kwargs.get("style_id", "playdoh10"),
+            auto_download=True,
+        )
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+        out_path = output_dir / f"from_png_new_api_{stylizer.model_name}_{stylizer.style_id}.png"
+
+        stylizer.run_from_png(
+            png_path,
+            output_path=out_path,
+            feature_blending_level=kwargs.get("feature_blending_level", 2),
+            color_mode=kwargs.get("color_mode", "1"),
+            crop_margin=kwargs.get("crop_margin", 10),
+            on_white=kwargs.get("on_white", True),
+        )
+
+        print(f"✅ PNG stylization succeeded (new API)! Saved to {out_path}")
+        return True
+
+    except Exception as e:
+        print(f"❌ PNG stylization failed (new API): {e}")
+        traceback.print_exc()
+        return False
+
+
+def test_brushstroke_from_sketch_old_api(sketch, output_dir: Path, **kwargs) -> bool:
+    """Render a Sketch via CairoRenderer, then stylize using BrushstrokeStylizer (old API, backward compatible)."""
+    try:
+        print("\nTesting brushstroke from Sketch (BrushstrokeStylizer - old API)...")
         stylizer = BrushstrokeStylizer(
             model_name="style2",
             style_id=kwargs.get("style_id", "playdoh10"),
@@ -66,7 +98,7 @@ def test_brushstroke_from_sketch(sketch, output_dir: Path, **kwargs) -> bool:
         )
 
         output_dir.mkdir(parents=True, exist_ok=True)
-        out_path = output_dir / f"from_sketch_{stylizer.model_name}_{stylizer.style_id}.png"
+        out_path = output_dir / f"from_sketch_old_api_{stylizer.model_name}_{stylizer.style_id}.png"
 
         stylizer.run(
             sketch,
@@ -78,11 +110,44 @@ def test_brushstroke_from_sketch(sketch, output_dir: Path, **kwargs) -> bool:
             on_white=kwargs.get("on_white", True),
         )
 
-        print(f"✅ Sketch stylization succeeded! Saved to {out_path}")
+        print(f"✅ Sketch stylization succeeded (old API)! Saved to {out_path}")
         return True
 
     except Exception as e:
-        print(f"❌ Sketch stylization failed: {e}")
+        print(f"❌ Sketch stylization failed (old API): {e}")
+        traceback.print_exc()
+        return False
+
+
+def test_brushstroke_from_sketch_new_api(sketch, output_dir: Path, **kwargs) -> bool:
+    """Render a Sketch via CairoRenderer, then stylize using Stylizer wrapper (new API)."""
+    try:
+        print("\nTesting brushstroke from Sketch (Stylizer wrapper - new API)...")
+        stylizer = Stylizer(
+            method="brushstrokesengine",
+            model_name="style2",
+            style_id=kwargs.get("style_id", "playdoh10"),
+            auto_download=True,
+        )
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+        out_path = output_dir / f"from_sketch_new_api_{stylizer.model_name}_{stylizer.style_id}.png"
+
+        stylizer.run(
+            sketch,
+            output_path=out_path,
+            canvas_size=kwargs.get("canvas_size", None),  # None means use sketch's actual dimensions
+            feature_blending_level=kwargs.get("feature_blending_level", 2),
+            color_mode=kwargs.get("color_mode", "1"),
+            crop_margin=kwargs.get("crop_margin", 10),
+            on_white=kwargs.get("on_white", True),
+        )
+
+        print(f"✅ Sketch stylization succeeded (new API)! Saved to {out_path}")
+        return True
+
+    except Exception as e:
+        print(f"❌ Sketch stylization failed (new API): {e}")
         traceback.print_exc()
         return False
 
@@ -105,19 +170,46 @@ def main():
     successes = []
     failures = []
 
-    if test_brushstroke_from_png(png_path, output_dir):
-        successes.append("from_png")
+    # Test old API (BrushstrokeStylizer)
+    print("\n" + "=" * 60)
+    print("Testing Old API (BrushstrokeStylizer - backward compatible)")
+    print("=" * 60)
+    
+    if test_brushstroke_from_png_old_api(png_path, output_dir):
+        successes.append("from_png_old_api")
     else:
-        failures.append("from_png")
+        failures.append("from_png_old_api")
 
-    if test_brushstroke_from_sketch(sketch, output_dir):
-        successes.append("from_sketch")
+    if test_brushstroke_from_sketch_old_api(sketch, output_dir):
+        successes.append("from_sketch_old_api")
     else:
-        failures.append("from_sketch")
+        failures.append("from_sketch_old_api")
 
-    print("\n📊 Summary:")
+    # Test new API (Stylizer wrapper)
+    print("\n" + "=" * 60)
+    print("Testing New API (Stylizer wrapper)")
+    print("=" * 60)
+    
+    if test_brushstroke_from_png_new_api(png_path, output_dir):
+        successes.append("from_png_new_api")
+    else:
+        failures.append("from_png_new_api")
+
+    if test_brushstroke_from_sketch_new_api(sketch, output_dir):
+        successes.append("from_sketch_new_api")
+    else:
+        failures.append("from_sketch_new_api")
+
+    print("\n" + "=" * 60)
+    print("📊 Summary:")
+    print("=" * 60)
     print(f"✅ Successful: {successes}")
     print(f"❌ Failed: {failures}")
+    
+    if len(failures) == 0:
+        print("\n✅ All tests passed!")
+    else:
+        print(f"\n⚠️  {len(failures)} test(s) failed.")
 
 
 if __name__ == "__main__":
@@ -131,7 +223,7 @@ if __name__ == "__main__":
         # style1：偏传统画风的模型
         # style2：偏现代/多样风格的模型
     # model 决定：
-        # 使用哪一套权重与结构（style1/style2），也就决定了“风格空间”的整体分布。
+        # 使用哪一套权重与结构（style1/style2），也就决定了"风格空间"的整体分布。
 # 2. STYLE（或当作 Z 使用）======
     # 示例：playdoh10（风格名）或 594（随机种子）
     # 含义有两种用法：
@@ -149,7 +241,7 @@ if __name__ == "__main__":
     # 作用：STYLE 作为 key，在这个库中取出对应的 style 向量（或多向量），再交给 BrushLibrary / GanBrushOptions 来设置笔触风格。
     # 要求：必须和 MODEL 对应，比如 MODEL=style2 时，要用 models/neube/style2/brush_libs/... 下面的库。
     # library 决定：
-        # 在这个 model 的风格空间里，要从哪个“字典”（库）里拿风格向量：
+        # 在这个 model 的风格空间里，要从哪个"字典"（库）里拿风格向量：
             # 训练集投影库（projected_training_styles.pkl）
             # 新风格库（projected_novel_styles.pkl）
             # CLIP 风格库（clip_brushes.pkl）

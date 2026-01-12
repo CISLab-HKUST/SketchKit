@@ -5,7 +5,7 @@ import traceback
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from sketchkit.stylizer import BrushstrokeStylizer, Stylizer
+from sketchkit.stylization import BrushstrokeStylizer, Stylizer
 from sketchkit.datasets import PhotoSketching
 
 """

@@ -11,7 +11,7 @@ import traceback
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from sketchkit.stylizer import Stylizer
+from sketchkit.stylization import Stylizer
 from sketchkit.datasets import PhotoSketching
 
 """
@@ -171,7 +171,7 @@ def main():
     
     # Prepare output directory and sample PNG
     output_dir = Path("tmp_stylizer_test")
-    png_path = Path("input/PhotoSketching.png")
+    png_path = Path("input/0-0.png")
     
     if png_path.exists() and sketch is not None:
         # Test from PNG

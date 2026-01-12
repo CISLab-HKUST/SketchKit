@@ -6,7 +6,7 @@ from pathlib import Path as PathLibPath
 import pandas as pd
 from tqdm import tqdm
 
-from sketchkit.core.sketch import Sketch, Path
+from sketchkit.core.sketch import Sketch, Path, Curve
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import (
     download_with_gdown,
@@ -131,7 +131,7 @@ class CreativeSketch(SketchDataset):
             if self.cislab_source:
                 url = (
                     f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/"
-                    + "sketches_svg.zip"
+                    + "creative_sketch.zip"
                 )
                 download_with_wget(url, file_path=svg_zip_path)
             else:
@@ -268,7 +268,7 @@ class CreativeSketch(SketchDataset):
                     cubic._set_vertices_attribute("color", stroke_color)
                     strokes.append(cubic)
             path_list.append(Path(curves=strokes))
-        return Sketch(path_list)
+        return Sketch(512, 512, path_list)
 
     def _get_single(self, idx: int) -> Sketch:
         """Get a sketch by index.

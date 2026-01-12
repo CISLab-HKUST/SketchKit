@@ -301,7 +301,7 @@ class DeepVecSIG24:
         # also save another version for visulization
         self._vis_stroke(strokes, (h, w), os.path.join(p, "vis.svg"))
         print("Results are saved to dir:", p)
-        return strokes
+        return strokes, (h, w)
 
     def _vis_stroke(self, strokes, canvas_size, save_path):
         h, w = canvas_size
@@ -384,7 +384,7 @@ class DeepVecSIG24:
             os.path.join(image_folder, out_folder, "refine.svg"))
 
         # stroke traversal
-        paths_poly = self._simplify_SVG(
+        paths_poly, (svg_h, svg_w) = self._simplify_SVG(
             os.path.join(image_folder, out_folder, "refine.svg"),
             keypt_pre_dict,
             rdp_simplify=self.rdp,
@@ -394,5 +394,5 @@ class DeepVecSIG24:
 
         # convert to Sketch format
         path_list = self._paths_to_Sketch(paths_poly)
-        sketch = Sketch(paths=path_list)
+        sketch = Sketch(height=svg_h, width=svg_w, paths=path_list)
         return sketch

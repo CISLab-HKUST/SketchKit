@@ -17,29 +17,46 @@ from sketchkit.utils.file import (
 
 
 def load_differsketching_json(json_path: str) -> Sketch:
-    """Load a JSON sketch and convert it to a `Sketch` instance.
-
-    Args:
-        json_path (str): Path to a DifferSketching JSON file.
-
-    Returns:
-        Sketch: A `Sketch` object representing the vector sketch.
-    """
+    """Load a JSON sketch and convert it to a `Sketch` instance, returning also (width, height)."""
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     strokes = data["strokes"]
     paths = []
+    # Try to get width/height from JSON, else compute from points
+    width = data.get("width", None)
+    height = data.get("height", None)
+    all_x, all_y = [], []
 
+    # Gather all points for min/max calculation
     for stroke in strokes:
-        points = stroke["path"]  # [[x,y], [x,y], ...]
+        for pt in stroke["path"]:
+            all_x.append(pt[0])
+            all_y.append(pt[1])
+
+    min_x = min(all_x) if all_x else 0
+    min_y = min(all_y) if all_y else 0
+
+    # If width/height not in JSON, compute from points
+    if width is None and all_x:
+        width = max(all_x) - min_x
+    if height is None and all_y:
+        height = max(all_y) - min_y
+    width = width if width is not None else 0
+    height = height if height is not None else 0
+
+    # Now build paths, shifting all points so min_x/min_y is at (0,0)
+    for stroke in strokes:
+        points = stroke["path"]
         pressures = stroke.get("pressure", [None] * len(points))
         thickness = stroke.get("width", None)
 
+        shifted_points = [[x - min_x, y - min_y] for x, y in points]
+
         curves = []
-        for i in range(len(points) - 1):
-            x0, y0 = points[i]
-            x1, y1 = points[i + 1]
+        for i in range(len(shifted_points) - 1):
+            x0, y0 = shifted_points[i]
+            x1, y1 = shifted_points[i + 1]
 
             p0 = pressures[i] if pressures else None
             p1 = pressures[i + 1] if pressures else None
@@ -57,7 +74,7 @@ def load_differsketching_json(json_path: str) -> Sketch:
             path = Path(curves=curves)
             paths.append(path)
 
-    return Sketch(paths=paths)
+    return paths, (width, height)
 
 
 class DifferSketching(SketchDataset):
@@ -195,30 +212,22 @@ class DifferSketching(SketchDataset):
             if self.raw_data[idx] is None:
                 self.raw_data[idx] = self._load_sketch(idx)
 
-    def _load_sketch(self, idx: int) -> Sketch:
-        """Load a single sketch by index."""
+    def _load_sketch(self, idx: int):
+        """Load a single sketch by index, returning (paths, (width, height))."""
         row = self.items_metadata.iloc[idx]
-        sketch = load_differsketching_json(row["file_path"])
-        return sketch
+        paths, (width, height) = load_differsketching_json(row["file_path"])
+        return [paths, (width, height)]
 
     def _get_single(self, idx: int) -> Sketch:
-        """Get a sketch by index.
-
-        Args:
-            idx (int): Index of the sketch to retrieve.
-
-        Returns:
-            Sketch: A Sketch object containing the drawing data as paths.
-
-        Raises:
-            IndexError: If index is out of range.
-        """
+        """Get a sketch by index, returning a Sketch object with width/height."""
         if idx < 0 or idx >= len(self):
             raise IndexError("Index out of range")
 
         if self.raw_data[idx] is None:
             self.raw_data[idx] = self._load_sketch(idx)
-        return self.raw_data[idx]
+        paths, (width, height) = self.raw_data[idx]
+        sketch = Sketch(height=height, width=width, paths=paths)
+        return sketch
 
     def extra_repr(self) -> str:
         """Return extra information for the string representation."""
@@ -239,8 +248,6 @@ if __name__ == "__main__":
     # # Download from CISLAB CDN
     # dataset = DifferSketching(cislab_source=True)
 
-    print(dataset)
-
     # Search items using metadata - filter by drawing types
     objects = dataset.items_metadata[
         (dataset.items_metadata["category"] == "Animal_Head")
@@ -250,12 +257,10 @@ if __name__ == "__main__":
     # Load sketches
     sketches = [dataset[row.id] for _, row in objects[:5].iterrows()]
 
-    from PIL import Image
     from sketchkit.renderer.cairo_renderer import CairoRenderer
 
-    renderer = CairoRenderer(800, (1, 1, 1))
+    renderer = CairoRenderer()
     raster_image = renderer.render(sketches[2])
     outpath = "test.png"
     if outpath is not None:
-        raster_image_png = Image.fromarray(raster_image, "RGB")
-        raster_image_png.save(outpath, "PNG")
+        raster_image.save(outpath, "PNG")

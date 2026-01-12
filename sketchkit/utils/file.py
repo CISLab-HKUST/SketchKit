@@ -10,6 +10,7 @@ from pyunpack import Archive
 import gdown
 
 CISLAB_CDN = "https://cislab.hkust-gz.edu.cn/projects/sketchkit"
+CACHE_DIR = os.path.expanduser("~/.sketchkit/")
 
 
 def download_with_wget(

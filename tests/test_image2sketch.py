@@ -18,7 +18,7 @@ def _save_png(image: Image.Image, destination: Path) -> None:
     assert destination.stat().st_size > 0
 
 if __name__ == "__main__":
-    image_path = Path(__file__).parent / "angel.png"
+    image_path = Path(__file__).parent / "ant_357.png"
 
     with Image.open(image_path) as pil_image:
         input_image = pil_image.convert("RGB")

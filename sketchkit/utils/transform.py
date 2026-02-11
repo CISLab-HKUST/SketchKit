@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 
+from typing import TYPE_CHECKING
 
 # def convert_to_curve(sketch: Sketch, maxError=4.0):
 #     from sketchkit.utils.fit_curve import fit_curve

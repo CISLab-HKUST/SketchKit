@@ -46,11 +46,7 @@ if __name__ == "__main__":
     photosketch_path = output_dir / "angel_photosketch.png"
     _save_png(photosketch_result, photosketch_path)
 
-    swiftsketch_generator = SketchGenerator(
-        method="SwiftSketch",
-        use_refine=True,
-        guidance_param=2.5,
-    )
+    swiftsketch_generator = SketchGenerator(method="SwiftSketch")
     swiftsketch_result = swiftsketch_generator.run(input_image, size=512)
     assert isinstance(swiftsketch_result, Sketch)
 

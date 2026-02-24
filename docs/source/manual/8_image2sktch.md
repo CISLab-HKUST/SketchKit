@@ -13,7 +13,6 @@ The module currently supports the following methods:
 .. autosummary::
    :toctree: generated
 
-   sketchkit.image2sketch.SketchGenerator
    sketchkit.image2sketch.HEDModel
    sketchkit.image2sketch.PhotoSketchModel
    sketchkit.image2sketch.SwiftSketchModel
@@ -44,7 +43,6 @@ The method implements [SwiftSketch: A Diffusion Model for Image-to-Vector Sketch
 The main interface is the `SketchGenerator` class.
 
 ```python
-from sketchkit.core import Sketch
 from sketchkit.image2sketch import SketchGenerator
 from sketchkit.renderer.cairo_renderer import CairoRenderer, CairoRenderOptions
 from PIL import Image
@@ -53,26 +51,18 @@ from PIL import Image
 input_image = Image.open("angel.png").convert("RGB")
 
 # 1) HED: raster edge map
-hed_generator = SketchGenerator(method="HED", postprocess=True)
+hed_generator = SketchGenerator(method="HED")
 hed_result = hed_generator.run(input_image, size=512)
 hed_result.save("angel_hed.png")
 
 # 2) PhotoSketch: raster contour sketch
-photosketch_generator = SketchGenerator(method="PhotoSketch", device="cuda")
+photosketch_generator = SketchGenerator(method="PhotoSketch")
 photosketch_result = photosketch_generator.run(input_image, size=512)
 photosketch_result.save("angel_photosketch.png")
 
 # 3) SwiftSketch: vector sketch
-swift_model_kwargs = {
-    "use_refine": True,
-    "guidance_param": 2.5,
-}
-swiftsketch_generator = SketchGenerator(
-    method="SwiftSketch",
-    **swift_model_kwargs,
-)
+swiftsketch_generator = SketchGenerator(method="SwiftSketch")
 sketch = swiftsketch_generator.run(input_image, size=512)
-assert isinstance(sketch, Sketch)
 
 render_options = CairoRenderOptions(canvas_size=(512, 512))
 renderer = CairoRenderer(render_options=render_options)
@@ -83,15 +73,16 @@ rendered_image.save("angel_swiftsketch.png")
 sketch.to_svg("angel_swiftsketch.svg")
 ```
 
-- `SketchGenerator` initialization parameters:
-  - **method**: backend name, one of `"HED"`, `"PhotoSketch"`, `"SwiftSketch"` (lowercase names are also supported).
-  - **model_kwargs**: method-specific arguments, defined at initialization.
-  - HED examples: `postprocess`, `postprocess_threshold`, `auto_download`, `checkpoint_dir`.
-  - PhotoSketch examples: `device`, `auto_download`, `checkpoint_dir`.
-  - SwiftSketch examples: `device`, `use_refine`, `guidance_param`, `auto_download`, `checkpoint_dir`.
-- `SketchGenerator.run(...)` parameters:
-  - **input**: input image (`PIL.Image`, `numpy.ndarray`, or image path).
-  - **size**: output size. Use an integer for square output (e.g., `512`) or `(width, height)`. If omitted, output keeps the input image size.
-- Advanced note:
-  - `PhotoSketch` supports an optional init arg `input_size` (default `256`) for internal preprocessing resolution. `run(..., size=...)` controls output resolution.
-  - `SwiftSketch` supports an optional init arg `fix_scale` (default `True`) for internal scale normalization.
+## Usage Notes
+
+**Constructor**
+
+- `SketchGenerator(method=...)`
+- `method`: backend name. Supported values are `"HED"`, `"PhotoSketch"`, and `"SwiftSketch"` (lowercase aliases are also accepted).
+
+**Run Method**
+
+- `run(input, size=None)`
+- `input`: accepts a `PIL.Image`, a `numpy.ndarray`, or an image path.
+- `size`: accepts an integer (square output) or a `(width, height)` tuple. If omitted, output keeps the input image size.
+

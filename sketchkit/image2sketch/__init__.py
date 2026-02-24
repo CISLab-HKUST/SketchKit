@@ -84,12 +84,12 @@ def available_methods() -> list[str]:
     return list(_METHOD_REGISTRY.keys())
 
 
-def create_model(method: str = _DEFAULT_METHOD, **kwargs) -> Image2SketchModel:
+def create_model(method: str = _DEFAULT_METHOD) -> Image2SketchModel:
     """Instantiate a model for the requested method."""
 
     resolved_method = _resolve_method_name(method)
     factory = get_method(resolved_method)
-    instance = factory(**kwargs)
+    instance = factory()
     if not hasattr(instance, "generate"):
         raise TypeError(
             f"image2sketch method '{resolved_method}' produced an object without a 'generate' method."
@@ -121,16 +121,14 @@ def _resolve_method_name(method: str) -> str:
 class SketchGenerator:
     """A class for image-to-sketch generation."""
 
-    def __init__(self, method: str = "SwiftSketch", **model_kwargs: object):
+    def __init__(self, method: str = "SwiftSketch"):
         """Initialise the SketchGenerator.
 
         Args:
             method (str, optional): The image2sketch method name.
-            **model_kwargs: Method-specific model arguments.
         """
         self.method = method
-        self.model_kwargs = model_kwargs
-        self.generator_method = create_model(method, **model_kwargs)
+        self.generator_method = create_model(method)
 
     def run(
         self,
@@ -148,15 +146,10 @@ def image2sketch(
     *,
     method: str = _DEFAULT_METHOD,
     size: ImageSize = None,
-    **model_kwargs: object,
 ) -> Image2SketchResult:
     """Generate sketch or raster outputs for the provided image using the requested method."""
 
-    resolved_model: Image2SketchModel
-    if model_kwargs:
-        resolved_model = create_model(method, **model_kwargs)
-    else:
-        resolved_model = _get_default_model(method)
+    resolved_model: Image2SketchModel = _get_default_model(method)
 
     if not hasattr(resolved_model, "generate"):
         raise TypeError("image2sketch requires the model to expose a 'generate' method.")

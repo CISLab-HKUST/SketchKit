@@ -25,7 +25,7 @@ The method implements [Deep Sketch Vectorization via Implicit Surface Extraction
 
 ### LineDrawer
 
-LineDrawer is a stroke-level vectorization method based on human perception, originally presented in *CAD/Graphics 2025*. The method implements the CNNVE (CNN-based Vectorization Engine) approach to reconstruct complex line art at the stroke level.
+LineDrawer ([LineDrawer: Stroke-Level Process Reconstruction of Complex Line Art Based on Human Perception](https://www.sciencedirect.com/science/article/pii/S0097849325002067)) is a stroke-level vectorization method based on human perception, presented in *Computers & Graphics 2025*. The method implements the CNNVE (CNN-based Vectorization Engine) approach to reconstruct complex line art at the stroke level.
 
 The LineDrawer vectorization pipeline consists of the following steps:
 

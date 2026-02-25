@@ -17,7 +17,7 @@ from sketchkit.core.sketch3d import Sketch3D, Path3D, Curve3D, Vertex3D, Point3D
 
 
 # for 360 views rendering (wir3d way)
-def generate_orbit_views(num_frames, fov_deg=60, radius=2.0):
+def generate_orbit_views(num_frames, fov_deg=60, radius=100.0):
     azimuths = torch.linspace(0, 2.0 * np.pi, num_frames)
     elevations = torch.zeros_like(azimuths) * np.pi * 0.25
     azimuths = azimuths.tolist()
@@ -48,7 +48,7 @@ def generate_orbit_views(num_frames, fov_deg=60, radius=2.0):
 
 
 # create the CIS Logo
-def make_cis_sketch3d(thicknesses=None, variable_width=False) -> Sketch3D:
+# def make_cis_sketch3d(thicknesses=None, variable_width=False) -> Sketch3D:
     """Higher-level 3D sketch for letters CIS with depth offsets."""
     if thicknesses is None:
         thicknesses = [5.0, 5.0, 5.0]
@@ -166,19 +166,19 @@ def main(
 ):
     os.makedirs(out_dir, exist_ok=True)
     # positions, lookats, fov = load_renderlist(renderlist_path)
-    cameras = generate_orbit_views(views, fov_deg=60, radius=2.2)
+    cameras = generate_orbit_views(views, fov_deg=60, radius=1)
 
     # Load or create sketch
     if sketch_json and os.path.exists(sketch_json):
         print(f"Loading sketch from {sketch_json}")
-        cis3d = load_sketch3d_from_json(sketch_json)
+        cis3d = Sketch3D.from_json(sketch_json)
     else:
         # Curves in world coordinates
         if varied_thickness:
             cis3d = make_cis_sketch3d(thicknesses=[5.0, 1.0, 13.0])
         else:
             cis3d = make_cis_sketch3d(variable_width=variable_width)
-        
+
         # Save to JSON if requested
         if save_json:
             cis3d.to_json(save_json)
@@ -189,7 +189,7 @@ def main(
         # For variable width mode, don't use global stroke_width
         options = DiffVGRenderOptions(canvas_size=(width, height), stroke_width=None)
     else:
-        options = DiffVGRenderOptions(canvas_size=(width, height), stroke_width=10.0)
+        options = DiffVGRenderOptions(canvas_size=(width, height), stroke_width=2.0)
 
     # options.back_end = backend
     options.device = "cuda" if torch.cuda.is_available() else "cpu"

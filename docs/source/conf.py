@@ -23,7 +23,7 @@ version = os.environ.get("SKETCHKIT_DOCS_VERSION", "main")
 
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.apidoc",
+    # "sphinx.ext.apidoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",  # for Google/NumPy style docstrings
     "sphinx.ext.viewcode",

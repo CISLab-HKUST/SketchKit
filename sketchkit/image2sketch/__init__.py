@@ -20,6 +20,7 @@ from .swiftsketch.generate import SwiftSketchModel
 
 ImageInput = Union[Image.Image, np.ndarray, str]
 Image2SketchResult = Union[Sketch, Image.Image, list[Sketch], list[Image.Image]]
+ImageSize = Optional[Union[int, Tuple[int, int]]]
 
 
 class Image2SketchModel(Protocol):
@@ -38,6 +39,14 @@ MethodFactory = Callable[..., Image2SketchModel]
 _METHOD_REGISTRY: MutableMapping[str, MethodFactory] = {}
 _DEFAULT_INSTANCES: Dict[str, Image2SketchModel] = {}
 _DEFAULT_METHOD = "swiftsketch"
+_METHOD_ALIASES: Dict[str, str] = {
+    "hed": "hed",
+    "HED": "hed",
+    "photosketch": "photosketch",
+    "PhotoSketch": "photosketch",
+    "swiftsketch": "swiftsketch",
+    "SwiftSketch": "swiftsketch",
+}
 
 
 def register_method(name: str, factory: MethodFactory) -> None:
@@ -59,8 +68,9 @@ def register_method(name: str, factory: MethodFactory) -> None:
 def get_method(name: str) -> MethodFactory:
     """Return the factory registered for the given method name."""
 
+    resolved_name = _resolve_method_name(name)
     try:
-        return _METHOD_REGISTRY[name]
+        return _METHOD_REGISTRY[resolved_name]
     except KeyError as exc:
         available = ", ".join(sorted(_METHOD_REGISTRY)) or "none"
         raise ValueError(
@@ -74,38 +84,72 @@ def available_methods() -> list[str]:
     return list(_METHOD_REGISTRY.keys())
 
 
-def create_model(method: str = _DEFAULT_METHOD, **kwargs) -> Image2SketchModel:
+def create_model(method: str = _DEFAULT_METHOD) -> Image2SketchModel:
     """Instantiate a model for the requested method."""
 
-    factory = get_method(method)
-    instance = factory(**kwargs)
+    resolved_method = _resolve_method_name(method)
+    factory = get_method(resolved_method)
+    instance = factory()
     if not hasattr(instance, "generate"):
         raise TypeError(
-            f"image2sketch method '{method}' produced an object without a 'generate' method."
+            f"image2sketch method '{resolved_method}' produced an object without a 'generate' method."
         )
     return cast(Image2SketchModel, instance)
 
 
 def _get_default_model(method: str = _DEFAULT_METHOD) -> Image2SketchModel:
-    if method not in _DEFAULT_INSTANCES:
-        _DEFAULT_INSTANCES[method] = create_model(method)
-    return _DEFAULT_INSTANCES[method]
+    resolved_method = _resolve_method_name(method)
+    if resolved_method not in _DEFAULT_INSTANCES:
+        _DEFAULT_INSTANCES[resolved_method] = create_model(resolved_method)
+    return _DEFAULT_INSTANCES[resolved_method]
+
+
+def _resolve_method_name(method: str) -> str:
+    if method in _METHOD_REGISTRY:
+        return method
+    if method in _METHOD_ALIASES:
+        return _METHOD_ALIASES[method]
+
+    lowered = method.lower()
+    if lowered in _METHOD_REGISTRY:
+        return lowered
+    if lowered in _METHOD_ALIASES:
+        return _METHOD_ALIASES[lowered]
+    return method
+
+
+class SketchGenerator:
+    """A class for image-to-sketch generation."""
+
+    def __init__(self, method: str = "SwiftSketch"):
+        """Initialise the SketchGenerator.
+
+        Args:
+            method (str, optional): The image2sketch method name.
+        """
+        self.method = method
+        self.generator_method = create_model(method)
+
+    def run(
+        self,
+        input: Union[ImageInput, Sequence[ImageInput]],
+        size: ImageSize = None,
+    ) -> Image2SketchResult:
+        """Generate sketch outputs from an input image."""
+        if not hasattr(self.generator_method, "generate"):
+            raise TypeError("SketchGenerator backend must implement a 'generate' method.")
+        return self.generator_method.generate(input, size=size)
 
 
 def image2sketch(
     image: Union[ImageInput, Sequence[ImageInput]],
     *,
     method: str = _DEFAULT_METHOD,
-    size: Optional[Union[int, Tuple[int, int]]] = None,
-    **model_kwargs: object,
+    size: ImageSize = None,
 ) -> Image2SketchResult:
     """Generate sketch or raster outputs for the provided image using the requested method."""
 
-    resolved_model: Image2SketchModel
-    if model_kwargs:
-        resolved_model = create_model(method, **model_kwargs)
-    else:
-        resolved_model = _get_default_model(method)
+    resolved_model: Image2SketchModel = _get_default_model(method)
 
     if not hasattr(resolved_model, "generate"):
         raise TypeError("image2sketch requires the model to expose a 'generate' method.")
@@ -121,6 +165,7 @@ photosketch = cast(PhotoSketchModel, _get_default_model("photosketch"))
 swiftsketch = cast(SwiftSketchModel, _get_default_model("swiftsketch"))
 
 __all__ = [
+    "SketchGenerator",
     "Image2SketchModel",
     "image2sketch",
     "available_methods",

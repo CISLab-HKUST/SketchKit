@@ -85,4 +85,3 @@ sketch.to_svg("angel_swiftsketch.svg")
 - `run(input, size=None)`
 - `input`: accepts a `PIL.Image`, a `numpy.ndarray`, or an image path.
 - `size`: accepts an integer (square output) or a `(width, height)` tuple. If omitted, output keeps the input image size.
-

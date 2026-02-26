@@ -44,5 +44,6 @@ animator = Animator(method="RIFE")
 img_list = animator.run(img0, img1, inner_frames=24)
 ```
 
-- Parameters:
-  - **inner_frames**: the number of intermediate frames.
+**Arguments**
+
+- `inner_frames`: the number of intermediate frames.

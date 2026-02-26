@@ -1,61 +1,99 @@
 """
-T2I-Adapter Model Implementation for Sketch-to-Image Conversion
+T2I-Adapter Model Implementation for Sketch-to-Image Conversion (SDXL Version)
+
+This module encapsulates the diffusers `StableDiffusionXLAdapterPipeline` 
+for generating images conditioned on edge maps or sketches.
 """
 
 import torch
-from diffusers import StableDiffusionAdapterPipeline, T2IAdapter
+from diffusers import (
+    StableDiffusionXLAdapterPipeline,
+    T2IAdapter,
+    AutoencoderKL,
+    EulerAncestralDiscreteScheduler
+)
 from PIL import Image
+import numpy as np
 from typing import Tuple, Union, Dict, Any, Optional
 import warnings
 
 
 class T2IAdapterModel:
-    """T2I-Adapter model for edge-conditioned sketch-to-image conversion."""
+    """T2I-Adapter model for edge/sketch-conditioned sketch-to-image conversion using SDXL.
+    
+    Attributes:
+        pipeline (StableDiffusionXLAdapterPipeline): The loaded diffusers pipeline.
+        adapter_model (str): The name/path of the loaded T2I-Adapter.
+        sd_model (str): The name/path of the base SDXL model.
+        device (str): Computation device ('cuda' or 'cpu').
+    """
     
     def __init__(
         self,
         device: str = "cuda",
-        adapter_model: str = "TencentARC/t2iadapter_canny_sd15v2",
-        sd_model: str = "runwayml/stable-diffusion-v1-5",
+        adapter_model: str = "TencentARC/t2i-adapter-sketch-sdxl-1.0", 
+        sd_model: str = "stabilityai/stable-diffusion-xl-base-1.0",
+        vae_model: str = "madebyollin/sdxl-vae-fp16-fix",
         torch_dtype: torch.dtype = torch.float16,
         safety_checker: bool = False,
         **kwargs: Any,
     ):
-        """
-        Initialize T2I-Adapter model.
-        
+        """Initializes the T2I-Adapter model with SDXL, VAE, and Euler Ancestral Scheduler.
+
         Args:
-            device: Device to use ('cuda' or 'cpu')
-            adapter_model: T2I-Adapter model name
-            sd_model: Stable Diffusion base model
-            torch_dtype: Data type for model weights
-            safety_checker: Whether to use safety checker
-            **kwargs: Additional parameters for model loading
+            device (str): Hardware device to run the model on. Defaults to "cuda".
+            adapter_model (str): HuggingFace hub path for the T2I-Adapter.
+            sd_model (str): HuggingFace hub path or local path for the base SDXL model.
+            vae_model (str): HuggingFace hub path or local path for the VAE model.
+            torch_dtype (torch.dtype): PyTorch data type for model weights.
+            safety_checker (bool): Whether to enable the NSFW safety checker.
+            **kwargs (Any): Additional kwargs passed to diffusers loading methods.
+
+        Raises:
+            ImportError: If required `diffusers` library versions are missing.
+            RuntimeError: If model initialization fails.
         """
-        print(f"Loading T2I-Adapter model: {adapter_model}")
+        print(f"Loading SDXL T2I-Adapter model: {adapter_model}")
         
         try:
+            scheduler = EulerAncestralDiscreteScheduler.from_pretrained(
+                sd_model,
+                subfolder="scheduler",
+                **kwargs
+            )
+
             adapter = T2IAdapter.from_pretrained(
                 adapter_model,
                 torch_dtype=torch_dtype,
                 **kwargs
             )
-            
+
+            vae = AutoencoderKL.from_pretrained(
+                vae_model, 
+                torch_dtype=torch_dtype,
+                **kwargs
+            )
+
             if safety_checker:
-                self.pipeline = StableDiffusionAdapterPipeline.from_pretrained(
+                self.pipeline = StableDiffusionXLAdapterPipeline.from_pretrained(
                     sd_model,
                     adapter=adapter,
+                    vae=vae,
+                    scheduler=scheduler,
                     torch_dtype=torch_dtype,
                     **kwargs
                 )
             else:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    self.pipeline = StableDiffusionAdapterPipeline.from_pretrained(
+                    self.pipeline = StableDiffusionXLAdapterPipeline.from_pretrained(
                         sd_model,
                         adapter=adapter,
+                        vae=vae,
+                        scheduler=scheduler,
                         torch_dtype=torch_dtype,
                         safety_checker=None,
+                        requires_safety_checker=False,
                         **kwargs
                     )
             
@@ -72,13 +110,13 @@ class T2IAdapterModel:
             self.torch_dtype = torch_dtype
             self.device = device
             
-            print(f"✅ T2I-Adapter model loaded successfully")
+            print(f"✅ SDXL T2I-Adapter loaded successfully")
             print(f"   - Adapter: {adapter_model}")
             print(f"   - Base model: {sd_model}")
             
         except ImportError as e:
             raise ImportError(
-                "T2I-Adapter requires diffusers>=0.14.0. "
+                "SDXL T2I-Adapter requires diffusers>=0.19.0. "
                 "Install with: pip install diffusers transformers accelerate"
             ) from e
         except Exception as e:
@@ -88,31 +126,61 @@ class T2IAdapterModel:
         self,
         control_image: Image.Image,
         prompt: str,
-        size: Union[int, Tuple[int, int]] = 512,
-        negative_prompt: str = "",
-        num_inference_steps: int = 50,
+        size: Optional[Union[int, Tuple[int, int]]] = None,
+        negative_prompt: str = "longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality",
+        num_inference_steps: int = 30, 
         guidance_scale: float = 7.5,
         adapter_conditioning_scale: float = 1.0,
         seed: Optional[int] = None,
         **kwargs: Any,
     ) -> Image.Image:
-        """Generate image from edge-conditioned sketch."""
-        # Remove parameters that are already explicitly handled
+        """Generates an image from an edge or sketch conditioned image using SDXL T2I-Adapter.
+
+        Args:
+            control_image (Image.Image): The input conditioning sketch/edge map.
+            prompt (str): Text prompt describing the desired output.
+            size (Optional[Union[int, Tuple[int, int]]]): Target resolution.
+            negative_prompt (str): Text prompt detailing what to avoid.
+            num_inference_steps (int): Number of denoising steps. Defaults to 30.
+            guidance_scale (float): CFG scale for text guidance. Defaults to 7.5.
+            adapter_conditioning_scale (float): Strength of the T2I-Adapter influence. Defaults to 1.0.
+            seed (Optional[int]): Random seed for deterministic generation.
+            **kwargs (Any): Additional arguments for the pipeline.
+
+        Returns:
+            Image.Image: The generated image.
+
+        Raises:
+            RuntimeError: If image generation fails during pipeline execution.
+        """
         kwargs_copy = kwargs.copy()
-        # Remove parameters from other methods that might be passed by mistake
         kwargs_copy.pop('controlnet_conditioning_scale', None)
         kwargs_copy.pop('image_guidance_scale', None)
-        kwargs_copy.pop('adapter_conditioning_factor', None)  # Remove unsupported parameter
-        
-        # Convert image to grayscale if needed
-        if control_image.mode != 'L':
-            control_image = control_image.convert('L')
+        kwargs_copy.pop('adapter_conditioning_factor', None)
+
+        # SDXL T2I-Adapter specifically expects RGB inputs due to PixelUnshuffle layers
+        if control_image.mode != 'RGB':
+            control_image = control_image.convert('RGB')
         
         generator = None
         if seed is not None:
             device = self.device if self.device != "cuda" or torch.cuda.is_available() else "cpu"
             generator = torch.Generator(device=device).manual_seed(seed)
+
+        width, height = control_image.size
+        if size is None:
+            ratio = np.sqrt(1024.0 * 1024.0 / (width * height))
+            new_width, new_height = int(width * ratio), int(height * ratio)
+        else:
+            new_width = size if isinstance(size, int) else size[0]
+            new_height = size if isinstance(size, int) else size[1]
+
+        new_width = (new_width // 8) * 8
+        new_height = (new_height // 8) * 8
         
+        if (width, height) != (new_width, new_height):
+            control_image = control_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
         try:
             result = self.pipeline(
                 prompt=prompt,
@@ -122,12 +190,12 @@ class T2IAdapterModel:
                 guidance_scale=guidance_scale,
                 adapter_conditioning_scale=adapter_conditioning_scale,
                 generator=generator,
-                height=size if isinstance(size, int) else size[1],
-                width=size if isinstance(size, int) else size[0],
+                width=new_width,
+                height=new_height,
                 **kwargs_copy,
             )
             
             return result.images[0]
             
         except Exception as e:
-            raise RuntimeError(f"T2I-Adapter generation failed: {e}") from e
+            raise RuntimeError(f"T2I-Adapter SDXL generation failed: {e}") from e

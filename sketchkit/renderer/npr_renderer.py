@@ -48,7 +48,6 @@ class NPRRenderer:
         # 归一化OBJ模型到单位立方体内
         # trimesh读取obj
         import trimesh
-
         mesh = trimesh.load(input_path)
         vertices = mesh.vertices
         vertices -= np.mean(vertices, axis=0)
@@ -56,7 +55,6 @@ class NPRRenderer:
         max_dim = np.max(np.linalg.norm(vertices, axis=1))
         vertices /= max_dim
         # 中心到原点
-
         # 写入新的obj文件
         mesh.vertices = vertices
         mesh.export(output_path)
@@ -193,13 +191,11 @@ class NPRRenderer:
 
 if __name__ == "__main__":
     from sketchkit.core.camera import Camera
-
     sug_opt = NPRRenderOptions(method="SuggestiveContour", threshold=0.005)
     rv_opt = NPRRenderOptions(method="RidgesAndValleys", threshold=0.1)
     ar_opt = NPRRenderOptions(method="AppearantRidges", threshold=0.1)
 
     renderer = NPRRenderer(obj_path="media/rapid.obj")
-
     # camera = Camera()
     # camera.set_look_at([0, 0, 0])
     # camera.set_xyz([0, 2.55, 0])

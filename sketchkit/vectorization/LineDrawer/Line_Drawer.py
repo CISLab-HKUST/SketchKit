@@ -52,10 +52,11 @@ class LineDrawer:
             with gzip.open(graph_merge_path, 'rb') as f:
                 merge_dic = pickle.load(f)
 
-            sketch = self._convert_to_sketch(merge_dic)
+            h, w = img.shape[:2]
+            sketch = self._convert_to_sketch(merge_dic, h, w)
             return sketch
 
-    def _convert_to_sketch(self, merge_dic: dict) -> Sketch:
+    def _convert_to_sketch(self, merge_dic: dict, height: int, width: int) -> Sketch:
         """
         Convert the CNNVE output dictionary to a Sketch object.
         """
@@ -86,5 +87,5 @@ class LineDrawer:
                     if stroke_list:
                         paths.append(SketchPath(stroke_list))
 
-        return Sketch(paths)
+        return Sketch(height, width, paths)
 

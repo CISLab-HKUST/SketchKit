@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import cv2
+import av
 from PIL import Image
 import wget
 import hashlib
@@ -10,6 +11,7 @@ from pyunpack import Archive
 import gdown
 
 CISLAB_CDN = "https://cislab.hkust-gz.edu.cn/projects/sketchkit"
+CACHE_DIR = os.path.expanduser("~/.sketchkit/")
 
 
 def download_with_wget(
@@ -170,32 +172,40 @@ def save_seq_video(img_seq, file_path, fps, w=None, h=None):
             h, w = int(arr.shape[0]), int(arr.shape[1])
 
     ext = os.path.splitext(file_path)[1].lower()
-    if ext == ".mp4":
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    elif ext == ".avi":
-        fourcc = cv2.VideoWriter_fourcc(*"MJPG")
-    else:
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
 
-    out = cv2.VideoWriter(file_path, fourcc, fps, (w, h))
+
+    # Use PyAV for better compatibility
+    container = av.open(file_path, mode='w')
+    
+    # H.264 is widely supported
+    stream = container.add_stream('h264', rate=fps)
+    stream.width = w
+    stream.height = h
+    stream.pix_fmt = 'yuv420p'
+    stream.options = {'crf': '23'}
 
     for img in img_seq:
         if isinstance(img, Image.Image):
             frame = np.asarray(img.convert("RGB"))
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         else:
             frame = np.asarray(img)
             if frame.ndim == 2:
-                frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
-            else:
-                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
+            elif frame.shape[2] == 4:
+                 frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)
+            # else assumed RGB
 
         if frame.shape[1] != w or frame.shape[0] != h:
             frame = cv2.resize(frame, (w, h))
 
-        out.write(frame)
+        av_frame = av.VideoFrame.from_ndarray(frame, format='rgb24')
+        for packet in stream.encode(av_frame):
+            container.mux(packet)
 
-    out.release()
+    for packet in stream.encode():
+        container.mux(packet)
+
+    container.close()
     print("Saved video to", file_path)
 
 

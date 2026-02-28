@@ -106,25 +106,26 @@ Searching sketches by metadata
 Available Datasets
 --------------
 
-The following are the built-in sketch datasets currently available in SketchKit:
+The following are the built-in sketch datasets currently available in SketchKit. Each dataset has its
+own manual page in this section so you can customize descriptions and examples.
 
-.. autosummary::
-    :toctree: generated/
-    :template: class_dataset.rst
+.. toctree::
+  :maxdepth: 1
+  :caption: Available Datasets
 
-    hzySketch
-    QuickDraw
-    ControlSketch
-    TUBerlin
-    TracingVsFreehand
-    OpenSketch
-    SketchXPRIS
-    Sketchy
-    PhotoSketching
-    GMUSketchCleanup
-    FSCOCO
-    DifferSketching
-    CreativeSketch
+  datasets/hzySketch
+  datasets/QuickDraw
+  datasets/ControlSketch
+  datasets/TUBerlin
+  datasets/TracingVsFreehand
+  datasets/OpenSketch
+  datasets/SketchXPRIS
+  datasets/Sketchy
+  datasets/PhotoSketching
+  datasets/GMUSketchCleanup
+  datasets/FSCOCO
+  datasets/DifferSketching
+  datasets/CreativeSketch
 
 
 Dataset feature

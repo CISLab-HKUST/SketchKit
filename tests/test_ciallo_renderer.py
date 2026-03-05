@@ -1,6 +1,5 @@
 from sketchkit.datasets import DifferSketching
 from sketchkit.renderer.ciallo_renderer import CialloRenderer, CialloRenderOptions
-from sketchkit.renderer.cairo_renderer import CairoRenderer, CairoRenderOptions
 
 if __name__ == "__main__":
     my_data = DifferSketching(skip_integrity_check=True)

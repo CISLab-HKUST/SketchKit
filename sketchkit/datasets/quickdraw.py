@@ -5,6 +5,7 @@ import numpy as np
 from tqdm import tqdm
 from pathlib import Path as PathLibPath
 import pandas as pd
+import math
 
 
 from sketchkit.core.sketch import Sketch, Path, Curve
@@ -45,10 +46,12 @@ def parse_stroke3_format(stroke_data):
     ys -= np.min(ys)
     xy = np.stack([xs, ys], axis=1)  # (N_point, 2)
 
+    max_dim = math.ceil(np.max(xy))
+
     path_list = []  # list of (N_strokes, 4, 2)
     stroke_list = []  # list of (4, 2)
     total_segment_num = 0
-    for i in range(len(pen_state) - 1):
+    for i in range(len(pen_state)):
         if pen_state[i] == 0:
             p_start = xy[i]  # (2)
             p_end = xy[i + 1]  # (2)
@@ -59,7 +62,7 @@ def parse_stroke3_format(stroke_data):
         elif stroke_list != []:
             path_list.append(Path(stroke_list))
             stroke_list = []
-    return path_list, total_segment_num
+    return path_list, total_segment_num, max_dim
 
 
 class QuickDraw(SketchDataset):
@@ -270,8 +273,8 @@ class QuickDraw(SketchDataset):
                 cnt += data[split].shape[0]
 
         single_sketch_stroke = self.raw_data[idx]
-        path_list, total_segment_num = parse_stroke3_format(single_sketch_stroke)
-        sketch = Sketch(height=256, width=256, paths=path_list)
+        path_list, total_segment_num, max_dim = parse_stroke3_format(single_sketch_stroke)
+        sketch = Sketch(height=max_dim, width=max_dim, paths=path_list)
         return sketch
 
     def extra_repr(self) -> str:

@@ -6,7 +6,7 @@ if __name__ == "__main__":
     print(len(my_data))
 
     from PIL import Image
-    from sketchkit.renderer.cairo_renderer import CairoRenderer
+    from sketchkit.renderer import CairoRenderer
 
     renderer = CairoRenderer()
     # raster_image = renderer.render_with_texture(sketch=my_data[0],texture='./sketchkit/assets/grid.png',width=3)

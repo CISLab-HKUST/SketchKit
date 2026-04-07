@@ -1,4 +1,6 @@
-import os, json, glob
+import os
+import glob
+from pathlib import Path
 from PIL import Image
 import numpy as np
 import torch
@@ -15,7 +17,7 @@ from sketchkit.core.sketch3d import Sketch3D, Path3D, Curve3D, Vertex3D, Point3D
 
 
 # for 360 views rendering (wir3d way)
-def generate_orbit_views(num_frames, fov_deg=60, radius=2.0):
+def generate_orbit_views(num_frames, fov_deg=60, radius=100.0):
     azimuths = torch.linspace(0, 2.0 * np.pi, num_frames)
     elevations = torch.zeros_like(azimuths) * np.pi * 0.25
     azimuths = azimuths.tolist()
@@ -46,7 +48,7 @@ def generate_orbit_views(num_frames, fov_deg=60, radius=2.0):
 
 
 # create the CIS Logo
-def make_cis_sketch3d(thicknesses=None, variable_width=False) -> Sketch3D:
+# def make_cis_sketch3d(thicknesses=None, variable_width=False) -> Sketch3D:
     """Higher-level 3D sketch for letters CIS with depth offsets."""
     if thicknesses is None:
         thicknesses = [5.0, 5.0, 5.0]
@@ -159,16 +161,27 @@ def main(
     single_view: bool = False,
     varied_thickness: bool = False,
     variable_width: bool = False,
+    sketch_json: str | None = None,
+    save_json: str | None = None,
 ):
     os.makedirs(out_dir, exist_ok=True)
     # positions, lookats, fov = load_renderlist(renderlist_path)
-    cameras = generate_orbit_views(views, fov_deg=60, radius=2.2)
+    cameras = generate_orbit_views(views, fov_deg=60, radius=1)
 
-    # Curves in world coordinates
-    if varied_thickness:
-        cis3d = make_cis_sketch3d(thicknesses=[5.0, 1.0, 13.0])
+    # Load or create sketch
+    if sketch_json and os.path.exists(sketch_json):
+        print(f"Loading sketch from {sketch_json}")
+        cis3d = Sketch3D.from_json(sketch_json)
     else:
-        cis3d = make_cis_sketch3d(variable_width=variable_width)
+        # Curves in world coordinates
+        if varied_thickness:
+            cis3d = make_cis_sketch3d(thicknesses=[5.0, 1.0, 13.0])
+        else:
+            cis3d = make_cis_sketch3d(variable_width=variable_width)
+
+        # Save to JSON if requested
+        if save_json:
+            cis3d.to_json(save_json)
 
     if varied_thickness:
         options = DiffVGRenderOptions(canvas_size=(width, height), stroke_width=None)
@@ -176,7 +189,7 @@ def main(
         # For variable width mode, don't use global stroke_width
         options = DiffVGRenderOptions(canvas_size=(width, height), stroke_width=None)
     else:
-        options = DiffVGRenderOptions(canvas_size=(width, height), stroke_width=10.0)
+        options = DiffVGRenderOptions(canvas_size=(width, height), stroke_width=2.0)
 
     # options.back_end = backend
     options.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -254,6 +267,18 @@ if __name__ == "__main__":
         action="store_true",
         help="Use variable width along each curve (4-point widths)",
     )
+    parser.add_argument(
+        "--sketch_json",
+        type=str,
+        help="Path to JSON file to load sketch from",
+        default=None,
+    )
+    parser.add_argument(
+        "--save_json",
+        type=str,
+        help="Path to save the generated sketch as JSON",
+        default="./sketch3d_test_out/cis3d_sketch.json",
+    )
     args = parser.parse_args()
 
     stroke_color = tuple(args.stroke_color) if args.stroke_color else None
@@ -270,4 +295,6 @@ if __name__ == "__main__":
         single_view=args.single_view,
         varied_thickness=args.varied_thickness,
         variable_width=args.variable_width,
+        sketch_json=args.sketch_json,
+        save_json=args.save_json,
     )

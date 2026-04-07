@@ -1,14 +1,15 @@
 import numpy as np
 from sketchkit.utils.geometry import bezier_lengths, is_line
+from sketchkit.utils.transform import (
+    parse_single_path,
+    parse_transform,
+    apply_transform_to_path,
+)
 import svgpathtools
 import json
-from .schema import (
-    SketchSchema,
-    PathSchema,
-    CurveArray,
-    VertexArray,
-    PointArray
-)
+from .schema import SketchSchema, PathSchema, CurveArray, VertexArray, PointArray
+import xml.etree.ElementTree as ET
+
 
 class Point:
     """2D point.
@@ -797,15 +798,25 @@ class Sketch:
 
                 # Use attributes from the first curve of the path for the entire path
                 first_curve = path.curves[0]
-                color = first_curve.color[0] if first_curve.color[0] is not None else (0, 0, 0)
+                color = (
+                    first_curve.color[0]
+                    if first_curve.color[0] is not None
+                    else (0, 0, 0)
+                )
                 color_hex = f"#{int(color[0]*255):02x}{int(color[1]*255):02x}{int(color[2]*255):02x}"
                 thickness = (
-                    first_curve.thickness[0] if first_curve.thickness[0] is not None else 1.0
+                    first_curve.thickness[0]
+                    if first_curve.thickness[0] is not None
+                    else 1.0
                 )
-                opacity = first_curve.opacity[0] if first_curve.opacity[0] is not None else 1.0
+                opacity = (
+                    first_curve.opacity[0]
+                    if first_curve.opacity[0] is not None
+                    else 1.0
+                )
 
                 d_parts = []
-                
+
                 # Initial MoveTo
                 p0 = first_curve.p_start
                 last_x = p0.x * scale + offset_x
@@ -838,7 +849,7 @@ class Sketch:
 
                     d_parts.append(f"C {x1} {y1}, {x2} {y2}, {x3} {y3}")
                     last_x, last_y = x3, y3
-                
+
                 path_d = " ".join(d_parts)
                 svg_parts.append(
                     f'<path d="{path_d}" stroke="{color_hex}" stroke-width="{thickness}" fill="none" stroke-opacity="{opacity}"/>'
@@ -854,7 +865,6 @@ class Sketch:
         return final_str
 
     def get_progressive_frames(self, length_per_frame: int = 10) -> list["Sketch"]:
-        import queue
         sketch_frames = []
 
         for i in range(self.path_num):
@@ -964,34 +974,50 @@ class Sketch:
                 p_start: VertexArray = (
                     float(curve.p_start.x),
                     float(curve.p_start.y),
-                    float(curve.p_start.pressure)
-                    if curve.p_start.pressure is not None
-                    else None,
-                    float(curve.p_start.thickness)
-                    if curve.p_start.thickness is not None
-                    else None,
-                    tuple(curve.p_start.color.tolist())
-                    if curve.p_start.color is not None
-                    else None,
-                    float(curve.p_start.opacity)
-                    if curve.p_start.opacity is not None
-                    else None,
+                    (
+                        float(curve.p_start.pressure)
+                        if curve.p_start.pressure is not None
+                        else None
+                    ),
+                    (
+                        float(curve.p_start.thickness)
+                        if curve.p_start.thickness is not None
+                        else None
+                    ),
+                    (
+                        tuple(curve.p_start.color.tolist())
+                        if curve.p_start.color is not None
+                        else None
+                    ),
+                    (
+                        float(curve.p_start.opacity)
+                        if curve.p_start.opacity is not None
+                        else None
+                    ),
                 )
                 p_end: VertexArray = (
                     float(curve.p_end.x),
                     float(curve.p_end.y),
-                    float(curve.p_end.pressure)
-                    if curve.p_end.pressure is not None
-                    else None,
-                    float(curve.p_end.thickness)
-                    if curve.p_end.thickness is not None
-                    else None,
-                    tuple(curve.p_end.color.tolist())
-                    if curve.p_end.color is not None
-                    else None,
-                    float(curve.p_end.opacity)
-                    if curve.p_end.opacity is not None
-                    else None,
+                    (
+                        float(curve.p_end.pressure)
+                        if curve.p_end.pressure is not None
+                        else None
+                    ),
+                    (
+                        float(curve.p_end.thickness)
+                        if curve.p_end.thickness is not None
+                        else None
+                    ),
+                    (
+                        tuple(curve.p_end.color.tolist())
+                        if curve.p_end.color is not None
+                        else None
+                    ),
+                    (
+                        float(curve.p_end.opacity)
+                        if curve.p_end.opacity is not None
+                        else None
+                    ),
                 )
                 p_crtl1: PointArray = (
                     float(curve.p_crtl1.x),
@@ -1015,7 +1041,7 @@ class Sketch:
             f.write(sketch_data.model_dump_json(indent=None))  # Minified JSON
 
     @classmethod
-    def from_json(cls, json_path: str) -> "Sketch":
+    def from_json(cls, file_path: str) -> "Sketch":
         """Load a sketch from a JSON file (Compact Format).
 
         Args:
@@ -1024,7 +1050,7 @@ class Sketch:
         Returns:
             Sketch: Loaded sketch object.
         """
-        with open(json_path, "r") as f:
+        with open(file_path, "r") as f:
             json_content = f.read()
 
         sketch_data = SketchSchema.model_validate_json(json_content)
@@ -1066,3 +1092,117 @@ class Sketch:
             paths.append(Path(curves=curves, label=path_data.label))
 
         return cls(height=sketch_data.height, width=sketch_data.width, paths=paths)
+
+    @classmethod
+    def from_svg(
+        cls,
+        svg_file: str,
+        *,
+        default_thickness: float = 1.0,
+        default_pressure: float | None = None,
+        cast_canvas_to_int: bool = True,
+    ) -> "Sketch":
+        invalid_svg_shapes = [
+            "rect",
+            "circle",
+            "ellipse",
+            "line",
+            "polyline",
+            "polygon",
+        ]
+
+        tree = ET.parse(svg_file)
+        root = tree.getroot()
+
+        # --- Canvas size: strictly from viewBox like TU-Berlin ---
+        view_box = root.get("viewBox")
+        if not view_box:
+            raise ValueError(
+                "TU-Berlin aligned loader requires <svg viewBox='0 0 W H'>."
+            )
+
+        parts = view_box.replace(",", " ").split()
+        if len(parts) != 4:
+            raise ValueError(f"Invalid viewBox: {view_box!r}")
+
+        view_x, view_y, view_w, view_h = [float(p) for p in parts]
+        if int(view_x) != 0 or int(view_y) != 0:
+            raise ValueError(
+                f"TU-Berlin aligned loader expects viewBox minX/minY = 0, got {view_x},{view_y}"
+            )
+
+        canvas_w = view_w - view_x
+        canvas_h = view_h - view_y
+        if cast_canvas_to_int:
+            canvas_w = int(canvas_w)
+            canvas_h = int(canvas_h)
+
+        # --- Parse paths with optional group transform (TU-Berlin style) ---
+        path_objs: List[Path] = []
+        matrix: Optional[TransformMatrix] = None
+
+        for elem in root.iter():
+            # strip namespace in the same spirit as TU-Berlin
+            try:
+                _, tag_suffix = elem.tag.split("}")
+            except ValueError:
+                tag_suffix = elem.tag
+
+            if tag_suffix in invalid_svg_shapes:
+                raise ValueError(
+                    f"Unsupported SVG shape <{tag_suffix}> (TU-Berlin aligned loader)."
+                )
+
+            if tag_suffix == "g":
+                if "transform" not in elem.attrib:
+                    continue
+                matrix = parse_transform(elem.attrib["transform"])
+
+            elif tag_suffix == "path":
+                if "transform" in elem.attrib:
+                    raise ValueError(
+                        "TU-Berlin aligned loader forbids <path transform='...'>. Put transform on <g>."
+                    )
+
+                d = elem.attrib.get("d", "").strip()
+                if not d:
+                    continue
+
+                if matrix is not None:
+                    d = apply_transform_to_path(d, matrix)
+
+                subpaths = parse_single_path(d)  # NOTE: now returns multiple subpaths
+                if subpaths is None:
+                    continue
+
+                for control_points_list in subpaths:
+                    segment_num = (len(control_points_list) - 1) // 3
+                    curves: List[Curve] = []
+
+                    for i in range(segment_num):
+                        raw_curve = control_points_list[i * 3 : i * 3 + 4]  # 4 points
+
+                        p_start = Vertex(
+                            raw_curve[0][0],
+                            raw_curve[0][1],
+                            thickness=default_thickness,
+                            pressure=default_pressure,
+                        )
+                        p_ctrl1 = Point(raw_curve[1][0], raw_curve[1][1])
+                        p_ctrl2 = Point(raw_curve[2][0], raw_curve[2][1])
+                        p_end = Vertex(
+                            raw_curve[3][0],
+                            raw_curve[3][1],
+                            thickness=default_thickness,
+                            pressure=default_pressure,
+                        )
+
+                        curves.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))
+
+                    if curves:
+                        path_objs.append(Path(curves=curves))
+
+        if not path_objs:
+            raise ValueError("No valid <path d='...'> found in SVG.")
+
+        return cls(height=canvas_h, width=canvas_w, paths=path_objs)

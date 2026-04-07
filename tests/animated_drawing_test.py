@@ -30,7 +30,7 @@ if __name__ == '__main__':
     
 
     
-    animated_ordering = Orderer.create(method="Fu", device="cpu")
+    animated_ordering = Orderer(method="Fu", device="cpu")
     sketch = animated_ordering.run(sketch)
 
     sketch_frames = sketch.get_progressive_frames(length_per_frame=10)

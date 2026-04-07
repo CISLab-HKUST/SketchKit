@@ -1,7 +1,7 @@
-from sketchkit.renderer.cairo_renderer import CairoRenderer, CairoRenderOptions
-from sketchkit.renderer.ciallo_renderer import CialloRenderer, CialloRenderOptions
+from .cairo_renderer import CairoRenderer, CairoRenderOptions
+from .ciallo_renderer import CialloRenderer, CialloRenderOptions
 
-__ALL__ = [
+__all__ = [
     "CairoRenderOptions",
     "CialloRenderOptions",
     "CairoRenderer",

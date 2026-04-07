@@ -44,7 +44,7 @@ print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 
 ## Visualization
-from sketchkit.renderer.cairo_renderer import CairoRenderer
+from sketchkit.renderer import CairoRenderer
 
 # Initialize a renderer for rendering
 renderer = CairoRenderer()

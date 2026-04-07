@@ -130,7 +130,7 @@ Once you have loaded sketches, you can render them as raster images using Sketch
 
 ```python
 from PIL import Image
-from sketchkit.renderer.cairo_renderer import CairoRenderer
+from sketchkit.renderer import CairoRenderer
 
 # Load a sketch from the dataset
 sketch = dataset[100]

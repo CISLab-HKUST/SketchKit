@@ -44,7 +44,7 @@ The main interface is the `SketchGenerator` class.
 
 ```python
 from sketchkit.image2sketch import SketchGenerator
-from sketchkit.renderer.cairo_renderer import CairoRenderer, CairoRenderOptions
+from sketchkit.renderer import CairoRenderer, CairoRenderOptions
 from PIL import Image
 
 # Load an input image

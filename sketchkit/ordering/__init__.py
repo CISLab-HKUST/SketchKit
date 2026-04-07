@@ -12,15 +12,26 @@ from typing import overload, Literal
 from sketchkit.core.sketch import Sketch
 
 
-class Orderer(ABC):
+class Orderer():
+    def __init__(self, method: str = "LineDrawer", device: str = "cuda"):
+        super().__init__()
+        self.method = OrdererMethod.create(method, device)
+    
+    def run(self, *args, **kwargs) -> Sketch:
+        return self.method.run(*args, **kwargs)
+
+class OrdererMethod(ABC):
     """
     A class for sketch ordering.
 
-    Attributes:
+    Attributes: 
         method (str): The ordering method that is used.
         device (str): The device that is used.
     """
-
+    def __init__(self, method: str = "LineDrawer", device: str = "cuda"):
+        super().__init__()
+        self.method = self.create(method, device)
+    
     @staticmethod
     @overload
     def create(

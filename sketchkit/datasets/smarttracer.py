@@ -7,10 +7,9 @@ import json
 from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
-from pathlib import Path as PathLibPath
 from sketchkit.core import Sketch
 
-dataset_filename = "hzy_sketch.zip"
+dataset_filename = "sketch.zip"
 
 DEFAULT_CANVAS_HEIGHT= 1024
 DEFAULT_CANVAS_WIDTH = 1024
@@ -19,7 +18,7 @@ def download_and_extract_data(
     output_folder, remove_sourcefile=True, cislab_source=True
 ):
     os.makedirs(output_folder, exist_ok=True)
-    url = f"{CISLAB_CDN}/datasets/hzySketch/{dataset_filename}"
+    url = f"{CISLAB_CDN}/datasets/SmartTracer/{dataset_filename}"
     try:
         download_with_wget(
             url,
@@ -41,7 +40,7 @@ def download_and_extract_data(
         return
 
 
-def load_hzy_sketch_json(drawing_path):
+def load_smarttracer_sketch_json(drawing_path):
     """
     Load a vector sketch from a .json file and convert to SketchVG format.
     Args:
@@ -85,36 +84,13 @@ def load_hzy_sketch_json(drawing_path):
     return Sketch(paths=paths, height=DEFAULT_CANVAS_HEIGHT, width=DEFAULT_CANVAS_WIDTH)
 
 
-class hzySketch(SketchDataset):
-    """The hzy dataset,
-    which contains drawing process for high-quality anime line arts.
+class SmartTracer(SketchDataset):
+    """The SmartTracer dataset contains drawing process for high-quality anime line arts in json files.
 
-    Args:
-        data_base: The directory of storing the dataset, which is automatically downloaded if not existed.
-    """
-
-    """Loads the hzy_sketch dataset from json files.
-
-    This class handles the automatic download, extraction, and parsing of the
-    hzy_sketch dataset. It indexes all json sketches and provides an
-    interface to access them as `Sketch` objects. Accessing an item
-    (e.g., `my_data[0]`) returns a single `Sketch` object.
-
-
-    
     Attributes:
         md5_sum (str): MD5 checksum for dataset integrity verification.
-        
-    Example:
-        >>> my_data = hzy_sketch()
-        >>> print(len(my_data))
-        182
-        >>> print(my_data[0])
-       <sketchkit.core.sketch.Sketch object at 0x000001AB5033ACE0>
-    """
-    DEFAULT_CANVAS_HEIGHT= 1024
-    DEFAULT_CANVAS_WIDTH = 1024
 
+    """
     md5_sum = "473c51ae0259f1435994a9cea090b5e7"
 
     # def __init__(
@@ -123,7 +99,7 @@ class hzySketch(SketchDataset):
     #     load_all: bool = False,
     #     cislab_source: bool = False,
     # ):
-    #     """Initializes the hzy dataset loader.
+    #     """Initializes the SmartTracer dataset loader.
 
     #     Checks if the dataset exists locally. If not, it triggers the download
     #     and extraction process. It then scans the SVG directories to populate a
@@ -166,7 +142,7 @@ class hzySketch(SketchDataset):
 
     def _load_all(self):
         for _, row in self.items_metadata.iterrows():
-            self.raw_data[row["id"]] = load_hzy_sketch_json(
+            self.raw_data[row["id"]] = load_smarttracer_sketch_json(
                 os.path.join(self.json_base, row["json"])
             )
 
@@ -205,7 +181,7 @@ class hzySketch(SketchDataset):
             raise IndexError("Index out of range")
         if self.raw_data[idx] is None:
             self.json_base = os.path.join(self.root, "json")
-            self.raw_data[idx] = load_hzy_sketch_json(
+            self.raw_data[idx] = load_smarttracer_sketch_json(
                 os.path.join(self.json_base, self.items_metadata.iloc[idx]["json"])
             )
         sketch = self.raw_data[idx]
@@ -215,17 +191,13 @@ class hzySketch(SketchDataset):
 
 
 if __name__ == "__main__":
-    dataset = hzySketch(load_all=True)
+    dataset = SmartTracer()
     print(dataset)
     sketch = dataset[1]
     print(sketch.curve_num, sketch.path_num)
 
-    from PIL import Image
-    from sketchkit.renderer.cairo_renderer import CairoRenderer
+    from sketchkit.renderer import CairoRenderer
 
-    renderer = CairoRenderer(1024, (1, 1, 1))
+    renderer = CairoRenderer()
     raster_image = renderer.render(sketch)
-    outpath = "test.png"
-    if outpath is not None:
-        raster_image_png = Image.fromarray(raster_image, "RGB")
-        raster_image_png.save(outpath, "PNG")
+    raster_image.save("test.png")

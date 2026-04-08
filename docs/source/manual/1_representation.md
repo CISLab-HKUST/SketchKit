@@ -63,7 +63,7 @@ Here's a example to demonstrate how to explore SketchKit's representation:
 
 ```python
 from sketchkit.datasets import QuickDraw
-from sketchkit.renderer.cairo_renderer import CairoRenderer
+from sketchkit.renderer import CairoRenderer
 from PIL import Image
 
 # Load a dataset and get a sketch

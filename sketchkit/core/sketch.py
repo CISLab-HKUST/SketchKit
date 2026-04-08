@@ -1116,26 +1116,33 @@ class Sketch:
 
         # --- Canvas size: strictly from viewBox like TU-Berlin ---
         view_box = root.get("viewBox")
-        if not view_box:
-            raise ValueError(
-                "TU-Berlin aligned loader requires <svg viewBox='0 0 W H'>."
-            )
+        if view_box:
+            # raise ValueError(
+            #     "TU-Berlin aligned loader requires <svg viewBox='0 0 W H'>."
+            # )
 
-        parts = view_box.replace(",", " ").split()
-        if len(parts) != 4:
-            raise ValueError(f"Invalid viewBox: {view_box!r}")
+            parts = view_box.replace(",", " ").split()
+            if len(parts) != 4:
+                raise ValueError(f"Invalid viewBox: {view_box!r}")
 
-        view_x, view_y, view_w, view_h = [float(p) for p in parts]
-        if int(view_x) != 0 or int(view_y) != 0:
-            raise ValueError(
-                f"TU-Berlin aligned loader expects viewBox minX/minY = 0, got {view_x},{view_y}"
-            )
+            view_x, view_y, view_w, view_h = [float(p) for p in parts]
+            if int(view_x) != 0 or int(view_y) != 0:
+                raise ValueError(
+                    f"TU-Berlin aligned loader expects viewBox minX/minY = 0, got {view_x},{view_y}"
+                )
 
-        canvas_w = view_w - view_x
-        canvas_h = view_h - view_y
-        if cast_canvas_to_int:
-            canvas_w = int(canvas_w)
-            canvas_h = int(canvas_h)
+            canvas_w = view_w - view_x
+            canvas_h = view_h - view_y
+            if cast_canvas_to_int:
+                canvas_w = int(canvas_w)
+                canvas_h = int(canvas_h)
+        else:
+            canvas_w = int(root.get("width"))
+            canvas_h = int(root.get("height"))
+            if not canvas_w or not canvas_h:
+                raise ValueError(
+                    "loader requires <svg width='W' height='H'>."
+                )
 
         # --- Parse paths with optional group transform (TU-Berlin style) ---
         path_objs: List[Path] = []

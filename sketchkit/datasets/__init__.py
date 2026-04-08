@@ -1,7 +1,7 @@
 from .tu_berlin import TUBerlin
 from .quickdraw import QuickDraw
 from .sketchy import Sketchy
-from .hzy_sketch import hzySketch
+from .smarttracer import SmartTracer
 from .tracing_vs_freehand import TracingVsFreehand
 from .controlsketch import ControlSketch
 from .opensketch import OpenSketch
@@ -15,7 +15,7 @@ from .creative_sketch import CreativeSketch
 __all__ = [
     "TUBerlin",
     "QuickDraw", 
-    "hzySketch", 
+    "SmartTracer",
     "TracingVsFreehand", 
     "ControlSketch", 
     "OpenSketch",

@@ -159,12 +159,29 @@ class CNNVE:
         return sketch
     
     def _point_to_vertex(self, p):
-        """Convert [y, x] point to Vertex(x, y)."""
+        """
+        Convert [y, x] point to Vertex(x, y).
+        
+        Args:
+            p: List or tuple of [y, x] coordinates.
+        
+        Returns:
+            Vertex: Vertex object with x and y coordinates swapped.
+        """
         # Note: input points are often [y, x] from numpy indices
         return Vertex(x=p[1], y=p[0], thickness=2.0, opacity=1.0, color=(0,0,0))
 
     def _create_linear_curve(self, p_start, p_end):
-        """Create a linear Curve between two vertices."""
+        """
+        Create a linear Curve between two vertices.
+        
+        Args:
+            p_start: Starting vertex.
+            p_end: Ending vertex.
+        
+        Returns:
+            Curve: Linear curve with control points at 1/3 and 2/3 of the distance.
+        """
         # For linear curve, control points are same as start/end
         # or linearly interpolated. Sketchkit might expect specific handle placement.
         # Here we just place them at 1/3 and 2/3.
@@ -173,7 +190,15 @@ class CNNVE:
         return Curve(p_start, p_end, p_c1, p_c2)
 
     def _points_to_path(self, points):
-        """Convert list of [y, x] points to a Path."""
+        """
+        Convert list of [y, x] points to a Path.
+        
+        Args:
+            points: List of [y, x] coordinate points.
+        
+        Returns:
+            Path or None: Path object if there are at least 2 points, None otherwise.
+        """
         if len(points) < 2:
             return None
             
@@ -196,6 +221,15 @@ class CNNVE:
     def _generate_ordered_sketch(self, msort, point_list_map, height, width):
         """
         Generate a single Sketch object with paths ordered by frame appearance.
+        
+        Args:
+            msort: Dictionary mapping frame indices to stroke IDs.
+            point_list_map: Dictionary mapping stroke IDs to point lists.
+            height: Height of the sketch.
+            width: Width of the sketch.
+        
+        Returns:
+            Sketch: Sketch object with paths ordered by their appearance in the video frames.
         """
         ordered_paths = []
         

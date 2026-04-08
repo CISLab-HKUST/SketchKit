@@ -10,7 +10,7 @@ from .photosketching import PhotoSketching
 from .gmu_sketch_cleanup import GMUSketchCleanup
 from .fscoco import FSCOCO
 from .differsketching import DifferSketching
-# from .creative_sketch import CreativeSketch
+from .creative_sketch import CreativeSketch
 
 __all__ = [
     "TUBerlin",

@@ -62,6 +62,9 @@ def lerp(a, b, t):
 
 
 class CairoRenderer(Renderer):
+    """
+    A class for rasterizing vector sketches into images using the Cairo backend.
+    """
     def __init__(self, render_options: CairoRenderOptions | None = None):
         if render_options is None:
             render_options = CairoRenderOptions()

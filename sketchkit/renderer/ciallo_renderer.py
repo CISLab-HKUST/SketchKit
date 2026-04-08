@@ -243,6 +243,10 @@ class CialloRenderOptions(RenderOptions):
 
 
 class CialloRenderer(Renderer):
+    """
+    A class for brush-based rendering of vector sketches using the method of paper "GPU-Accelerated Rendering of Vector
+    Brush Strokes" in SIGGRAPH 2024.
+    """
     def __init__(self, render_options: CialloRenderOptions | None = None):
         if render_options is None:
             render_options = CialloRenderOptions()  # Default if None is passed

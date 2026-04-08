@@ -1,8 +1,8 @@
-# hzySketch
+# SmartTracer
 
-`hzySketch` is a `SketchDataset` loader for the hzy dataset, where the sequential drawing process of high-quality anime line arts is stored as `.json` files. The loader extracts coordinate points and dynamic point-level thickness, converting them into a `Sketch` composed of `Path`s and cubic Bézier `Curve`s. The canvas dimensions are dynamically calculated based on the bounding box of the strokes to ensure no clipping occurs.
+`SmartTracer` is a `SketchDataset` loader for the SmartTracer dataset, where the sequential drawing process of high-quality anime line arts is stored as `.json` files. The loader extracts coordinate points and dynamic point-level thickness, converting them into a `Sketch` composed of `Path`s and cubic Bézier `Curve`s. The canvas dimensions are dynamically calculated based on the bounding box of the strokes to ensure no clipping occurs.
 
-**Source**: `datasets/hzy_sketch.py`
+**Source**: `datasets/smarttracer.py`
 
 ## Data Format
 
@@ -11,6 +11,7 @@ Each sample is a JSON array of strokes, where each stroke contains a sequence of
 * `x`: x-coordinate (float)
 * `y`: y-coordinate (float)
 * `w`: local stroke thickness/width at the current point (float)
+* `t`: time stamp
 
 The loader groups these points into strokes and converts each consecutive point pair into a cubic Bézier curve, applying the `w` attribute to the `thickness` of the corresponding `Vertex`.
 
@@ -20,9 +21,7 @@ After download and extraction, the dataset is expected under:
 
 ```
 <root>/
-  hzySketch/
-    .metadata.parquet
-    hzy_sketch.zip
+  SmartTracer/
     json/
       00000.json
       00001.json
@@ -35,9 +34,9 @@ After download and extraction, the dataset is expected under:
 ## Code
 
 ```python
-from sketchkit.datasets import hzySketch
+from sketchkit.datasets import SmartTracer
 
-ds = hzySketch(
+ds = SmartTracer(
     root="path/to/cache_dir",
     load_all=False,
     cislab_source=True,
@@ -51,7 +50,7 @@ print(sketch.path_num, sketch.curve_num)
 
 **Arguments**
 
-* `root`: Root directory used for caching and extraction. hzySketch data is placed under `<root>/hzySketch/`.
+* `root`: Root directory used for caching and extraction. SmartTracer data is placed under `<root>/SmartTracer/`.
 * `load_all`: If `True`, preload all `.json` files into memory to avoid disk I/O and JSON decoding overhead during iteration.
 * `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror.
-* CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/hzySketch/hzy_sketch.zip`
+* CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/SmartTracer/sketch.zip`

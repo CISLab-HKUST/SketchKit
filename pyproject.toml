@@ -48,6 +48,10 @@ dependencies = [
 requires = ["setuptools", "wheel", "torch", "cmake", "ninja", "numpy", "pybind11"]
 build-backend = "setuptools.build_meta"
 
+[tool.uv.extra-build-dependencies]
+clip = ["setuptools<82"]
+visdom = ["setuptools<82"]
+
 [dependency-groups]
 dev = [
   {include-group = "doc"},

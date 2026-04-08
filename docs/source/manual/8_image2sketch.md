@@ -44,7 +44,7 @@ The main interface is the `SketchGenerator` class.
 
 ```python
 from sketchkit.image2sketch import SketchGenerator
-from sketchkit.renderer.cairo_renderer import CairoRenderer, CairoRenderOptions
+from sketchkit.renderer import CairoRenderer, CairoRenderOptions
 from PIL import Image
 
 # Load an input image
@@ -78,10 +78,10 @@ sketch.to_svg("angel_swiftsketch.svg")
 **Constructor**
 
 - `SketchGenerator(method=...)`
-- `method`: backend name. Supported values are `"HED"`, `"PhotoSketch"`, and `"SwiftSketch"` (lowercase aliases are also accepted).
+  - `method`: backend name. Supported values are `"HED"`, `"PhotoSketch"`, and `"SwiftSketch"` (lowercase aliases are also accepted).
 
 **Run Method**
 
 - `run(input, size=None)`
-- `input`: accepts a `PIL.Image`, a `numpy.ndarray`, or an image path.
-- `size`: accepts an integer (square output) or a `(width, height)` tuple. If omitted, output keeps the input image size.
+  - `input`: accepts a `PIL.Image`, a `numpy.ndarray`, or an image path.
+  - `size`: accepts an integer (square output) or a `(width, height)` tuple. If omitted, output keeps the input image size.

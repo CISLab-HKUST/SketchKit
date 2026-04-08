@@ -68,10 +68,10 @@ out_teddy = modeler.run(sketch, output_path = 'seed3d_model.glb')
 **Constructor**
 
 - `Modeler(method=...)`
-- `method`: backend name. Supported values are `"teddy"`, `"sens"`, `"doubao"`, `"seed3d"`, `"seed-3d"`, `"doubao-seed3d"` (uppercase aliases are also accepted).
+  - `method`: backend name. Supported values are `"teddy"`, `"sens"`, `"doubao"`, `"seed3d"`, `"seed-3d"`, `"doubao-seed3d"` (uppercase aliases are also accepted).
 
 **Run Method**
 
-- `run(input, size=None)`
-- `input`: accepts a `PIL.Image`, a `Sketch`, or an image path.
-- `output_path`: output path of the model.
+- `run(input, output_path)`
+  - `input`: accepts a `PIL.Image`, a `Sketch`, or an image path.
+  - `output_path`: output path of the model.

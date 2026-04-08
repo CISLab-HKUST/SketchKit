@@ -19,7 +19,8 @@ The module currently supports the following methods:
 
 ### ControlNet Lineart
 
-The method implements [ControlNet](https://arxiv.org/abs/2302.05543) with a Lineart condition (`control_v11p_sd15_lineart`). It is designed to colorize clean, distinct line drawings and preserves the structural integrity of the original lines.
+The method implements [Adding Conditional Control to Text-to-Image Diffusion Models
+(ControlNet)](https://arxiv.org/abs/2302.05543) from ICCV 2023 with a Lineart condition (`control_v11p_sd15_lineart`). It is designed to colorize clean, distinct line drawings and preserves the structural integrity of the original lines.
 
 **Output:** Returns a `PIL.Image` (RGB mode).
 
@@ -59,27 +60,25 @@ result_scribble = scribble_colorizer.run(
     size=512
 )
 result_scribble.save("colorized_scribble.png")
-
 ```
 
 ## Usage Notes
 
 **Constructor**
 
-* `Colorizer(method="controlnet_lineart", device="cuda", **kwargs)`
-* `method`: backend name. Supported values are `"controlnet_lineart"` and `"controlnet_scribble"`.
-* `device`: execution device, e.g., `"cuda"` or `"cpu"`.
+- `Colorizer(method="controlnet_lineart", device="cuda", **kwargs)`
+  - `method`: backend name. Supported values are `"controlnet_lineart"` and `"controlnet_scribble"`.
+  - `device`: execution device, e.g., `"cuda"` or `"cpu"`.
 
 **Run Method**
 
-* `run(input_data, prompt, size=None, input_size=None, **kwargs)`
-* `input_data`: accepts a `Sketch` object, `PIL.Image`, or `numpy.ndarray`.
-* `prompt`: text description guiding the colorization (default: `"vibrant colors, anime style"`).
-* `size`: output resolution. Accepts an integer (square) or `(width, height)` tuple.
-* `input_size`: (Optional) resize dimensions for the input before processing.
-* `**kwargs`: Generation controls including:
-* `stroke_width` (int): Width of lines when rasterizing vector sketches (default: 2).
-* `num_inference_steps` (int): Diffusion steps (default: 20).
-* `guidance_scale` (float): Text prompt influence (default: 7.5).
-* `controlnet_conditioning_scale` (float): Strength of the sketch control (default: 1.0).
-* `seed` (int): Random seed for reproducibility.
+- `run(input_data, prompt, size=None, input_size=None, **kwargs)`
+  - `input_data`: accepts a `Sketch` object, `PIL.Image`, or `numpy.ndarray`.
+  - `prompt`: text description guiding the colorization (default: `"vibrant colors, anime style"`).
+  - `size`: output resolution. Accepts an integer (square) or `(width, height)` tuple.
+  - `input_size`: (Optional) resize dimensions for the input before processing.
+  - `stroke_width` (int): Width of lines when rasterizing vector sketches (default: 2).
+  - `num_inference_steps` (int): Diffusion steps (default: 20).
+  - `guidance_scale` (float): Text prompt influence (default: 7.5).
+  - `controlnet_conditioning_scale` (float): Strength of the sketch control (default: 1.0).
+  - `seed` (int): Random seed for reproducibility.

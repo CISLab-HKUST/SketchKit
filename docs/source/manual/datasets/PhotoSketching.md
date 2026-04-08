@@ -20,11 +20,21 @@ After download and extraction, the dataset is expected under:
 
 ```
 <root>/
-  sketch/
-    *.svg
-  sketch-rendered/
-    *.png
-  .metadata.pkl
+  PhotoSketching/
+    sketch/
+      *.svg
+    sketch-rendered/
+      width-1/
+        *.png
+      width-3/
+        *.png
+      width-5/
+        *.png
+    list/
+      train.txt
+      test.txt
+      val.txt
+    .metadata.pkl
 ```
 
 Each `.svg` file under `sketch/` corresponds to a single vector sketch. The loader scans this directory recursively and caches indexed file paths in `.metadata.pkl`.

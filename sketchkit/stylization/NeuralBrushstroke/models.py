@@ -19,9 +19,9 @@ def get_models_dir() -> Path:
     """Get the default models directory path.
 
     Returns:
-        Path to the models directory (sketchkit/stylizer/brushstrokesengine/models/)
+        Path to the models directory (sketchkit/stylizer/NeuralBrushstroke/models/)
     """
-    return Path(CACHE_DIR) / "models" / "brushstrokesengine"
+    return Path(CACHE_DIR) / "models" / "NeuralBrushstroke"
 
 
 def download_models(
@@ -61,7 +61,7 @@ def download_models(
     # Download models.zip
     archive_path = models_dir / "models.zip"
 
-    print(f"📥 Downloading brushstroke engine models...")
+    print(f"Downloading brushstroke engine models...")
     print(f"   Destination: {models_dir}")
 
     try:
@@ -76,7 +76,7 @@ def download_models(
                     desc="Downloading models.zip",
                 )
             except Exception as e:
-                print(f"⚠️  S3 download failed, trying Google Drive: {e}")
+                print(f"S3 download failed, trying Google Drive: {e}")
                 use_s3 = False
 
         if not use_s3:
@@ -87,7 +87,7 @@ def download_models(
                 quiet=quiet,
             )
 
-        print("📦 Extracting models...")
+        print("Extracting models...")
         extract_files(
             file_path=str(archive_path),
             output_dir=str(models_dir),
@@ -107,19 +107,16 @@ def download_models(
         nested_root = models_dir / "models"
         if nested_root.exists() and nested_root.is_dir():
             print(
-                f"📂 Detected nested 'models' directory inside {models_dir}, flattening..."
+                f"Detected nested 'models' directory inside {models_dir}, flattening..."
             )
             for item in nested_root.iterdir():
                 target = models_dir / item.name
                 if target.exists():
-                    # 如果目标已存在，跳过避免覆盖（正常情况下不会发生）
                     continue
                 item.rename(target)
-            # 移除空的 nested_root 目录
             try:
                 nested_root.rmdir()
             except OSError:
-                # 如果目录非空（极少见），保留但不影响后续使用
                 pass
 
         # Verify extraction

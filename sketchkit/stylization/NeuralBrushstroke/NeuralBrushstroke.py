@@ -1,7 +1,3 @@
-"""
-Brushstroke Stylizer for sketch-to-stylized image conversion.
-"""
-
 import os
 import sys
 import numpy as np
@@ -20,7 +16,7 @@ from .models import (
 )
 
 
-class BrushstrokeStylizer:
+class NeuralBrushstroke:
     """
     A class for stylizing sketches using the Neural Brushstroke Engine (NeuBE).
     
@@ -44,7 +40,7 @@ class BrushstrokeStylizer:
         **kwargs: Any,
     ):
         """
-        Initialize the BrushstrokeStylizer.
+        Initialize the NeuralBrushstroke.
         
         Args:
             model_name: The model name to use. Options: 'style1', 'style2'. 
@@ -193,7 +189,7 @@ class BrushstrokeStylizer:
         Stylize an existing PNG geometry image using the brushstroke engine.
 
         This method assumes the input PNG is a line drawing (black on white),
-        similar to the --geom_image expected by sketchkit.stylizer.brushstrokesengine.forger.viz.paint_image_main.
+        similar to the --geom_image expected by sketchkit.stylizer.NeuralBrushstroke.forger.viz.paint_image_main.
 
         Args:
             png_path: Path to the input PNG geometry image.
@@ -336,8 +332,8 @@ class BrushstrokeStylizer:
                 return forger
         except ImportError as e:
             raise ImportError(
-                "forger module not found. Please ensure brushstroke_engine is in sketchkit/stylizer/brushstrokesengine:\n"
-                "  1. Place brushstroke_engine code in sketchkit/stylizer/brushstrokesengine/\n"
+                "forger module not found. Please ensure brushstroke_engine is in sketchkit/stylizer/NeuralBrushstroke:\n"
+                "  1. Place brushstroke_engine code in sketchkit/stylizer/NeuralBrushstroke/\n"
                 "  2. Run: pip install -e .\n\n"
                 "The forger module should be automatically included as a subpackage.\n"
                 f"Original error: {e}"

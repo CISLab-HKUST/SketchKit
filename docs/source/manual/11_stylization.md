@@ -12,10 +12,10 @@ The module currently supports the following interface:
 .. autosummary::
    :toctree: generated
 
-   sketchkit.stylization.Stylizer
+   sketchkit.stylization.NeuralBrushstroke
 ```
 
-### BrushstrokesEngine
+### NeuralBrushstroke
 
 The backend implements [Neural Brushstroke Engine: Learning a Latent Space of Interactive Drawing Tools](https://research.nvidia.com/labs/toronto-ai/brushstroke_engine/) from *SIGGRAPH Asia 2022*. It stylizes clean sketch geometry with learned brushstroke appearance while preserving the input structure.
 
@@ -33,7 +33,7 @@ dataset = PhotoSketching()
 sketch = dataset[0]
 
 stylizer = Stylizer(
-    method="brushstrokesengine",
+    method="NeuralBrushstroke",
     model_name="style2",
     style_id="playdoh10",
 )
@@ -66,7 +66,7 @@ blend_result = stylizer.run(
 
 **Constructor**
 
-- `method`: currently supports `"brushstrokesengine"`.
+- `method`: currently supports `"NeuralBrushstroke"`.
 - `model_name`: pretrained model variant. Supported values are `"style1"` and `"style2"`.
 - `style_id`: default style used for stylization.
 

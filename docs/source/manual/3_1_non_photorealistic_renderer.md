@@ -4,17 +4,7 @@ The non-photorealistic renderer (NPR) module provides functionality to render 3D
 
 **Source**: `sketchkit/renderer/npr_renderer.py`
 
-## Available Renderer
-
-The module currently supports the following renderer and render options:
-
-```{eval-rst}
-.. autosummary::
-   :toctree: generated
-
-   sketchkit.renderer.npr_renderer.NPRRenderer
-   sketchkit.renderer.npr_renderer.NPRRenderOptions
-```
+## Usage
 
 ### NPRRenderOptions
 
@@ -30,7 +20,7 @@ The method implements non-photorealistic rendering techniques based on [Suggesti
 
 **Output:** Returns a list of PIL Image objects representing the rendered views from different camera angles.
 
-## Supported Rendering Methods
+## Available Rendering Methods
 
 ### Suggestive Contour
 
@@ -87,8 +77,8 @@ save_seq_gif(images, "npr_rendering_appearant_ridges.gif")
 **Constructor**
 
 - `NPRRenderer(obj_path, render_options=None)`
-- `obj_path`: path to the 3D model file (OBJ format)
-- `render_options`: optional `NPRRenderOptions` object with rendering parameters
+  - `obj_path`: path to the 3D model file (OBJ format)
+  - `render_options`: optional `NPRRenderOptions` object with rendering parameters
 
 **NPRRenderOptions**
 

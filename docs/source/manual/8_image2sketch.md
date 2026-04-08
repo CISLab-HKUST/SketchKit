@@ -78,10 +78,10 @@ sketch.to_svg("angel_swiftsketch.svg")
 **Constructor**
 
 - `SketchGenerator(method=...)`
-- `method`: backend name. Supported values are `"HED"`, `"PhotoSketch"`, and `"SwiftSketch"` (lowercase aliases are also accepted).
+  - `method`: backend name. Supported values are `"HED"`, `"PhotoSketch"`, and `"SwiftSketch"` (lowercase aliases are also accepted).
 
 **Run Method**
 
 - `run(input, size=None)`
-- `input`: accepts a `PIL.Image`, a `numpy.ndarray`, or an image path.
-- `size`: accepts an integer (square output) or a `(width, height)` tuple. If omitted, output keeps the input image size.
+  - `input`: accepts a `PIL.Image`, a `numpy.ndarray`, or an image path.
+  - `size`: accepts an integer (square output) or a `(width, height)` tuple. If omitted, output keeps the input image size.

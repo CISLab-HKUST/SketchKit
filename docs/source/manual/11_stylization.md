@@ -106,12 +106,12 @@ if check_models_available("style2"):
 **Constructor**
 
 - `Stylizer(method="brushstrokesengine", model_name="style2", style_id="playdoh10", models_dir=None, device="cuda", auto_download=True)`
-- `method`: Stylization method to use. Currently supported: `"brushstrokesengine"` (default).
-- `model_name`: Model variant to use. Options: `"style1"`, `"style2"` (default).
-- `style_id`: Style ID for stylization. Default: `"playdoh10"`.
-- `models_dir`: Custom models directory. If None, uses default cache location.
-- `device`: Device to use. Default: `"cuda"`.
-- `auto_download`: Automatically download models if not found. Default: `True`.
+  - `method`: Stylization method to use. Currently supported: `"brushstrokesengine"` (default).
+  - `model_name`: Model variant to use. Options: `"style1"`, `"style2"` (default).
+  - `style_id`: Style ID for stylization. Default: `"playdoh10"`.
+  - `models_dir`: Custom models directory. If None, uses default cache location.
+  - `device`: Device to use. Default: `"cuda"`.
+  - `auto_download`: Automatically download models if not found. Default: `True`.
 
 **Properties**
 
@@ -121,11 +121,11 @@ if check_models_available("style2"):
 **run() Method**
 
 - `run(sketch, output_path=None, canvas_size=None, style_id=None, library_path=None, **kwargs)`
-- `sketch`: Input vector sketch to stylize.
-- `output_path`: Output file path. If None, uses temporary path.
-- `canvas_size`: Canvas size for rendering. If None, uses sketch's actual dimensions.
-- `style_id`: Style ID to use. Overrides instance default if provided.
-- `library_path`: Custom brush library path. If None, uses default (supports `projected_training_styles.pkl`, `projected_novel_styles.pkl`, `clip_brushes.pkl`).
+  - `sketch`: Input vector sketch to stylize.
+  - `output_path`: Output file path. If None, uses temporary path.
+  - `canvas_size`: Canvas size for rendering. If None, uses sketch's actual dimensions.
+  - `style_id`: Style ID to use. Overrides instance default if provided.
+  - `library_path`: Custom brush library path. If None, uses default (supports `projected_training_styles.pkl`, `projected_novel_styles.pkl`, `clip_brushes.pkl`).
 - Additional parameters:
   - `feature_blending_level` (int, default: 2): Feature blending level for patch stitching.
   - `color_mode` (str, default: "1"): Color mode. Options: `"1"` (single style), `"2"` (blended styles).
@@ -141,8 +141,8 @@ if check_models_available("style2"):
 **run_from_png() Method**
 
 - `run_from_png(png_path, output_path=None, style_id=None, library_path=None, **kwargs)`
-- `png_path`: Path to input PNG geometry image (black strokes on white background).
-- `output_path`: Output file path. If None, uses temporary path.
+  - `png_path`: Path to input PNG geometry image (black strokes on white background).
+  - `output_path`: Output file path. If None, uses temporary path.
 - All other parameters same as `run()` method.
 
 **Style Blending**

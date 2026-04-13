@@ -28,33 +28,8 @@ This page documents the implementation in `sketchkit/renderer3d` and a brief pra
 - Output: a list of RGB images, one image per camera view.
 
 
-### Camera projection (`Renderer3D.project_curves_ndc`)
 
-For each camera view:
-
-1. Convert control points to homogeneous coordinates.
-2. Transform world points to camera space with `Camera.extrinsics`.
-3. Perspective divide by depth `z`.
-4. Apply `Camera.intrinsics`.
-
-The camera intrinsics are generated from FoV by `intrinsics_from_fov_xy`, using normalized principal point `(0.5, 0.5)`. The projected output is organized as `[V, N, 4, 2]`, where `V` is number of views.
-
-### Stylization
-
-The base class resolves styling in a deterministic order:
-
-- Color (`_resolve_stroke_colors`)
-  - If `render_options.stroke_color` is set, it is used for all curves.
-  - Else colors are read from each curve start vertex (`curve.p_start.color`).
-  - Missing colors fall back to black.
-
-- Width (`_resolve_stroke_widths`)
-  - If `render_options.stroke_width` is set, it is treated as a global width.
-  - Else per-curve widths are collected from `curve.widths` (4-point widths).
-  - Else fallback width is `2.0`.
-
-
-### Code
+## Code
 
 ```python
 import numpy as np

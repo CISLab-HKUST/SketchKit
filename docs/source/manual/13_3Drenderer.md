@@ -2,7 +2,7 @@
 
 The 3D renderer module converts `Sketch3D` Bezier curves into 2D raster images from one or more camera views.
 
-This page documents the implementation in `sketchkit/renderer3d` and the practical usage pattern in `tests/test_3Dsketch.py`.
+This page documents the implementation in `sketchkit/renderer3d` and a brief practical usage introduction in `tests/test_3Dsketch.py`.
 
 **Source**: `sketchkit/renderer3d/renderer3d.py`, `sketchkit/renderer3d/diffvg_renderer.py`
 
@@ -15,6 +15,19 @@ This page documents the implementation in `sketchkit/renderer3d` and the practic
    sketchkit.renderer3d.DiffVGRenderer
 ```
 
+### DiffVGRenderer
+
+`DiffVGRenderer` is the main 3D-to-2D renderer in SketchKit for multi-view sketch visualization.
+
+- Input: a `Sketch3D` object and one or more `Camera` views.
+- Pipeline:
+  1. project 3D Bezier control points into 2D view space,
+  2. resolve stroke style (color and width),
+  3. rasterize with DiffVG,
+  4. return rendered `PIL.Image` frames.
+- Output: a list of RGB images, one image per camera view.
+
+
 ### Camera projection (`Renderer3D.project_curves_ndc`)
 
 For each camera view:
@@ -26,7 +39,7 @@ For each camera view:
 
 The camera intrinsics are generated from FoV by `intrinsics_from_fov_xy`, using normalized principal point `(0.5, 0.5)`. The projected output is organized as `[V, N, 4, 2]`, where `V` is number of views.
 
-### Style resolution
+### Stylization
 
 The base class resolves styling in a deterministic order:
 
@@ -40,10 +53,8 @@ The base class resolves styling in a deterministic order:
   - Else per-curve widths are collected from `curve.widths` (4-point widths).
   - Else fallback width is `2.0`.
 
-This supports both constant-width rendering and variable-width rendering along each Bezier curve.
 
-
-## Code
+### Code
 
 ```python
 import numpy as np
@@ -93,22 +104,11 @@ images[0].save("first_view.png")
 
 ## Usage Notes
 
-- `pydiffvg` is required for `DiffVGRenderer`; initialization raises `RuntimeError` if unavailable.
-- Current package export (`sketchkit.renderer3d`) exposes `DiffVGRenderer` directly.
-
 **Constructor**
 
 - `DiffVGRenderer(render_options=None)`
   - `render_options`: optional `DiffVGRenderOptions` object.
   - Throws `RuntimeError` if `pydiffvg` is not installed.
-
-**Render Method**
-
-- `render(sketch3d, cameras, render_options=None)`
-  - `sketch3d`: input `Sketch3D` object.
-  - `cameras`: list of `Camera` objects (one image is generated per camera).
-  - `render_options`: optional dataclass or `dict` override.
-  - Returns: `list[PIL.Image.Image]`.
 
 **Render Options**
 
@@ -121,8 +121,16 @@ images[0].save("first_view.png")
 - `DiffVGRenderOptions(Render3DOptions)`
   - `device` (str): execution device, e.g., `"cpu"` or `"cuda"`.
 
+**Render Method**
 
-### Sketch3D at a Glance
+- `render(sketch3d, cameras, render_options=None)`
+  - `sketch3d`: input `Sketch3D` object.
+  - `cameras`: list of `Camera` objects (one image is generated per camera).
+  - `render_options`: optional dataclass or `dict` override.
+  - Returns: `list[PIL.Image.Image]`.
+
+
+## Sketch3D
 
 `Sketch3D` is the geometric container consumed by the 3D renderer.
 

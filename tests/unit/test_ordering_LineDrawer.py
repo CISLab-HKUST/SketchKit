@@ -1,27 +1,24 @@
-import sys
 import os
-
 from tqdm import tqdm
-
-from sketchkit.utils.file import save_seq_gif
-
-sys.path.append(os.getcwd())
-
 import numpy as np
 from PIL import Image
+import os
 from sketchkit.ordering import Orderer
 from sketchkit.core.sketch import Sketch
-
+from sketchkit.utils.file import save_seq_gif
+from sketchkit.renderer.cairo_renderer import CairoRenderer
 
 if __name__ == "__main__":
     orderer = Orderer.create(method="LineDrawer")
 
     # Load image
-    img_path = "a1-2.png"
+    img_path = "test_images/a1-2.png"
     img_np = np.array(Image.open(img_path).convert("L"))
 
     # Video path
-    video_path = "a1-2.mp4"
+    video_path = "test_images/a1-2.mp4"
+    output_path = "outputs/ordering/LineDrawer"
+    os.makedirs(output_path, exist_ok=True)
 
     if not os.path.exists(video_path):
         print(f"⚠ Warning: Video file {video_path} not found")
@@ -45,14 +42,8 @@ if __name__ == "__main__":
 
         print("Done.")
 
-        from sketchkit.renderer.cairo_renderer import CairoRenderer
-
         renderer = CairoRenderer()
-
-        sketch_frames = sketch.get_progressive_frames(sample_rate=10)
-        raster_images = [
-            renderer.render(frame, {"canvas_size": (1024, 1024)})
-            for frame in tqdm(sketch_frames)
-        ]
-        raster_images[-1].save("linedrawer.jpg")
-        save_seq_gif(raster_images, "animated_drawing.gif", fps=30)
+        sketch_frames = sketch.get_progressive_frames(length_per_frame=10)
+        raster_images = [renderer.render(frame) for frame in tqdm(sketch_frames)]
+        raster_images[-1].save(f"{output_path}/sketch.jpg")
+        save_seq_gif(raster_images, f"{output_path}/animated_drawing.gif", fps=30)

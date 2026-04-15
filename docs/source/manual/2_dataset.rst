@@ -171,4 +171,4 @@ The following table shows features of each built-in SketchKit dataset.
 
 How to contribute a new dataset to SketchKit
 ---------------------------
-You can integrate a new or customized dataset into SketchKit following the `step-by-step document <2_1_dataset_contribution.md>`_.
+You can integrate a new or customized dataset into SketchKit following the `step-by-step document <https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/manual/2_1_dataset_contribution.html>`_.

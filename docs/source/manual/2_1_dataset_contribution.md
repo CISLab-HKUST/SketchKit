@@ -1,4 +1,4 @@
-# SketchKit Contribution Guide: Integrating New Datasets
+# Dataset Contribution Guide
 
 This guide provides a comprehensive walkthrough for developers who want to contribute a new or customized dataset to the SketchKit toolkit.
 
@@ -97,7 +97,7 @@ b) Define a `MyDataset` class (use your own name), which inherits from an abstra
   - Attributes: such as `md5_sum` and `metadata`
   - References: the URL and paper title of the dataset
 
-```
+```python
 class MyDataset(SketchDataset):
     """The MyDataset dataset ...
 
@@ -113,8 +113,13 @@ class MyDataset(SketchDataset):
 
 c) Update the `__init__.py` in `sketchkit/datasets` directory. Add the following line. Then add `"MyDataset"` into `__all__`.
 
-```
+```python
 from .my_dataset import MyDataset
+
+__all__ = [
+    ..., 
+    "MyDataset"
+]
 ```
 
 ### 3. Implement Overridden Methods
@@ -145,7 +150,7 @@ d) `_load_items_metadata()`: a method for loading and caching metadata for all i
   - Creates a parquet file (`self.root/.metadata.parquet`) containing metadata defined above for all sketches
   - If `.metadata.parquet` does not exist, use the code below:
 
-```
+```python
 items_metadata = pd.DataFrame(columns=["category", "split", "id", "sub_id"])
 new_rows = [
     {
@@ -173,7 +178,7 @@ self.items_metadata.to_parquet(
 
   - If `.metadata.parquet` exists, use the code below:
 
-```
+```python
 items_metadata = pd.read_parquet(
     os.path.join(self.root, ".metadata.parquet")
 )
@@ -185,7 +190,7 @@ e) `_load_all()`: a method for loading all sketch data into memory ([reference](
   - Traverse all the sketches, obtain their widths and heights, and parse them into path lists (see Step 4 below for details)
   - Fill each sketch data into `self.raw_data`
 
-```
+```python
 (sketch_width, sketch_height), path_list = parse_sketch(sketch_path)
 self.raw_data[cnt] = [path_list, (sketch_width, sketch_height)]
 ```
@@ -196,7 +201,7 @@ f) `_get_single(idx: int) -> Sketch`: a method for getting a sketch by index.
   - Output: `Sketch`: A Sketch object containing the drawing data as paths.
   - Load its path list and obtain its width and height. And then convert it into the `Sketch` instance (see details of the [representation](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/manual/1_representation.html)) by constructing `Vertex/Point`, `Curve`, `Path`, and `Sketch`
 
-```
+```python
 path_list, (width, height) = self.raw_data[idx]
 paths = []
 for path in path_list:
@@ -228,13 +233,13 @@ Use the `sketchkit/tests/test_dataset.py` for testing the integrated dataset.
 Follow the steps below:
 
 a) Initialize a dataset instance
-```
+```python
 from sketchkit.datasets import MyDataset
 dataset = MyDataset()
 ```
 
 b) Load a sketch example using an index or from a specified category and a specified split
-```
+```python
 # Load a sketch using index
 sketch = dataset[0]
 
@@ -247,13 +252,13 @@ sketch = subset_sketch[0]
 ```
 
 c) Output the attributes of the sketch, such as width, height, path_num, curve_num, etc.
-```
+```python
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
 
 d) Render the vector sketch into a raster image using the built-in renderer (refer to the [document](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/manual/3_renderer.html) for details)
-```
+```python
 from sketchkit.renderer import CairoRenderer
 renderer = CairoRenderer()
 raster_image = renderer.render(sketch)

@@ -168,3 +168,7 @@ The following table shows features of each built-in SketchKit dataset.
       - Polyline
     * - :class:`CreativeSketch <sketchkit.datasets.CreativeSketch>`
       - Polyline
+
+How to contribute a new dataset to SketchKit
+---------------------------
+You can integrate a new or customized dataset into SketchKit following the `step-by-step document <2_1_dataset_contribution.md>`_.

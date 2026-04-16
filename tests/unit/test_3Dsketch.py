@@ -48,7 +48,7 @@ def generate_orbit_views(num_frames, fov_deg=60, radius=100.0):
 
 
 # create the CIS Logo
-# def make_cis_sketch3d(thicknesses=None, variable_width=False) -> Sketch3D:
+def make_cis_sketch3d(thicknesses=None, variable_width=False) -> Sketch3D:
     """Higher-level 3D sketch for letters CIS with depth offsets."""
     if thicknesses is None:
         thicknesses = [5.0, 5.0, 5.0]
@@ -151,7 +151,7 @@ def save_gif_from_dir(frames_dir, out_gif, fps=30):
 # Main function to render CIS logo sketch from multiple views
 def main(
     renderlist_path="./renderlist.json",
-    out_dir="./sketch3d_test_out",
+    out_dir="outputs/3dsketch",
     views=60,
     width=512,
     height=512,
@@ -234,7 +234,7 @@ if __name__ == "__main__":
         "3dsketch rendering test with CIS LOGO curves (360 views)"
     )
     parser.add_argument("--renderlist", type=str, default="./renderlist.json")
-    parser.add_argument("--out", type=str, default="./sketch3d_test_out")
+    parser.add_argument("--out", type=str, default="outputs/3dsketch")
     parser.add_argument("--views", type=int, default=60)
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--height", type=int, default=512)
@@ -277,7 +277,7 @@ if __name__ == "__main__":
         "--save_json",
         type=str,
         help="Path to save the generated sketch as JSON",
-        default="./sketch3d_test_out/cis3d_sketch.json",
+        default="outputs/3dsketch/cis3d_sketch.json",
     )
     args = parser.parse_args()
 

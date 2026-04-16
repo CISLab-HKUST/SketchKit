@@ -166,7 +166,7 @@ def main(
 ):
     os.makedirs(out_dir, exist_ok=True)
     # positions, lookats, fov = load_renderlist(renderlist_path)
-    cameras = generate_orbit_views(views, fov_deg=60, radius=1)
+    cameras = generate_orbit_views(views, fov_deg=60, radius=3)
 
     # Load or create sketch
     if sketch_json and os.path.exists(sketch_json):
@@ -189,7 +189,7 @@ def main(
         # For variable width mode, don't use global stroke_width
         options = DiffVGRenderOptions(canvas_size=(width, height), stroke_width=None)
     else:
-        options = DiffVGRenderOptions(canvas_size=(width, height), stroke_width=2.0)
+        options = DiffVGRenderOptions(canvas_size=(width, height), stroke_width=1.0)
 
     # options.back_end = backend
     options.device = "cuda" if torch.cuda.is_available() else "cpu"

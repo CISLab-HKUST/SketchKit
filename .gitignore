@@ -36,3 +36,4 @@ media/
 *.gif
 *.ppm
 *.svg
+tests/sketch3d_test_out/*

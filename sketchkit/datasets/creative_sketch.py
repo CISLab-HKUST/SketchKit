@@ -98,7 +98,7 @@ class CreativeSketch(SketchDataset):
 
         if not os.path.exists(os.path.join(self.root, "creative_sketch.zip")):
             print(
-                f"creative_sketch.zip not found in {os.path.join(self.root, "creative_sketch.zip")}."
+                f"creative_sketch.zip not found in {os.path.join(self.root, 'creative_sketch.zip')}."
             )
             return False
 
@@ -265,7 +265,7 @@ class CreativeSketch(SketchDataset):
                     p_end = [seg[2], seg[3]]
                     line = np.stack([p_start, p_end], axis=0)
                     cubic = Curve.from_line(line)
-                    cubic._set_vertices_attribute("color", stroke_color)
+                    cubic._set_endpoint_attribute("color", stroke_color)
                     strokes.append(cubic)
             path_list.append(Path(curves=strokes))
         return Sketch(512, 512, path_list)

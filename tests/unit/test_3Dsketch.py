@@ -13,7 +13,7 @@ from sketchkit.core.camera import Camera
 from sketchkit.utils3d.transforms import wxyz_from_look_at
 from sketchkit.renderer3d.renderer3d import Render3DOptions
 
-from sketchkit.core.sketch3d import Sketch3D, Path3D, Curve3D, Vertex3D, Point3D
+from sketchkit.core.sketch3d import Sketch3D, Path3D, Curve3D, Point3D
 
 
 # for 360 views rendering (wir3d way)
@@ -81,14 +81,14 @@ def make_cis_sketch3d(thicknesses=None, variable_width=False) -> Sketch3D:
         if use_variable and isinstance(thickness, (list, tuple, np.ndarray)):
             # Variable width mode: thickness should be array of 4 values
             widths = list(thickness)
-            v0 = Vertex3D(*ctrls[0], thickness=widths[0], color=color, opacity=1.0)
-            v3 = Vertex3D(*ctrls[3], thickness=widths[3], color=color, opacity=1.0)
+            v0 = Point3D(*ctrls[0], thickness=widths[0], color=color, opacity=1.0)
+            v3 = Point3D(*ctrls[3], thickness=widths[3], color=color, opacity=1.0)
             c1 = Point3D(*ctrls[1], thickness=widths[1])
             c2 = Point3D(*ctrls[2], thickness=widths[2])
         else:
             # Constant width mode
-            v0 = Vertex3D(*ctrls[0], thickness=thickness, color=color, opacity=1.0)
-            v3 = Vertex3D(*ctrls[3], thickness=thickness, color=color, opacity=1.0)
+            v0 = Point3D(*ctrls[0], thickness=thickness, color=color, opacity=1.0)
+            v3 = Point3D(*ctrls[3], thickness=thickness, color=color, opacity=1.0)
             c1 = Point3D(*ctrls[1], thickness=thickness)
             c2 = Point3D(*ctrls[2], thickness=thickness)
 

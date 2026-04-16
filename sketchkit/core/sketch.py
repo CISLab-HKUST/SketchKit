@@ -7,40 +7,44 @@ from sketchkit.utils.transform import (
 )
 import svgpathtools
 import json
-from .schema import SketchSchema, PathSchema, CurveArray, VertexArray, PointArray
+from .schema import CurveSchema, SketchSchema, PathSchema, PointSchema
 import xml.etree.ElementTree as ET
 
 
+def _copy_attributes(attributes: dict | None) -> dict:
+    return dict(attributes) if attributes is not None else {}
+
+
+def _serialize_point(point: "Point") -> PointSchema:
+    return PointSchema(
+        x=float(point.x),
+        y=float(point.y),
+        pressure=float(point.pressure) if point.pressure is not None else None,
+        thickness=float(point.thickness) if point.thickness is not None else None,
+        color=tuple(point.color.tolist()) if point.color is not None else None,
+        opacity=float(point.opacity) if point.opacity is not None else None,
+        attributes=_copy_attributes(point.attributes),
+    )
+
+
+def _deserialize_point(point_data: PointSchema) -> "Point":
+    return Point(
+        x=point_data.x,
+        y=point_data.y,
+        pressure=point_data.pressure,
+        thickness=point_data.thickness,
+        color=point_data.color,
+        opacity=point_data.opacity,
+        attributes=point_data.attributes,
+    )
+
+
 class Point:
-    """2D point.
+    """2D point with optional drawing attributes.
 
-    Represents a 2D point with x and y coordinates stored as 32-bit floats.
-
-    Attributes:
-        x (np.float32): X coordinate.
-        y (np.float32): Y coordinate.
-    """
-
-    def __init__(
-        self,
-        x: float | np.float32,
-        y: float | np.float32,
-    ):
-        self.x = np.float32(x)
-        self.y = np.float32(y)
-
-
-class Vertex(Point):
-    """Vertex point with drawing attributes.
-
-    Extends Point with curve-specific properties: pressure, thickness, color,
-    and opacity for rendering.
-
-    Attributes:
-        pressure (np.float32 | None): Normalized pressure value.
-        thickness (np.float32 | None): Stroke thickness value.
-        color (np.ndarray | None): RGB color array with float32 dtype.
-        opacity (np.float32 | None): Opacity value (0.0-1.0).
+    `Point` is now the single 2D point type used across the library. It can
+    represent both geometric control points and styled stroke endpoints.
+    Custom user metadata can be stored in `attributes`.
     """
 
     def __init__(
@@ -51,44 +55,33 @@ class Vertex(Point):
         thickness: None | float | np.float32 = None,
         color: None | tuple[float, float, float] | np.ndarray = None,
         opacity: None | float | np.float32 = None,
+        attributes: dict | None = None,
     ):
-        """Initialize a Vertex.
-
-        Args:
-            x (float | np.float32): X coordinate.
-            y (float | np.float32): Y coordinate.
-            pressure (float | np.float32 | None, optional): Pressure at this
-                vertex. Defaults to None.
-            thickness (float | np.float32 | None, optional): Stroke thickness at
-                this vertex. Defaults to None.
-            color (tuple[float, float, float] | np.ndarray | None, optional):
-                RGB color as tuple or numpy array. Defaults to None.
-            opacity (float | np.float32 | None, optional): Opacity (0.0-1.0).
-                Defaults to None.
-        """
-        super().__init__(x, y)
+        self.x = np.float32(x)
+        self.y = np.float32(y)
         self.pressure = np.float32(pressure) if pressure is not None else None
         self.thickness = np.float32(thickness) if thickness is not None else None
         self.color = np.array(color, dtype=np.float32) if color is not None else None
         self.opacity = np.float32(opacity) if opacity is not None else None
-
+        self.attributes = _copy_attributes(attributes)
 
 class Curve:
-    """Curve defined by two vertices and two control points.
+    """Curve defined by two endpoint points and two control points.
 
-    Connects two vertices (start and end) with optional control points for a
-    curved path. Visual properties (color, pressure, thickness, opacity) are
-    applied to both vertices together.
+    Connects two endpoint points (start and end) with optional control points
+    for a curved path. Visual properties (color, pressure, thickness, opacity)
+    are applied to both endpoints together.
 
     Attributes:
-        p_start (Vertex): Starting vertex.
-        p_end (Vertex): Ending vertex.
+        p_start (Point): Starting endpoint.
+        p_end (Point): Ending endpoint.
         p_crtl1 (Point): First control point for curve definition.
         p_crtl2 (Point): Second control point for curve definition.
+        attributes (dict): Custom user metadata for the curve.
 
     Notes:
-        When setting properties, the same value is applied to both start and end
-        vertices. Numeric properties are converted to np.float32 automatically.
+        When setting properties, the same value is applied to both endpoints.
+        Numeric properties are converted to np.float32 automatically.
     """
 
     @classmethod
@@ -106,8 +99,8 @@ class Curve:
         start_x, start_y = ps[0], ps[1]
         end_x, end_y = pe[0], pe[1]
 
-        p_start = Vertex(start_x, start_y)
-        p_end = Vertex(end_x, end_y)
+        p_start = Point(start_x, start_y)
+        p_end = Point(end_x, end_y)
 
         ctrl1_x = 2.0 / 3.0 * start_x + 1.0 / 3.0 * end_x
         ctrl1_y = 2.0 / 3.0 * start_y + 1.0 / 3.0 * end_y
@@ -124,16 +117,17 @@ class Curve:
 
     def __init__(
         self,
-        p_start: Vertex,
-        p_end: Vertex,
+        p_start: Point,
+        p_end: Point,
         p_crtl1: Point,
         p_crtl2: Point,
+        attributes: dict | None = None,
     ):
         """Initialize a Curve.
 
         Args:
-            p_start (Vertex): Starting vertex.
-            p_end (Vertex): Ending vertex.
+            p_start (Point): Starting endpoint.
+            p_end (Point): Ending endpoint.
             p_crtl1 (Point): First control point.
             p_crtl2 (Point): Second control point.
         """
@@ -141,94 +135,95 @@ class Curve:
         self.p_end = p_end
         self.p_crtl1 = p_crtl1
         self.p_crtl2 = p_crtl2
+        self.attributes = _copy_attributes(attributes)
 
-    def _get_vertices_attribute(self, attribute: str):
+    def _get_endpoint_attribute(self, attribute: str):
         return [
             getattr(self.p_start, attribute),
             getattr(self.p_end, attribute),
         ]
 
-    def _set_vertices_attribute(self, attribute: str, value):
+    def _set_endpoint_attribute(self, attribute: str, value):
         setattr(self.p_start, attribute, value)
         setattr(self.p_end, attribute, value)
 
     @property
     def color(self):
-        """Colors of the start and end vertices.
+        """Colors of the start and end endpoints.
 
         Returns:
             list[np.ndarray | None]: A two-element list of RGB colors for the
-            start and end vertices (each as float32 arrays) or None.
+            start and end endpoints (each as float32 arrays) or None.
         """
-        return self._get_vertices_attribute("color")
+        return self._get_endpoint_attribute("color")
 
     @color.setter
     def color(self, value: None | tuple[float, float, float] | np.ndarray):
-        """Set color for both vertices.
+        """Set color for both endpoints.
 
         Args:
             value (tuple[float, float, float] | np.ndarray | None): RGB color as
                 tuple/ndarray, or None to clear.
         """
         color_value = np.array(value, dtype=np.float32) if value is not None else None
-        self._set_vertices_attribute("color", color_value)
+        self._set_endpoint_attribute("color", color_value)
 
     @property
     def pressure(self):
-        """Pressures of the start and end vertices.
+        """Pressures of the start and end endpoints.
 
         Returns:
             list[np.float32 | None]: Two-element list of pressures or None.
         """
-        return self._get_vertices_attribute("pressure")
+        return self._get_endpoint_attribute("pressure")
 
     @pressure.setter
     def pressure(self, value: None | float | np.float32):
-        """Set pressure for both vertices.
+        """Set pressure for both endpoints.
 
         Args:
             value (float | np.float32 | None): Pressure value or None to clear.
         """
         pressure_value = np.float32(value) if value is not None else None
-        self._set_vertices_attribute("pressure", pressure_value)
+        self._set_endpoint_attribute("pressure", pressure_value)
 
     @property
     def thickness(self):
-        """Thicknesses of the start and end vertices.
+        """Thicknesses of the start and end endpoints.
 
         Returns:
             list[np.float32 | None]: Two-element list of thicknesses or None.
         """
-        return self._get_vertices_attribute("thickness")
+        return self._get_endpoint_attribute("thickness")
 
     @thickness.setter
     def thickness(self, value: None | float | np.float32):
-        """Set thickness for both vertices.
+        """Set thickness for both endpoints.
 
         Args:
             value (float | np.float32 | None): Thickness value or None to clear.
         """
         thickness_value = np.float32(value) if value is not None else None
-        self._set_vertices_attribute("thickness", thickness_value)
+        self._set_endpoint_attribute("thickness", thickness_value)
 
     @property
     def opacity(self):
-        """Opacities of the start and end vertices.
+        """Opacities of the start and end endpoints.
 
         Returns:
             list[np.float32 | None]: Two-element list of opacities or None.
         """
-        return self._get_vertices_attribute("opacity")
+        return self._get_endpoint_attribute("opacity")
 
     @opacity.setter
     def opacity(self, value: None | float | np.float32):
-        """Set opacity for both vertices.
+        """Set opacity for both endpoints.
 
         Args:
             value (float | np.float32 | None): Opacity (0.0–1.0) or None to clear.
         """
         opacity_value = np.float32(value) if value is not None else None
-        self._set_vertices_attribute("opacity", opacity_value)
+        self._set_endpoint_attribute("opacity", opacity_value)
 
     def is_line(self) -> bool:
         """Check if the curve is a line.
@@ -334,17 +329,33 @@ class Curve:
 
         P0123 = lerp(P012, P123, t)                     # (2)
 
-        left_end = Vertex(P0123[0], P0123[1], self.p_start.pressure if self.p_start.pressure is not None else None, self.p_start.thickness, self.p_start.color, self.p_start.opacity)
-        left_ctrl1 = Point(P01[0], P01[1])
-        left_ctrl2 = Point(P012[0], P012[1])
+        left_end = Point(
+            P0123[0],
+            P0123[1],
+            self.p_start.pressure if self.p_start.pressure is not None else None,
+            self.p_start.thickness,
+            self.p_start.color,
+            self.p_start.opacity,
+            attributes=self.p_start.attributes,
+        )
+        left_ctrl1 = Point(P01[0], P01[1], attributes=self.p_crtl1.attributes)
+        left_ctrl2 = Point(P012[0], P012[1], attributes=self.p_crtl2.attributes)
 
-        right_start = Vertex(P0123[0], P0123[1], self.p_end.pressure if self.p_end.pressure is not None else None, self.p_end.thickness, self.p_end.color, self.p_end.opacity)
-        right_ctrl1 = Point(P123[0], P123[1])
-        right_ctrl2 = Point(P23[0], P23[1])
+        right_start = Point(
+            P0123[0],
+            P0123[1],
+            self.p_end.pressure if self.p_end.pressure is not None else None,
+            self.p_end.thickness,
+            self.p_end.color,
+            self.p_end.opacity,
+            attributes=self.p_end.attributes,
+        )
+        right_ctrl1 = Point(P123[0], P123[1], attributes=self.p_crtl1.attributes)
+        right_ctrl2 = Point(P23[0], P23[1], attributes=self.p_crtl2.attributes)
 
         # 组装 left/right
-        left  = Curve(self.p_start, left_end, left_ctrl1, left_ctrl2)
-        right = Curve(right_start, self.p_end, right_ctrl1, right_ctrl2)
+        left  = Curve(self.p_start, left_end, left_ctrl1, left_ctrl2, attributes=self.attributes)
+        right = Curve(right_start, self.p_end, right_ctrl1, right_ctrl2, attributes=self.attributes)
 
         return left, right
 
@@ -356,6 +367,7 @@ class Path:
 
     Attributes:
         curves (list[Curve]): Curves in this path.
+        attributes (dict): Custom user metadata for the path.
 
     Examples:
         >>> path = Path([curve1, curve2, curve3])
@@ -365,7 +377,12 @@ class Path:
         3
     """
 
-    def __init__(self, curves: list[Curve] | None = None, label: str | None = None):
+    def __init__(
+        self,
+        curves: list[Curve] | None = None,
+        label: str | None = None,
+        attributes: dict | None = None,
+    ):
         """Initialize a Path.
 
         Args:
@@ -374,6 +391,7 @@ class Path:
         """
         self.curves = curves if curves else []
         self.label = label
+        self.attributes = _copy_attributes(attributes)
 
     @property
     def curve_num(self):
@@ -397,7 +415,7 @@ class Path:
 
         Returns:
             list[list[np.ndarray | None]]: For each curve, a two-element list of
-            vertex colors (RGB arrays) or None.
+            endpoint colors (RGB arrays) or None.
         """
         return self._get_curves_attribute("color")
 
@@ -418,7 +436,7 @@ class Path:
 
         Returns:
             list[list[np.float32 | None]]: For each curve, a two-element list of
-            vertex pressures or None.
+            endpoint pressures or None.
         """
         return self._get_curves_attribute("pressure")
 
@@ -438,7 +456,7 @@ class Path:
 
         Returns:
             list[list[np.float32 | None]]: For each curve, a two-element list of
-            vertex thicknesses or None.
+            endpoint thicknesses or None.
         """
         return self._get_curves_attribute("thickness")
 
@@ -458,7 +476,7 @@ class Path:
 
         Returns:
             list[list[np.float32 | None]]: For each curve, a two-element list of
-            vertex opacities or None.
+            endpoint opacities or None.
         """
         return self._get_curves_attribute("opacity")
 
@@ -572,6 +590,7 @@ class Sketch:
 
     Attributes:
         paths (list[Path]): Paths in the sketch.
+        attributes (dict): Custom user metadata for the sketch.
 
     Examples:
         >>> sketch = Sketch([path1, path2, path3])
@@ -579,7 +598,13 @@ class Sketch:
         >>> sketch.thickness = 2.5          # Set all paths to thickness 2.5
     """
 
-    def __init__(self, height: float, width: float, paths: list[Path] | None = None):
+    def __init__(
+        self,
+        height: float,
+        width: float,
+        paths: list[Path] | None = None,
+        attributes: dict | None = None,
+    ):
         """Initialize a Sketch.
 
         Args:
@@ -590,6 +615,7 @@ class Sketch:
         self.height = height
         self.width = width
         self.paths = paths if paths else []
+        self.attributes = _copy_attributes(attributes)
 
     @property
     def path_num(self):
@@ -622,7 +648,7 @@ class Sketch:
 
         Returns:
             list[list[list[np.ndarray | None]]]: For each path, a list of curve
-            colors where each curve has a two-element list of vertex colors.
+            colors where each curve has a two-element list of endpoint colors.
         """
         return self._get_paths_attribute("color")
 
@@ -643,7 +669,7 @@ class Sketch:
 
         Returns:
             list[list[list[np.float32 | None]]]: For each path, a list of curve
-            pressures where each curve has a two-element list of vertex pressures.
+            pressures where each curve has a two-element list of endpoint pressures.
         """
         return self._get_paths_attribute("pressure")
 
@@ -663,7 +689,7 @@ class Sketch:
 
         Returns:
             list[list[list[np.float32 | None]]]: For each path, a list of curve
-            thicknesses where each curve has a two-element list of vertex values.
+            thicknesses where each curve has a two-element list of endpoint values.
         """
         return self._get_paths_attribute("thickness")
 
@@ -683,7 +709,7 @@ class Sketch:
 
         Returns:
             list[list[list[np.float32 | None]]]: For each path, a list of curve
-            opacities where each curve has a two-element list of vertex values.
+            opacities where each curve has a two-element list of endpoint values.
         """
         return self._get_paths_attribute("opacity")
 
@@ -971,70 +997,34 @@ class Sketch:
         for path in self.paths:
             curves_data = []
             for curve in path.curves:
-                p_start: VertexArray = (
-                    float(curve.p_start.x),
-                    float(curve.p_start.y),
-                    (
-                        float(curve.p_start.pressure)
-                        if curve.p_start.pressure is not None
-                        else None
-                    ),
-                    (
-                        float(curve.p_start.thickness)
-                        if curve.p_start.thickness is not None
-                        else None
-                    ),
-                    (
-                        tuple(curve.p_start.color.tolist())
-                        if curve.p_start.color is not None
-                        else None
-                    ),
-                    (
-                        float(curve.p_start.opacity)
-                        if curve.p_start.opacity is not None
-                        else None
-                    ),
-                )
-                p_end: VertexArray = (
-                    float(curve.p_end.x),
-                    float(curve.p_end.y),
-                    (
-                        float(curve.p_end.pressure)
-                        if curve.p_end.pressure is not None
-                        else None
-                    ),
-                    (
-                        float(curve.p_end.thickness)
-                        if curve.p_end.thickness is not None
-                        else None
-                    ),
-                    (
-                        tuple(curve.p_end.color.tolist())
-                        if curve.p_end.color is not None
-                        else None
-                    ),
-                    (
-                        float(curve.p_end.opacity)
-                        if curve.p_end.opacity is not None
-                        else None
-                    ),
-                )
-                p_crtl1: PointArray = (
-                    float(curve.p_crtl1.x),
-                    float(curve.p_crtl1.y),
-                )
-                p_crtl2: PointArray = (
-                    float(curve.p_crtl2.x),
-                    float(curve.p_crtl2.y),
+                p_start = _serialize_point(curve.p_start)
+                p_end = _serialize_point(curve.p_end)
+                p_crtl1 = _serialize_point(curve.p_crtl1)
+                p_crtl2 = _serialize_point(curve.p_crtl2)
+
+                curves_data.append(
+                    CurveSchema(
+                        p_start=p_start,
+                        p_crtl1=p_crtl1,
+                        p_crtl2=p_crtl2,
+                        p_end=p_end,
+                        attributes=_copy_attributes(curve.attributes),
+                    )
                 )
 
-                # [start, c1, c2, end]
-                curves_data.append((p_start, p_crtl1, p_crtl2, p_end))
-
-            paths_data.append(PathSchema(curves=curves_data, label=path.label))
+            paths_data.append(
+                PathSchema(
+                    curves=curves_data,
+                    label=path.label,
+                    attributes=_copy_attributes(path.attributes),
+                )
+            )
 
         sketch_data = SketchSchema(
-            height=float(self.height), width=float(self.width), paths=paths_data
+            height=float(self.height),
+            width=float(self.width),
+            paths=paths_data,
+            attributes=_copy_attributes(self.attributes),
         )
 
         with open(file_path, "w") as f:
@@ -1058,40 +1048,36 @@ class Sketch:
         paths = []
         for path_data in sketch_data.paths:
             curves = []
-            for curve_tuple in path_data.curves:
-                # curve_tuple: [start, c1, c2, end]
-                # start/end: [x, y, p, t, c, o]
-                # c1/c2: [x, y]
+            for curve_data in path_data.curves:
+                p_start = _deserialize_point(curve_data.p_start)
+                p_end = _deserialize_point(curve_data.p_end)
+                p_crtl1 = _deserialize_point(curve_data.p_crtl1)
+                p_crtl2 = _deserialize_point(curve_data.p_crtl2)
 
-                start_data = curve_tuple[0]
-                c1_data = curve_tuple[1]
-                c2_data = curve_tuple[2]
-                end_data = curve_tuple[3]
-
-                p_start = Vertex(
-                    x=start_data[0],
-                    y=start_data[1],
-                    pressure=start_data[2],
-                    thickness=start_data[3],
-                    color=start_data[4],
-                    opacity=start_data[5],
+                curves.append(
+                    Curve(
+                        p_start,
+                        p_end,
+                        p_crtl1,
+                        p_crtl2,
+                        attributes=curve_data.attributes,
+                    )
                 )
-                p_end = Vertex(
-                    x=end_data[0],
-                    y=end_data[1],
-                    pressure=end_data[2],
-                    thickness=end_data[3],
-                    color=end_data[4],
-                    opacity=end_data[5],
+
+            paths.append(
+                Path(
+                    curves=curves,
+                    label=path_data.label,
+                    attributes=path_data.attributes,
                 )
-                p_crtl1 = Point(x=c1_data[0], y=c1_data[1])
-                p_crtl2 = Point(x=c2_data[0], y=c2_data[1])
+            )
 
-                curves.append(Curve(p_start, p_end, p_crtl1, p_crtl2))
-
-            paths.append(Path(curves=curves, label=path_data.label))
-
-        return cls(height=sketch_data.height, width=sketch_data.width, paths=paths)
+        return cls(
+            height=sketch_data.height,
+            width=sketch_data.width,
+            paths=paths,
+            attributes=sketch_data.attributes,
+        )
 
     @classmethod
     def from_svg(
@@ -1189,7 +1175,7 @@ class Sketch:
                     for i in range(segment_num):
                         raw_curve = control_points_list[i * 3 : i * 3 + 4]  # 4 points
 
-                        p_start = Vertex(
+                        p_start = Point(
                             raw_curve[0][0],
                             raw_curve[0][1],
                             thickness=default_thickness,
@@ -1197,7 +1183,7 @@ class Sketch:
                         )
                         p_ctrl1 = Point(raw_curve[1][0], raw_curve[1][1])
                         p_ctrl2 = Point(raw_curve[2][0], raw_curve[2][1])
-                        p_end = Vertex(
+                        p_end = Point(
                             raw_curve[3][0],
                             raw_curve[3][1],
                             thickness=default_thickness,

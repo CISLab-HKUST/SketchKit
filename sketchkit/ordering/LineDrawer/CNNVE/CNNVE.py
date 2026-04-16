@@ -13,7 +13,7 @@ from .video_processor import VideoProcessor
 from .frame_matcher import FrameMatcher  
 from .color_generator import ColorGenerator
 from sketchkit.vectorization.LineDrawer.CNNVE.utils.image_utils import criterion_mask_overlap, get_rect_p0p1
-from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
+from sketchkit.core.sketch import Sketch, Path, Curve, Point
 
 # MASK_TH is defined in utils.py as 50, but we can define it here or import it if it exists in vectorization utils
 # In vectorization/utils/image_utils.py, criterion_mask_overlap uses hardcoded 30 for I_th and merge_th argument
@@ -158,26 +158,26 @@ class CNNVE:
         
         return sketch
     
-    def _point_to_vertex(self, p):
+    def _to_point(self, p):
         """
-        Convert [y, x] point to Vertex(x, y).
+        Convert [y, x] point to Point(x, y).
         
         Args:
             p: List or tuple of [y, x] coordinates.
         
         Returns:
-            Vertex: Vertex object with x and y coordinates swapped.
+            Point: Point object with x and y coordinates swapped.
         """
         # Note: input points are often [y, x] from numpy indices
-        return Vertex(x=p[1], y=p[0], thickness=2.0, opacity=1.0, color=(0,0,0))
+        return Point(x=p[1], y=p[0], thickness=2.0, opacity=1.0, color=(0,0,0))
 
     def _create_linear_curve(self, p_start, p_end):
         """
-        Create a linear Curve between two vertices.
+        Create a linear Curve between two endpoints.
         
         Args:
-            p_start: Starting vertex.
-            p_end: Ending vertex.
+            p_start: Starting endpoint.
+            p_end: Ending endpoint.
         
         Returns:
             Curve: Linear curve with control points at 1/3 and 2/3 of the distance.
@@ -212,8 +212,8 @@ class CNNVE:
             # if points[-1] != original_last: points.append(original_last) 
             
         for i in range(len(points) - 1):
-             v_start = self._point_to_vertex(points[i])
-             v_end = self._point_to_vertex(points[i+1])
+             v_start = self._to_point(points[i])
+             v_end = self._to_point(points[i+1])
              curves.append(self._create_linear_curve(v_start, v_end))
              
         return Path(curves)
@@ -246,4 +246,3 @@ class CNNVE:
                          ordered_paths.append(path)
              
         return Sketch(height, width, paths=ordered_paths)
-

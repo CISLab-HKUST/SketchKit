@@ -7,7 +7,7 @@ import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
+    from sketchkit.core.sketch import Sketch, Path, Curve, Point
 
 from typing import TYPE_CHECKING
 
@@ -54,8 +54,8 @@ from typing import TYPE_CHECKING
 #         curve_path = fit_curve(np.array(polyline_path), maxError)
 #         curves = [
 #             Curve(
-#                 Vertex(pt[0][0], pt[0][1]),
-#                 Vertex(pt[3][0], pt[3][1]),
+#                 Point(pt[0][0], pt[0][1]),
+#                 Point(pt[3][0], pt[3][1]),
 #                 Point(pt[1][0], pt[1][1]),
 #                 Point(pt[2][0], pt[2][1]),
 #             )

@@ -6,7 +6,6 @@ from sketchkit.core.sketch3d import (
     Sketch3D,
     Path3D,
     Curve3D,
-    Vertex3D,
     Point3D,
 )
 from sketchkit.utils3d.transforms import wxyz_from_look_at
@@ -19,13 +18,13 @@ def make_cis_sketch3d(variable_width=False):
     def make_curve(ctrls, color, thickness, variable=False):
         if variable:
             widths = list(thickness)
-            v0 = Vertex3D(*ctrls[0], thickness=widths[0], color=color, opacity=1.0)
-            v3 = Vertex3D(*ctrls[3], thickness=widths[3], color=color, opacity=1.0)
+            v0 = Point3D(*ctrls[0], thickness=widths[0], color=color, opacity=1.0)
+            v3 = Point3D(*ctrls[3], thickness=widths[3], color=color, opacity=1.0)
             c1 = Point3D(*ctrls[1], thickness=widths[1])
             c2 = Point3D(*ctrls[2], thickness=widths[2])
         else:
-            v0 = Vertex3D(*ctrls[0], thickness=thickness, color=color, opacity=1.0)
-            v3 = Vertex3D(*ctrls[3], thickness=thickness, color=color, opacity=1.0)
+            v0 = Point3D(*ctrls[0], thickness=thickness, color=color, opacity=1.0)
+            v3 = Point3D(*ctrls[3], thickness=thickness, color=color, opacity=1.0)
             c1 = Point3D(*ctrls[1], thickness=thickness)
             c2 = Point3D(*ctrls[2], thickness=thickness)
         return Curve3D(v0, v3, c1, c2)
@@ -126,3 +125,36 @@ def test_diffvg_renderer_init_and_json_roundtrip(tmp_path):
     loaded = Sketch3D.from_json(str(out_json))
     assert loaded.path_num == sketch.path_num
     assert loaded.curve_num == sketch.curve_num
+
+
+def test_3d_attributes_roundtrip(tmp_path):
+    sketch = Sketch3D(
+        attributes={"scene": "demo"},
+        paths=[
+            Path3D(
+                attributes={"layer": "front"},
+                curves=[
+                    Curve3D(
+                        p_start=Point3D(0, 0, 0, thickness=1.0, color=(1, 0, 0), opacity=1.0, attributes={"role": "start"}),
+                        p_end=Point3D(1, 1, 1, thickness=2.0, color=(0, 1, 0), opacity=0.8, attributes={"role": "end"}),
+                        p_ctrl1=Point3D(0.2, 0.3, 0.4, thickness=1.5, attributes={"handle": 1}),
+                        p_ctrl2=Point3D(0.6, 0.7, 0.8, thickness=1.6, attributes={"handle": 2}),
+                        attributes={"curve_id": "3d-c0"},
+                    )
+                ],
+            )
+        ],
+    )
+
+    json_path = tmp_path / "attributes_3d.json"
+    sketch.to_json(str(json_path))
+    loaded = Sketch3D.from_json(str(json_path))
+    curve = loaded.paths[0].curves[0]
+
+    assert loaded.attributes == {"scene": "demo"}
+    assert loaded.paths[0].attributes == {"layer": "front"}
+    assert curve.attributes == {"curve_id": "3d-c0"}
+    assert curve.p_start.attributes == {"role": "start"}
+    assert curve.p_end.attributes == {"role": "end"}
+    assert curve.p_ctrl1.attributes == {"handle": 1}
+    assert curve.p_ctrl2.attributes == {"handle": 2}

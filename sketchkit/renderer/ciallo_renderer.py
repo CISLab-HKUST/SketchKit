@@ -6,7 +6,7 @@ from PIL import Image
 from dataclasses import dataclass
 
 from sketchkit.renderer.renderer import Renderer, RenderOptions
-from sketchkit.core.sketch import Sketch, Curve, Path, Vertex, Point
+from sketchkit.core.sketch import Sketch, Curve, Path, Point
 
 
 def _sample_cubic_bezier(points: np.ndarray, num_samples: int) -> np.ndarray:

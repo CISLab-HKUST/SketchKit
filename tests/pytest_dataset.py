@@ -6,7 +6,7 @@ from sketchkit.datasets import QuickDraw, PhotoSketching
 @pytest.mark.slow
 def test_quickdraw_dataset_loading(tmp_path):
     try:
-        dataset = QuickDraw(root=str(tmp_path))
+        dataset = QuickDraw()
     except Exception as exc:
         pytest.skip(f"QuickDraw dataset unavailable: {exc}")
 
@@ -19,7 +19,7 @@ def test_quickdraw_dataset_loading(tmp_path):
 @pytest.mark.slow
 def test_quickdraw_dataset_loading_all(tmp_path):
     try:
-        dataset = QuickDraw(root=str(tmp_path), load_all=True)
+        dataset = QuickDraw(load_all=True)
     except Exception as exc:
         pytest.skip(f"QuickDraw dataset unavailable: {exc}")
 
@@ -32,7 +32,7 @@ def test_quickdraw_dataset_loading_all(tmp_path):
 @pytest.mark.slow
 def test_photosketching_dataset_loading(tmp_path):
     try:
-        dataset = PhotoSketching(root=str(tmp_path), cislab_source=True)
+        dataset = PhotoSketching(cislab_source=True)
     except Exception as exc:
         pytest.skip(f"PhotoSketching dataset unavailable: {exc}")
 

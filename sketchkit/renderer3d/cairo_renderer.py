@@ -3,7 +3,7 @@ import torch
 from PIL import Image
 from copy import deepcopy
 
-from sketchkit.core.sketch import Curve, Path, Point, Sketch, Vertex
+from sketchkit.core.sketch import Curve, Path, Point, Sketch
 from sketchkit.core.sketch3d import Sketch3D
 from sketchkit.renderer.cairo_renderer import CairoRenderer
 from sketchkit.utils3d.camera import intrinsics_from_fov_xy
@@ -161,7 +161,7 @@ class CairoRenderer3D(Renderer3D):
                 if curve.widths is not None:
                     has_width = True
                     widths.append(curve.widths)  # shape (4,)
-                # Fallback to vertex thickness
+                # Fallback to endpoint thickness
                 elif curve.p_start.thickness is not None:
                     has_width = True
                     # Use same width for all 4 control points
@@ -233,8 +233,8 @@ class CairoRenderer3D(Renderer3D):
             else:
                 sw = 1.0
 
-            v_start = Vertex(px[0], py[0], thickness=sw, color=rgb, opacity=1.0)
-            v_end = Vertex(px[3], py[3], thickness=sw, color=rgb, opacity=1.0)
+            v_start = Point(px[0], py[0], thickness=sw, color=rgb, opacity=1.0)
+            v_end = Point(px[3], py[3], thickness=sw, color=rgb, opacity=1.0)
             p_ctrl1 = Point(px[1], py[1])
             p_ctrl2 = Point(px[2], py[2])
             paths.append(Path([Curve(v_start, v_end, p_ctrl1, p_ctrl2)]))
@@ -292,7 +292,7 @@ class CairoRenderer3D(Renderer3D):
         shape_groups = []
         num_control_points = torch.zeros(1, dtype=torch.int32) + 2
 
-        # synchronize the use of stroke_width from render_options and the vertex definitions
+        # synchronize the use of stroke_width from render_options and the endpoint definitions
         if isinstance(stroke_width, (float, int)) and (stroke_width is None or stroke_width <= 0):
             stroke_width = 1.0   #should use some default value
         elif stroke_width is None:

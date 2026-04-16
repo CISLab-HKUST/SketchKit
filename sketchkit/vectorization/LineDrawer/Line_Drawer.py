@@ -7,7 +7,7 @@ import gzip
 import pickle
 from PIL import Image
 from .CNNVE import CNNVE
-from sketchkit.core.sketch import Sketch, Path as SketchPath, Curve, Vertex
+from sketchkit.core.sketch import Sketch, Path as SketchPath, Curve, Point
 
 
 class LineDrawer:
@@ -88,4 +88,3 @@ class LineDrawer:
                         paths.append(SketchPath(stroke_list))
 
         return Sketch(height, width, paths)
-

@@ -8,7 +8,7 @@ from tqdm import tqdm
 import pandas as pd
 from pathlib import Path as PathLibPath
 
-from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
+from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import (
     download_with_wget,
@@ -294,8 +294,8 @@ class OpenSketch(SketchDataset):
         for path in path_list:
             curves = []
             for raw_curve in path:
-                p_start = Vertex(raw_curve[0][0], raw_curve[0][1])
-                p_end = Vertex(raw_curve[3][0], raw_curve[3][1])
+                p_start = Point(raw_curve[0][0], raw_curve[0][1])
+                p_end = Point(raw_curve[3][0], raw_curve[3][1])
                 p_ctrl1 = Point(raw_curve[1][0], raw_curve[1][1])
                 p_ctrl2 = Point(raw_curve[2][0], raw_curve[2][1])
                 curves.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))

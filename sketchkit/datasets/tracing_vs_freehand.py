@@ -7,7 +7,7 @@ from tqdm import tqdm
 from pathlib import Path as PathLibPath
 
 # Import your core definitions
-from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
+from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
 
@@ -233,18 +233,18 @@ class TracingVsFreehand(SketchDataset):
                 x0, y0 = xs[i], ys[i]
                 x1, y1 = xs[i+1], ys[i+1]
                 
-                # Pressure for start and end vertices
+                # Pressure for start and end endpoints
                 p0 = pressures[i]
                 p1 = pressures[i+1]
 
-                v_start = Vertex(
+                v_start = Point(
                     x=x0, y=y0, 
                     pressure=p0, 
                     thickness=stroke_width, 
                     color=color_rgb, 
                     opacity=opacity
                 )
-                v_end = Vertex(
+                v_end = Point(
                     x=x1, y=y1, 
                     pressure=p1, 
                     thickness=stroke_width, 

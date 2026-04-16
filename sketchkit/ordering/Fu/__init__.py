@@ -1,4 +1,4 @@
-from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
+from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from typing import List, Dict, Any
 import numpy as np
 from .compute_cost import cost_individual, cost_transition, compute_T_junctions

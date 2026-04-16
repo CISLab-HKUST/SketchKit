@@ -91,7 +91,7 @@ class DiffVGRenderer(Renderer3D):
         shape_groups = []
         num_control_points = torch.zeros(1, dtype=torch.int32) + 2
 
-        # synchronize the use of stroke_width from render_options and the vertex definitions
+        # synchronize the use of stroke_width from render_options and the endpoint definitions
         if isinstance(stroke_width, (float, int)) and (
             stroke_width is None or stroke_width <= 0
         ):

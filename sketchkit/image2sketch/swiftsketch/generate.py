@@ -21,7 +21,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from sketchkit.core import Sketch, Path as SketchPath, Curve, Vertex, Point
+from sketchkit.core import Sketch, Path as SketchPath, Curve, Point
 from .utils.fixseed import fixseed
 from .utils import dist_util, sketch_utils
 from .utils.model_util import create_model_and_diffusion, load_model_wo_clip, create_model
@@ -251,10 +251,10 @@ class SwiftSketchModel:
                     "SwiftSketch currently only supports cubic Bézier curves with four control points."
                 )
 
-            start = Vertex(float(points[0][0]), float(points[0][1]))
+            start = Point(float(points[0][0]), float(points[0][1]))
             ctrl1 = Point(float(points[1][0]), float(points[1][1]))
             ctrl2 = Point(float(points[2][0]), float(points[2][1]))
-            end = Vertex(float(points[3][0]), float(points[3][1]))
+            end = Point(float(points[3][0]), float(points[3][1]))
 
             curve = Curve(p_start=start, p_end=end, p_crtl1=ctrl1, p_crtl2=ctrl2)
             path = SketchPath(curves=[curve])

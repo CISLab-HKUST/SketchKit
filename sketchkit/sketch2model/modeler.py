@@ -106,8 +106,9 @@ class Modeler:
 
         # Handle different input types
         if isinstance(sketch_input, Sketch):
-            renderer = CairoRenderer(canvas_size=512, canvas_color=(1, 1, 1))
-            raster_image = renderer.render(sketch_input, fit_canvas=True)
+            renderer = CairoRenderer()
+            raster_image = renderer.render(sketch_input)
+            raster_image = np.asarray(raster_image, dtype=np.uint8)
             if raster_image.ndim == 3:
                 raster_image = np.dot(raster_image[...,:3], [0.299, 0.587, 0.114]).astype(np.uint8)
         elif isinstance(sketch_input, str):
@@ -153,8 +154,9 @@ class Modeler:
 
         # Handle different input types
         if isinstance(sketch_input, Sketch):
-            renderer = CairoRenderer(canvas_size=512, canvas_color=(1, 1, 1))
-            raster_image = renderer.render(sketch_input, fit_canvas=True)
+            renderer = CairoRenderer()
+            raster_image = renderer.render(sketch_input)
+            raster_image = np.asarray(raster_image, dtype=np.uint8)
             if raster_image.ndim == 2 or (raster_image.ndim == 3 and raster_image.shape[2] == 1):
                 raster_image = np.stack([raster_image] * 3, axis=-1)
             elif raster_image.ndim == 3 and raster_image.shape[2] == 4:

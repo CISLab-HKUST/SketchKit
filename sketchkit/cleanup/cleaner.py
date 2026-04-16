@@ -30,7 +30,8 @@ class Cleaner:
 
     def run(
         self,
-        input: np.ndarray
+        input: np.ndarray,
+        output_folder: str = "cleanup",
     ) -> np.ndarray:
         """
         Simplify the input raster image.
@@ -41,7 +42,7 @@ class Cleaner:
         Returns:
             sketch (numpy.ndarray): an image in H*W in [0, 255].
         """
-        sketch = self.cleanup_method.run(input)
+        sketch = self.cleanup_method.run(input, out_folder=output_folder)
         if type(sketch) is not np.ndarray:
             raise Exception("Should return a numpy array. But with %s now." % str(type(sketch)))
         return sketch

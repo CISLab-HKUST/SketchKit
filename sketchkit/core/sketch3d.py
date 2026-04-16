@@ -233,14 +233,14 @@ class Sketch3D:
                     ),
                 )
 
-                # widths = (
-                #     curve.widths.tolist()
-                #     if hasattr(curve, "widths") and curve.widths is not None
-                #     else None
-                # )
+                widths = (
+                    curve.widths.tolist()
+                    if hasattr(curve, "widths") and curve.widths is not None
+                    else None
+                )
 
-                # curves_data.append((v_start, p_ctrl1, p_ctrl2, v_end, widths))
-                curves_data.append((v_start, p_ctrl1, p_ctrl2, v_end))
+                curves_data.append((v_start, p_ctrl1, p_ctrl2, v_end, widths))
+                # curves_data.append((v_start, p_ctrl1, p_ctrl2, v_end))
 
             paths_data.append(Path3DSchema(curves=curves_data))
 

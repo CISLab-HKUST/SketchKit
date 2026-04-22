@@ -134,7 +134,7 @@ result_point.save("colorized_manga_point.png")
 
 **MangaNinja-specific Parameters**
 
-- `is_lineart` (bool): Whether the input is already line art. If `False`, line art is automatically extracted (default: `True`).
+- `is_lineart` (bool): Whether the input is already line art. If `False`, line art is automatically extracted (default: `False`).
 - `guidance_scale_ref` (float): Strength of reference image guidance (default: 9.0).
 - `guidance_scale_point` (float): Strength of point control guidance (default: 15.0).
 - `point_ref` (torch.Tensor): Point map on the reference image, shape `(1, 1, H, W)`. Optional.

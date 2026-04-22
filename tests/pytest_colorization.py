@@ -1,10 +1,13 @@
-import os
+from pathlib import Path
 import pytest
 from PIL import Image
 
 from sketchkit.core.sketch import Sketch
 from sketchkit.colorization import Colorizer
 from sketchkit.renderer.cairo_renderer import CairoRenderer, CairoRenderOptions
+
+TESTS_DIR = Path(__file__).resolve().parent
+TEST_IMAGES_DIR = TESTS_DIR / "test_images"
 
 
 def convert_sketch_to_image(sketch, size=(1024, 1024)):
@@ -25,11 +28,11 @@ def convert_sketch_to_image(sketch, size=(1024, 1024)):
 
 @pytest.fixture(scope="module")
 def sample_data():
-    svg_path = os.path.join("test_images", "plane.svg")
-    if not os.path.exists(svg_path):
+    svg_path = TEST_IMAGES_DIR / "plane.svg"
+    if not svg_path.exists():
         pytest.skip("Required test file test_images/plane.svg is missing")
 
-    sketch = Sketch.from_svg(svg_path)
+    sketch = Sketch.from_svg(str(svg_path))
     sketch_image = convert_sketch_to_image(sketch, size=(1024, 1024))
     return sketch, sketch_image
 
@@ -68,9 +71,9 @@ def test_colorizer_methods_on_sketch(sample_data, method, sd_model, prompt, kwar
 
 @pytest.mark.slow
 def test_manga_ninja_colorization(tmp_path):
-    ref_path = os.path.join("test_images", "manga_ninja", "ref_hz0.png")
-    lineart_path = os.path.join("test_images", "manga_ninja", "lineart_hz1.png")
-    if not os.path.exists(ref_path) or not os.path.exists(lineart_path):
+    ref_path = TEST_IMAGES_DIR / "manga_ninja" / "ref_hz0.png"
+    lineart_path = TEST_IMAGES_DIR / "manga_ninja" / "lineart_hz1.png"
+    if not ref_path.exists() or not lineart_path.exists():
         pytest.skip("Required MangaNinja test images are missing")
 
     reference_image = Image.open(ref_path).convert("RGB")
@@ -96,11 +99,11 @@ def test_manga_ninja_colorization(tmp_path):
 
 @pytest.mark.slow
 def test_manga_ninja_with_point_control(tmp_path):
-    ref_path = os.path.join("test_images", "manga_ninja", "ref_hz0.png")
-    lineart_path = os.path.join("test_images", "manga_ninja", "lineart_hz1.png")
-    point_ref_path = os.path.join("test_images", "manga_ninja", "point_ref_hz01.npy")
-    point_main_path = os.path.join("test_images", "manga_ninja", "point_main_hz01.npy")
-    if not os.path.exists(ref_path) or not os.path.exists(lineart_path):
+    ref_path = TEST_IMAGES_DIR / "manga_ninja" / "ref_hz0.png"
+    lineart_path = TEST_IMAGES_DIR / "manga_ninja" / "lineart_hz1.png"
+    point_ref_path = TEST_IMAGES_DIR / "manga_ninja" / "point_ref_hz01.npy"
+    point_main_path = TEST_IMAGES_DIR / "manga_ninja" / "point_main_hz01.npy"
+    if not ref_path.exists() or not lineart_path.exists():
         pytest.skip("Required MangaNinja test images are missing")
 
     reference_image = Image.open(ref_path).convert("RGB")
@@ -110,9 +113,9 @@ def test_manga_ninja_with_point_control(tmp_path):
     import numpy as np
     point_ref = None
     point_main = None
-    if os.path.exists(point_ref_path):
+    if point_ref_path.exists():
         point_ref = torch.from_numpy(np.load(point_ref_path)).unsqueeze(0).unsqueeze(0)
-    if os.path.exists(point_main_path):
+    if point_main_path.exists():
         point_main = torch.from_numpy(np.load(point_main_path)).unsqueeze(0).unsqueeze(0)
 
     colorizer = Colorizer(method="manga_ninja")

@@ -346,11 +346,11 @@ class MangaNinjaModel:
 
         noise_scheduler = DDIMScheduler.from_pretrained(
             pretrained_model_name_or_path, subfolder="scheduler",
-            local_files_only=True,
+            
         )
         vae = AutoencoderKL.from_pretrained(
             pretrained_model_name_or_path, subfolder="vae",
-            local_files_only=True,
+            
         )
 
         denoising_unet = UNet2DConditionModel.from_pretrained(
@@ -358,7 +358,7 @@ class MangaNinjaModel:
             in_channels=4,
             low_cpu_mem_usage=False,
             ignore_mismatched_sizes=True,
-            local_files_only=True,
+            
         )
 
         reference_unet = RefUNet2DConditionModel.from_pretrained(
@@ -366,23 +366,23 @@ class MangaNinjaModel:
             in_channels=4,
             low_cpu_mem_usage=False,
             ignore_mismatched_sizes=True,
-            local_files_only=True,
+            
         )
 
-        refnet_tokenizer = CLIPTokenizer.from_pretrained(image_encoder_path, local_files_only=True)
-        refnet_text_encoder = CLIPTextModel.from_pretrained(image_encoder_path, local_files_only=True)
-        refnet_image_encoder = CLIPVisionModelWithProjection.from_pretrained(image_encoder_path, local_files_only=True)
+        refnet_tokenizer = CLIPTokenizer.from_pretrained(image_encoder_path)
+        refnet_text_encoder = CLIPTextModel.from_pretrained(image_encoder_path)
+        refnet_image_encoder = CLIPVisionModelWithProjection.from_pretrained(image_encoder_path)
 
         controlnet = ControlNetModel.from_pretrained(
             controlnet_model_name_or_path,
             in_channels=4,
             low_cpu_mem_usage=False,
             ignore_mismatched_sizes=True,
-            local_files_only=True,
+            
         )
-        controlnet_tokenizer = CLIPTokenizer.from_pretrained(image_encoder_path, local_files_only=True)
-        controlnet_text_encoder = CLIPTextModel.from_pretrained(image_encoder_path, local_files_only=True)
-        controlnet_image_encoder = CLIPVisionModelWithProjection.from_pretrained(image_encoder_path, local_files_only=True)
+        controlnet_tokenizer = CLIPTokenizer.from_pretrained(image_encoder_path)
+        controlnet_text_encoder = CLIPTextModel.from_pretrained(image_encoder_path)
+        controlnet_image_encoder = CLIPVisionModelWithProjection.from_pretrained(image_encoder_path)
 
         point_net = PointNet()
 

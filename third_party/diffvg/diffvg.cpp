@@ -1627,6 +1627,11 @@ void render(std::shared_ptr<Scene> scene,
             num_samples_y
         }, num_samples, scene->use_gpu);
         if (scene->use_gpu) {
+
+// Clean up boundary samples and may cause the illegal memory access errors
+// This happens with the large number of strokes or too large width and rear camera settings
+// e.g., 50 radius from the centering object and the camera with 10-width strokes 
+
 #ifdef __CUDACC__
             checkCuda(cudaFree(boundary_samples));
             checkCuda(cudaFree(boundary_ids));

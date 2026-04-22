@@ -82,6 +82,7 @@ class DiffVGRenderer(Renderer3D):
             rgba = row
         return torch.tensor(rgba, dtype=torch.float32)
 
+    #this is implemented to handle the too-short curve case that may cause instability in DiffVG's GPU rasterizer
     @staticmethod
     def _is_near_linear_cubic(points: torch.Tensor, eps: float = 1e-3) -> bool:
         """Detect cubics whose control points lie almost on the endpoint line."""

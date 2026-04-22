@@ -58,6 +58,8 @@ class Renderer3D(ABC):
             v = K[1, 1] * y_norm + K[1, 2]
             projected[vi] = np.concatenate([u, v], axis=1).reshape(N, P, 2)
 
+            # Current implemntations used averaged depth over a curve 
+            # and may be not stable for long curve or looped curve cases 
             z_curve = z.reshape(N, P)
             mean_depth[vi] = z_curve.mean(axis=1).astype(np.float32)
             visible[vi] = np.any(z_curve > near, axis=1)

@@ -125,4 +125,17 @@ images[0].save("first_view.png")
 
 - Serialization
   - `Sketch3D.to_json(...)` and `Sketch3D.from_json(...)` are used in tests/workflows to persist and reload 3D sketches.
+
+## Current Limitations
+
+- **Depth ordering approximation**:
+  Curve depth is currently approximated by the mean camera-space depth of each curve.
+  This can be unstable for long or looped curves with large within-curve depth variation,
+  and may lead to imperfect occlusion ordering in some views.
+
+- **Dense-scene CUDA fallback**:
+  For very large curve counts (or highly compressed projected geometry), DiffVG GPU rendering
+  may be forced or switched to CPU to avoid CUDA illegal memory access errors.
+  This improves rendering robustness but can noticeably increase render time.
+
   

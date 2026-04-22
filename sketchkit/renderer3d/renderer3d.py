@@ -25,6 +25,47 @@ class Render3DOptions:
 class Renderer3D(ABC):
     render_options = Render3DOptions()
 
+    def _project_curves_numpy(
+        self,
+        curves: torch.Tensor,
+        cameras: list[Camera],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Project curves and return (uv, mean_depth, visibility) in numpy."""
+        N, P = curves.shape[0], curves.shape[1]
+        verts = curves.detach().cpu().numpy().reshape(-1, 3)
+        verts_homo = np.concatenate([verts, np.ones((verts.shape[0], 1))], axis=1)
+
+        projected = np.zeros((len(cameras), N, P, 2), dtype=np.float32)
+        mean_depth = np.zeros((len(cameras), N), dtype=np.float32)
+        visible = np.zeros((len(cameras), N), dtype=bool)
+
+        for vi, camera in enumerate(cameras):
+            ext = camera.extrinsics
+            K = camera.intrinsics
+
+            # Camera coordinates: Xc = E @ Xw
+            Xc_homo = (ext @ verts_homo.T).T
+            z = Xc_homo[:, 2:3]
+
+            # Avoid unstable projection around the camera plane.
+            near = float(max(getattr(camera, "z_near", 0.1), 1e-6))
+            safe_z = np.where(z > near, z, near)
+
+            x_norm = Xc_homo[:, 0:1] / safe_z
+            y_norm = Xc_homo[:, 1:2] / safe_z
+
+            u = K[0, 0] * x_norm + K[0, 2]
+            v = K[1, 1] * y_norm + K[1, 2]
+            projected[vi] = np.concatenate([u, v], axis=1).reshape(N, P, 2)
+
+            # Current implemntations used averaged depth over a curve 
+            # and may be not stable for long curve or looped curve cases 
+            z_curve = z.reshape(N, P)
+            mean_depth[vi] = z_curve.mean(axis=1).astype(np.float32)
+            visible[vi] = np.any(z_curve > near, axis=1)
+
+        return projected, mean_depth, visible
+
     # exposed as public method
     def project_curves_ndc(
         self,
@@ -35,36 +76,31 @@ class Renderer3D(ABC):
             if isinstance(cameras, Camera):
                 cameras = [cameras]
 
-            """Project Bézier control points to normalized device coordinates using camera matrices."""
-            device = curves.device
-
-            V = len(cameras)
-            N, P = curves.shape[0], curves.shape[1]
-
-            verts = curves.detach().cpu().numpy().reshape(-1, 3)
-            # Homogeneous coordinates
-            verts_homo = np.concatenate([verts, np.ones((verts.shape[0], 1))], axis=1)
-
-            out = np.zeros((V, N, P, 2), dtype=np.float32)
-
-            for vi in range(V):
-                if cameras is not None:
-                    ext = cameras[vi].extrinsics
-                    K = cameras[vi].intrinsics
-
-                # Camera coordinates: Xc = E @ Xw
-                Xc_homo = (ext @ verts_homo.T).T
-                z = np.clip(Xc_homo[:, 2:3], 1e-6, None)
-                x_norm = Xc_homo[:, 0:1] / z
-                y_norm = Xc_homo[:, 1:2] / z
-
-                u = K[0, 0] * (x_norm) + K[0, 2]
-                v = K[1, 1] * y_norm + K[1, 2]
-                out[vi] = np.concatenate([u, v], axis=1).reshape(N, P, 2)
-
-            return torch.from_numpy(out).to(device)
+            projected, _, _ = self._project_curves_numpy(curves, cameras)
+            return torch.from_numpy(projected).to(curves.device)
         else:
             raise ValueError("Must provide 'cameras' for projection.")
+
+    def project_curves_ndc_with_depth(
+        self,
+        curves: torch.Tensor,
+        cameras: list[Camera] | Camera | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Project curves and return (uv, mean_depth, visibility_mask)."""
+        if cameras is None:
+            raise ValueError("Must provide 'cameras' for projection.")
+
+        if isinstance(cameras, Camera):
+            cameras = [cameras]
+
+        projected, mean_depth, visible = self._project_curves_numpy(curves, cameras)
+
+        device = curves.device
+        return (
+            torch.from_numpy(projected).to(device),
+            torch.from_numpy(mean_depth).to(device),
+            torch.from_numpy(visible).to(device),
+        )
 
     @staticmethod
     def _normalize_colors(

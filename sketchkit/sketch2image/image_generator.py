@@ -14,7 +14,9 @@ import torch
 
 from sketchkit.core.sketch import Sketch
 from sketchkit.renderer.cairo_renderer import CairoRenderer, CairoRenderOptions
-from .models import ControlNetModel, T2IAdapterModel, Pix2PixModel
+from .controlnet import ControlNetModel
+from .t2i_adapter import T2IAdapterModel
+from .pix2pix import Pix2PixModel
 
 
 class ImageGenerator:

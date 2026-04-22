@@ -12,9 +12,9 @@ The module currently supports the following methods:
 .. autosummary::
    :toctree: generated
 
-   sketchkit.sketch2image.models.ControlNetModel
-   sketchkit.sketch2image.models.Pix2PixModel
-   sketchkit.sketch2image.models.T2IAdapterModel
+   sketchkit.sketch2image.controlnet.ControlNetModel
+   sketchkit.sketch2image.pix2pix.Pix2PixModel
+   sketchkit.sketch2image.t2i_adapter.T2IAdapterModel
 
 ```
 

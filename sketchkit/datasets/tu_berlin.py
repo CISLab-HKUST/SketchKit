@@ -432,22 +432,24 @@ class TUBerlin(SketchDataset):
                 for item in all_categories
                 if os.path.isdir(os.path.join(svg_base, item))
             ]
-            self._all_categories = sorted(all_categories)
+            self.all_categories = sorted(all_categories)
 
             items_metadata = pd.DataFrame(columns=["category", "split", "id", "sub_id"])
             cnt = 0
-            for category in tqdm(self._all_categories, desc="Caching metadata"):
+            for category in tqdm(self.all_categories, desc="Caching metadata"):
                 class_base = os.path.join(self.root, "svg", category)
                 file_names = os.listdir(class_base)
                 file_ids = [int(item[:-4]) for item in file_names]
                 file_ids.sort()
 
-                split = "None"
+                valid_test_num = len(file_ids) // (10 + 1 + 1)
+                train_num = len(file_ids) - valid_test_num - valid_test_num
+                split_map = ["train"] * train_num + ["valid"] * valid_test_num + ["test"] * valid_test_num
 
                 new_rows = [
                     {
                         "category": category,
-                        "split": split,
+                        "split": split_map[id],
                         "id": cnt + id,
                         "sub_id": file_id,
                     }
@@ -469,7 +471,7 @@ class TUBerlin(SketchDataset):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
                 return self._load_items_metadata()
             self.items_metadata = items_metadata
-            self._all_categories = sorted(
+            self.all_categories = sorted(
                 self.items_metadata["category"].unique().tolist()
             )
         self.raw_data = [None] * len(self.items_metadata)  # type: list[list | None]
@@ -481,7 +483,7 @@ class TUBerlin(SketchDataset):
         numpy array for faster access. Only loads if self.load_all is True.
         """
         cnt = 0
-        for category in tqdm(self._all_categories, desc="Loading all data to memory"):
+        for category in tqdm(self.all_categories, desc="Loading all data to memory"):
             class_base = os.path.join(self.root, "svg", category)
             file_names = os.listdir(class_base)
             file_ids = [int(item[:-4]) for item in file_names]
@@ -536,8 +538,10 @@ class TUBerlin(SketchDataset):
         return sketch
 
     def extra_repr(self) -> str:
-        num_all = len(self.items_metadata[self.items_metadata["split"] == "None"])
-        return f"Categories: {len(self._all_categories)}\nAll: {num_all} samples"
+        num_train = len(self.items_metadata[self.items_metadata["split"] == "train"])
+        num_test = len(self.items_metadata[self.items_metadata["split"] == "test"])
+        num_val = len(self.items_metadata[self.items_metadata["split"] == "valid"])
+        return f"Categories: {len(self.all_categories)}\nTrain: {num_train} Validation: {num_val} Test samples: {num_test} "
 
 
 if __name__ == "__main__":

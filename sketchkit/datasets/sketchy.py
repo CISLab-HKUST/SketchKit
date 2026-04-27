@@ -108,7 +108,15 @@ def parse_svg(svg_file: str):
     Raises:
         AssertionError: If unsupported shapes or transforms are encountered.
     """
-    tree = ET.parse(svg_file)
+    try:
+        tree = ET.parse(svg_file)
+    except ET.ParseError:
+        with open(svg_file, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read()
+        if "</svg>" not in content:
+            content = content.rstrip() + "\n</svg>"
+        from io import StringIO
+        tree = ET.parse(StringIO(content))
     root = tree.getroot()
 
     # Robust viewBox / width/height parsing

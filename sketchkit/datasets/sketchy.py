@@ -2,6 +2,7 @@ import os
 import shutil
 import traceback
 import re
+from io import StringIO
 
 import xml.etree.ElementTree as ET
 import pandas as pd
@@ -115,7 +116,9 @@ def parse_svg(svg_file: str):
             content = f.read()
         if "</svg>" not in content:
             content = content.rstrip() + "\n</svg>"
-        from io import StringIO
+        content = re.sub(r'<!--.*?-->', '', content, flags=re.DOTALL)
+        content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', content)
+
         tree = ET.parse(StringIO(content))
     root = tree.getroot()
 

@@ -196,7 +196,7 @@ class Sketchy(SketchDataset):
     """
 
     md5_sum = "73bb8cb745dd7945ee8c998a58bf9f0a"
-    metadata = ["id", "pruned", "class_name", "filename", "path", "sketch_name"]
+    metadata = ["id", "pruned", "category", "filename", "path", "sketch_name", "split"]
     gdrive_id: str = "1Qr8HhjRuGqgDONHigGszyHG_awCstivo"
     filename: str = "sketches-06-04.7z"
 
@@ -260,11 +260,11 @@ class Sketchy(SketchDataset):
                 # if os.path.isdir(os.path.join(self.root, d))
             ]
             class_names.sort()
-            self.class_names = class_names
+            self.all_categories = class_names
 
             metadata_list = []
             cnt = 0
-            for class_name in self.class_names:
+            for class_name in self.all_categories:
                 class_base = os.path.join(self.src_dir, class_name)
                 files = os.listdir(class_base)
                 svg_files = sorted([f for f in files if f.lower().endswith(".svg")])
@@ -285,13 +285,18 @@ class Sketchy(SketchDataset):
 
                     invalid_files.append(os.path.join(class_name, f"{base}.svg"))
 
-                for svg_file in svg_files:
+                valid_test_num = len(svg_files) // (10 + 1 + 1)
+                train_num = len(svg_files) - valid_test_num - valid_test_num
+                split_map = ["train"] * train_num + ["valid"] * valid_test_num + ["test"] * valid_test_num
+
+                for svg_i, svg_file in enumerate(svg_files):
                     sketch_name = f"{class_name}/{svg_file}"
                     metadata_list.append(
                         {
                             "id": cnt,
                             "pruned": sketch_name in invalid_files,
-                            "class_name": class_name,
+                            "category": class_name,
+                            "split": split_map[svg_i],
                             "filename": svg_file,
                             "path": os.path.join(class_base, svg_file),
                             "sketch_name": sketch_name,
@@ -316,6 +321,9 @@ class Sketchy(SketchDataset):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
                 return self._load_items_metadata()
             self.items_metadata = items_metadata
+            self.all_categories = sorted(
+                self.items_metadata["category"].unique().tolist()
+            )
 
         self.raw_data = [None] * len(self.items_metadata)
 

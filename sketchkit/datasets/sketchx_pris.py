@@ -137,11 +137,11 @@ class SketchXPRIS(SketchDataset):
             ndjson_files = [
                 f for f in os.listdir(self.dataset_folder) if f.endswith(".ndjson")
             ]
-            self._all_categories = [os.path.splitext(f)[0] for f in ndjson_files]
-            self._all_categories.sort()
+            self.all_categories = [os.path.splitext(f)[0] for f in ndjson_files]
+            self.all_categories.sort()
 
             category_sample_count = {}
-            for category in self._all_categories:
+            for category in self.all_categories:
                 ndjson_path = os.path.join(self.dataset_folder, f"{category}.ndjson")
                 if not os.path.exists(ndjson_path):
                     print(
@@ -156,7 +156,7 @@ class SketchXPRIS(SketchDataset):
             items_metadata = []
             global_id = 0
 
-            for category in self._all_categories:
+            for category in self.all_categories:
                 sample_count = category_sample_count[category]
                 if sample_count == 0:
                     print(f"Skipping category '{category}' with 0 samples.")
@@ -181,7 +181,7 @@ class SketchXPRIS(SketchDataset):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
                 return self._load_items_metadata()
             self.items_metadata = items_metadata
-            self._all_categories = sorted(
+            self.all_categories = sorted(
                 self.items_metadata["category"].unique().tolist()
             )
         self.raw_data = [None] * len(self.items_metadata)
@@ -238,7 +238,7 @@ class SketchXPRIS(SketchDataset):
         numpy array for faster access. Only loads if self.load_all is True.
         """
         cnt = 0
-        for category in self._all_categories:
+        for category in self.all_categories:
             ndjson_path = os.path.join(
                 self.root,
                 "SketchX-PRIS-Dataset-master",

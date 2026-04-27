@@ -70,11 +70,15 @@ bool is_inside(const SceneData &scene_data,
             assert(node.child0 >= 0 && node.child1 >= 0);
             const AABB &b0 = bvh_nodes[node.child0].box;
             if (inside(b0, local_pt)) {
-                bvh_stack[stack_size++] = node.child0;
+                if (stack_size < max_bvh_stack_size) {
+                    bvh_stack[stack_size++] = node.child0;
+                }
             }
             const AABB &b1 = bvh_nodes[node.child1].box;
             if (inside(b1, local_pt)) {
-                bvh_stack[stack_size++] = node.child1;
+                if (stack_size < max_bvh_stack_size) {
+                    bvh_stack[stack_size++] = node.child1;
+                }
             }
             assert(stack_size <= max_bvh_stack_size);
         }
@@ -562,8 +566,9 @@ Vector4f sample_color(const SceneData &scene,
                     f.alpha = color_alpha[3];
                     f.group_id = group_id;
                     f.is_stroke = true;
-                    assert(num_fragments < max_hit_shapes);
-                    fragments[num_fragments++] = f;
+                    if (num_fragments < max_hit_shapes) {
+                        fragments[num_fragments++] = f;
+                    }
                 }
             }
             if (shape_group.fill_color != nullptr) {
@@ -576,19 +581,24 @@ Vector4f sample_color(const SceneData &scene,
                     f.alpha = color_alpha[3];
                     f.group_id = group_id;
                     f.is_stroke = false;
-                    assert(num_fragments < max_hit_shapes);
-                    fragments[num_fragments++] = f;
+                    if (num_fragments < max_hit_shapes) {
+                        fragments[num_fragments++] = f;
+                    }
                 }
             }
         } else {
             assert(node.child0 >= 0 && node.child1 >= 0);
             const AABB &b0 = scene.bvh_nodes[node.child0].box;
             if (inside(b0, pt, scene.bvh_nodes[node.child0].max_radius)) {
-                bvh_stack[stack_size++] = node.child0;
+                if (stack_size < max_bvh_stack_size) {
+                    bvh_stack[stack_size++] = node.child0;
+                }
             }
             const AABB &b1 = scene.bvh_nodes[node.child1].box;
             if (inside(b1, pt, scene.bvh_nodes[node.child1].max_radius)) {
-                bvh_stack[stack_size++] = node.child1;
+                if (stack_size < max_bvh_stack_size) {
+                    bvh_stack[stack_size++] = node.child1;
+                }
             }
             assert(stack_size <= max_bvh_stack_size);
         }
@@ -884,8 +894,9 @@ Vector4f sample_color_prefiltered(const SceneData &scene,
                     f.is_stroke = true;
                     f.path_info = local_path_info;
                     f.within_distance = true;
-                    assert(num_fragments < max_hit_shapes);
-                    fragments[num_fragments++] = f;
+                    if (num_fragments < max_hit_shapes) {
+                        fragments[num_fragments++] = f;
+                    }
                 }
             }
             if (shape_group.fill_color != nullptr) {
@@ -923,8 +934,9 @@ Vector4f sample_color_prefiltered(const SceneData &scene,
                         f.is_stroke = false;
                         f.path_info = local_path_info;
                         f.within_distance = found;
-                        assert(num_fragments < max_hit_shapes);
-                        fragments[num_fragments++] = f;
+                        if (num_fragments < max_hit_shapes) {
+                            fragments[num_fragments++] = f;
+                        }
                     }
                 }
             }
@@ -932,11 +944,15 @@ Vector4f sample_color_prefiltered(const SceneData &scene,
             assert(node.child0 >= 0 && node.child1 >= 0);
             const AABB &b0 = scene.bvh_nodes[node.child0].box;
             if (inside(b0, pt, scene.bvh_nodes[node.child0].max_radius)) {
-                bvh_stack[stack_size++] = node.child0;
+                if (stack_size < max_bvh_stack_size) {
+                    bvh_stack[stack_size++] = node.child0;
+                }
             }
             const AABB &b1 = scene.bvh_nodes[node.child1].box;
             if (inside(b1, pt, scene.bvh_nodes[node.child1].max_radius)) {
-                bvh_stack[stack_size++] = node.child1;
+                if (stack_size < max_bvh_stack_size) {
+                    bvh_stack[stack_size++] = node.child1;
+                }
             }
             assert(stack_size <= max_bvh_stack_size);
         }
@@ -1611,6 +1627,11 @@ void render(std::shared_ptr<Scene> scene,
             num_samples_y
         }, num_samples, scene->use_gpu);
         if (scene->use_gpu) {
+
+// Clean up boundary samples and may cause the illegal memory access errors
+// This happens with the large number of strokes or too large width and rear camera settings
+// e.g., 50 radius from the centering object and the camera with 10-width strokes 
+
 #ifdef __CUDACC__
             checkCuda(cudaFree(boundary_samples));
             checkCuda(cudaFree(boundary_ids));

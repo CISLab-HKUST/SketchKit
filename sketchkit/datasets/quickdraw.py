@@ -192,9 +192,9 @@ class QuickDraw(SketchDataset):
                 for line in f.readlines():
                     line = line.strip("\n")
                     all_categories.append(line)
-            self._all_categories = sorted(all_categories)
+            self.all_categories = sorted(all_categories)
             items_metadata = pd.DataFrame(columns=["category", "split", "id", "sub_id"])
-            for category in tqdm(self._all_categories, desc="Caching metadata"):
+            for category in tqdm(self.all_categories, desc="Caching metadata"):
                 npz_path = os.path.join(self.root, category + ".npz")
                 data = np.load(npz_path, encoding="latin1", allow_pickle=True)
                 for split in ["train", "valid", "test"]:
@@ -223,7 +223,7 @@ class QuickDraw(SketchDataset):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
                 return self._load_items_metadata()
             self.items_metadata = items_metadata
-            self._all_categories = sorted(
+            self.all_categories = sorted(
                 self.items_metadata["category"].unique().tolist()
             )
         self.raw_data = [None] * len(self.items_metadata)
@@ -235,7 +235,7 @@ class QuickDraw(SketchDataset):
         numpy array for faster access. Only loads if self.load_all is True.
         """
         cnt = 0
-        for category in tqdm(self._all_categories, desc="Loading all data to memory"):
+        for category in tqdm(self.all_categories, desc="Loading all data to memory"):
             npz_path = os.path.join(self.root, category + ".npz")
             data = np.load(npz_path, encoding="latin1", allow_pickle=True)
             for split in ["train", "valid", "test"]:
@@ -281,7 +281,7 @@ class QuickDraw(SketchDataset):
         num_train = len(self.items_metadata[self.items_metadata["split"] == "train"])
         num_test = len(self.items_metadata[self.items_metadata["split"] == "test"])
         num_val = len(self.items_metadata[self.items_metadata["split"] == "valid"])
-        return f"Categories: {len(self._all_categories)}\nTrain: {num_train} Validation: {num_val} Test samples: {num_test} "
+        return f"Categories: {len(self.all_categories)}\nTrain: {num_train} Validation: {num_val} Test samples: {num_test} "
 
 
 if __name__ == "__main__":

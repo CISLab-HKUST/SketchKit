@@ -58,8 +58,18 @@ cd /path/to/SketchKit
 Replace `/path/to/SketchKit` with the actual path to your SketchKit folder.
 
 #### Step 3: Install SketchKit
-Run the following commands:
 
+Run the following commands in the working directory:
+
+```bash
+# Install the environment
+uv sync
+
+# Activate the environment
+source .venv/bin/activate
+```
+
+<!-- 
 ```bash
 # Create a new conda environment with Python 3.12
 conda create -n sketchkit python==3.12
@@ -69,7 +79,7 @@ conda activate sketchkit
 
 # Install SketchKit in development mode
 pip install -e .
-```
+``` -->
 After installation, you can import `sketchkit` in your python program.
 
 #### Step 4: Verify Installation

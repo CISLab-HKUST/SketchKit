@@ -37,8 +37,6 @@ After download and extraction, the dataset is expected under:
 from sketchkit.datasets import SmartTracer
 
 ds = SmartTracer(
-    root="path/to/cache_dir",
-    load_all=False,
     cislab_source=True,
 )
 

@@ -94,26 +94,32 @@ print("SketchKit installed successfully!")
 **Note**: Use `pip install -e .` (with `-e`) for development installation, which allows you to modify the code and see changes immediately.
 
 ### Example
+
 #### Load dataset
 
 SketchKit provides several options for loading datasets:
 
 ##### Basic Loading (Recommended for beginners)
+
 ```python
 # Load metadata only (fast, low memory usage)
 dataset = QuickDraw()
 ```
+
 **Load All Data to Memory**
+
 ```python
 # Load all sketches to memory (faster access, high memory usage)
 dataset = QuickDraw(load_all=True)
 ```
 
 **Use Alternative Download Source**
+
 ```python
 # Download from CISLab mirror (may be faster in some regions)
 dataset = QuickDraw(cislab_source=True)
 ```
+
 ##### Working with Dataset Metadata
 
 All datasets provide a `items_metadata` attribute that helps you search and filter sketches:

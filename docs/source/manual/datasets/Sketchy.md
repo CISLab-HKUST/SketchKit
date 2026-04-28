@@ -40,8 +40,6 @@ After download and extraction, the dataset is expected under:
 from sketchkit.datasets import Sketchy
 
 ds = Sketchy(
-    root="path/to/cache_dir",
-    load_all=True,
     cislab_source=True,
 )
 

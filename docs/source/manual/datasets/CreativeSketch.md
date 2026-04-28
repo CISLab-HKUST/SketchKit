@@ -31,8 +31,6 @@ Each sketch is represented as polylines, which are converted to cubic Bézier se
 from sketchkit.datasets import CreativeSketch
 
 ds = CreativeSketch(
-    root="path/to/cache_dir",
-    load_all=True,
     cislab_source=True,
 )
 

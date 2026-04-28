@@ -45,8 +45,6 @@ Each `.svg` file under `sketch/` corresponds to a single vector sketch. The load
 from sketchkit.datasets import PhotoSketching
 
 ds = PhotoSketching(
-    root="path/to/cache_dir",
-    load_all=False,
     cislab_source=True,
 )
 

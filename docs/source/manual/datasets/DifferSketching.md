@@ -49,8 +49,6 @@ After download and extraction, the dataset is expected under:
 from sketchkit.datasets import DifferSketching
 
 ds = DifferSketching(
-    root="path/to/cache_dir",
-    load_all=True,
     cislab_source=True,
 )
 

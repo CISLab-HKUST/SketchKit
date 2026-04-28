@@ -49,7 +49,6 @@ After download and extraction the cache directory should look like::
 from sketchkit.datasets import GMUSketchCleanup
 
 ds = GMUSketchCleanup(
-    root="/path/to/cache_dir",
     load_all=False,           # set True to load everything into memory
     cislab_source=True,       # toggle download source
 )

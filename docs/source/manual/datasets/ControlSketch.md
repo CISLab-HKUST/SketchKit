@@ -36,8 +36,6 @@ Splits are organized as `train`, `validation`, and `test`.
 from sketchkit.datasets import ControlSketch
 
 ds = ControlSketch(
-    root="path/to/cache_dir",
-    load_all=True,
     cislab_source=True,
 )
 

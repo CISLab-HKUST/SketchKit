@@ -53,6 +53,7 @@ def mAP_score(true_class, pred_probs, n_classes):
 
 def recognition_metrics(gt_labels, predict_probs, class_number):
     """
+    Compute sketch recognition metrics, including ACC@1, ACC@3, ACC@5, ACC@10, and mAP.
 
     Args:
         gt_labels: (batch_size)
@@ -78,3 +79,49 @@ def recognition_metrics(gt_labels, predict_probs, class_number):
     outstr = 'acc@1: %.6f, acc@3: %.6f, acc@5: %.6f, acc@10: %.6f, mAP: %.6f' % \
              (eval_acc_top1 * 100, eval_acc_top3 * 100, eval_acc_top5 * 100, eval_acc_top10 * 100, eval_mAP * 100)
     print(outstr)
+
+
+def segmentation_metrics(gt_labels_list, predict_labels_list, component_correct_threshold=0.75):
+    """
+    Compute sketch segmentation metrics, including P_metric and C_metric.
+
+    Args:
+        gt_labels_list: A list of gt_labels, each for a sketch. Each item includes num_path paths. Each path contains gt labels for points on the path.
+        predict_labels_list: (num_sketch, num_point)
+        component_correct_threshold: A component/path is correctly labeled if at least 75% of its points have the correct label.
+
+    Returns:
+
+    """
+    p_metric_list = []
+    c_metric_list = []
+
+    for i in range(len(predict_labels_list)):
+        gt_labels = gt_labels_list[i]
+        predict_labels = np.array(predict_labels_list[i])  # (num_point)
+        predict_labels_left = np.copy(predict_labels)
+
+        n_path = len(gt_labels)
+
+        p_correct = 0
+        p_total = len(predict_labels)
+        c_correct = 0
+        c_total = n_path
+
+        for path_i in range(n_path):
+            path_gt_labels = np.array(gt_labels[path_i])  # (num_point_on_path)
+            path_predict_labels = predict_labels_left[:len(path_gt_labels)]  # (num_point_on_path)
+            predict_labels_left = predict_labels_left[len(path_gt_labels):]
+
+            path_point_correct = np.sum(path_gt_labels == path_predict_labels)
+            p_correct += path_point_correct
+
+            patch_label_percent = path_point_correct / float(len(path_gt_labels))
+            if patch_label_percent > component_correct_threshold:
+                c_correct += 1
+
+        p_metric_list.append(p_correct / float(p_total))
+        c_metric_list.append(c_correct / float(c_total))
+
+    p_metric, c_metric = np.average(p_metric_list), np.average(c_metric_list)
+    print('P_metric:{:.4}%\tC_metric:{:.4}%'.format(p_metric * 100, c_metric * 100))

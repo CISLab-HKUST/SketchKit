@@ -11,6 +11,7 @@ from .gmu_sketch_cleanup import GMUSketchCleanup
 from .fscoco import FSCOCO
 from .differsketching import DifferSketching
 from .creative_sketch import CreativeSketch
+from .sketchime import SketchIME
 
 __all__ = [
     "TUBerlin",
@@ -25,5 +26,6 @@ __all__ = [
     "GMUSketchCleanup",
     "FSCOCO",
     "DifferSketching", 
-    "CreativeSketch"
+    "CreativeSketch",
+    "SketchIME"
 ]

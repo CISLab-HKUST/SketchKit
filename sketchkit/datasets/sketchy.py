@@ -116,6 +116,7 @@ def parse_svg(svg_file: str):
             content = f.read()
         if "</svg>" not in content:
             content = content.rstrip() + "\n</svg>"
+        content = re.sub(r'&(?!amp;|lt;|gt;|quot;|#)', '&amp;', content)
         content = re.sub(r'<!--.*?-->', '', content, flags=re.DOTALL)
         content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', content)
 

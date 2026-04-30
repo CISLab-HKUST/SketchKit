@@ -24,6 +24,7 @@ def parse_stroke3_format(stroke_data):
         stroke_data (np.ndarray): Array of shape (N_point, 3), where each point
             is in stroke-3 format (dx, dy, pen_state). Pen state is 0 (drawing)
             or 1 (lifting).
+        image_size (int): The size for resizing the sketches.
 
     Returns:
         tuple: A tuple containing:
@@ -37,6 +38,7 @@ def parse_stroke3_format(stroke_data):
     dx = stroke_data[:, 0]  # (N_point)
     dy = stroke_data[:, 1]  # (N_point)
     pen_state = stroke_data[:, 2]  # (N_point)
+    group_id = stroke_data[:, 3]  # (N_point)
 
     # Convert to absolute coordinates
     xs, ys = np.cumsum(dx), np.cumsum(dy)
@@ -44,47 +46,33 @@ def parse_stroke3_format(stroke_data):
     ys -= np.min(ys)
     xy = np.stack([xs, ys], axis=1)  # (N_point, 2)
 
+    min_xy = np.min(xy, axis=0, keepdims=True)  # (1, 2)
+    max_xy = np.max(xy, axis=0, keepdims=True)  # (1, 2)
+    max_dims = max_xy - min_xy
+    max_width = max_dims[0, 0]
+    max_height = max_dims[0, 1]
+    xy = xy - min_xy
+
     path_list = []  # list of (N_strokes, 4, 2)
     stroke_list = []  # list of (4, 2)
     total_segment_num = 0
-    for i in range(len(pen_state) - 1):
+    for i in range(len(pen_state)):
         if pen_state[i] == 0:
+            assert i != len(pen_state) - 1
             p_start = xy[i]  # (2)
             p_end = xy[i + 1]  # (2)
             line = np.stack([p_start, p_end], axis=0)  # (2, 2)
-            cubic = Curve.from_line(line)  # (4, 2)
+            attribute_list = [{"group_id": group_id[i]},
+                              {"group_id": group_id[i + 1]}]
+            cubic = Curve.from_line(line, attribute_list=attribute_list)  # (4, 2)
             stroke_list.append(cubic)
             total_segment_num += 1
         else:
             path_list.append(Path(stroke_list))
             stroke_list = []
-    
-    # Calculate canvas size based on bounding box
-    if path_list:
-        all_points = []
-        for path in path_list:
-            for curve in path.curves:
-                all_points.extend([
-                    [curve.p_start.x, curve.p_start.y],
-                    [curve.p_crtl1.x, curve.p_crtl1.y],
-                    [curve.p_crtl2.x, curve.p_crtl2.y],
-                    [curve.p_end.x, curve.p_end.y]
-                ])
-        
-        if all_points:
-            all_points_array = np.array(all_points)
-            width = float(np.max(all_points_array[:, 0]) - np.min(all_points_array[:, 0]))
-            height = float(np.max(all_points_array[:, 1]) - np.min(all_points_array[:, 1]))
-            
-            # Add a small margin and ensure minimum size
-            width = max(width * 1.1, 100.0)
-            height = max(height * 1.1, 100.0)
-        else:
-            width, height = 512.0, 512.0
-    else:
-        width, height = 512.0, 512.0
-    
-    return path_list, total_segment_num, width, height
+
+
+    return path_list, total_segment_num, max_width, max_height
 
 
 class SketchXPRIS(SketchDataset):
@@ -105,7 +93,7 @@ class SketchXPRIS(SketchDataset):
     # MD5 Sum of the whole dir, you can set a list for zip files
     md5_sum = "67ac28f552b857fc84de4f60775a13a0"
     # Metadata columns for each items
-    metadata = ["id", "sub_id", "category"]
+    metadata = ["id", "sub_id", "category", "split", "label_names"]
 
     # def __init__(
     #     self,
@@ -130,10 +118,12 @@ class SketchXPRIS(SketchDataset):
         self.dataset_folder = os.path.join(
             self.root, "SketchX-PRIS-Dataset-master", "Perceptual Grouping"
         )
+        self.group_folder = os.path.join(
+            self.root, "SketchX-PRIS-Dataset-master", "Group ID"
+        )
+        self.all_class_part_labels = []  # in "class-part" format, such as "dog-head"
+
         if not os.path.exists(os.path.join(self.root, ".metadata.parquet")):
-            self.group_folder = os.path.join(
-                self.root, "SketchX-PRIS-Dataset-master", "Group ID"
-            )
             ndjson_files = [
                 f for f in os.listdir(self.dataset_folder) if f.endswith(".ndjson")
             ]
@@ -162,9 +152,27 @@ class SketchXPRIS(SketchDataset):
                     print(f"Skipping category '{category}' with 0 samples.")
                     continue
 
+                valid_test_num = sample_count // (10 + 1 + 1)
+                train_num = sample_count - valid_test_num - valid_test_num
+                split_map = ["train"] * train_num + ["valid"] * valid_test_num + ["test"] * valid_test_num
+
+                part_label_name_file = os.path.join(self.group_folder, f"{category}.txt")
+                if not os.path.exists(part_label_name_file):
+                    part_label_name_file = os.path.join(self.group_folder, f"{'-'.join(category.split('_'))}.txt")
+                with open(part_label_name_file, "r", encoding="utf-8") as f:
+                    lines = [line.strip().lower() for line in f.readlines() if line.strip()]
+                label_names = ",".join(lines)
+                self.all_class_part_labels += ["-".join([category, part]) for part in lines]
+
                 for sub_id in range(sample_count):
                     items_metadata.append(
-                        {"category": category, "sub_id": sub_id, "id": global_id}
+                        {
+                            "category": category,
+                            "sub_id": sub_id,
+                            "id": global_id,
+                            "split": split_map[sub_id],
+                            "label_names": label_names
+                        }
                     )
                     global_id += 1
 
@@ -172,7 +180,6 @@ class SketchXPRIS(SketchDataset):
             self.items_metadata.to_parquet(
                 os.path.join(self.root, ".metadata.parquet"), compression="zstd"
             )
-
         else:
             items_metadata = pd.read_parquet(
                 os.path.join(self.root, ".metadata.parquet")
@@ -184,6 +191,15 @@ class SketchXPRIS(SketchDataset):
             self.all_categories = sorted(
                 self.items_metadata["category"].unique().tolist()
             )
+
+            for category in self.all_categories:
+                part_label_name_file = os.path.join(self.group_folder, f"{category}.txt")
+                if not os.path.exists(part_label_name_file):
+                    part_label_name_file = os.path.join(self.group_folder, f"{'-'.join(category.split('_'))}.txt")
+                with open(part_label_name_file, "r", encoding="utf-8") as f:
+                    lines = [line.strip().lower() for line in f.readlines() if line.strip()]
+                self.all_class_part_labels += ["-".join([category, part]) for part in lines]
+
         self.raw_data = [None] * len(self.items_metadata)
 
     def _check_integrity(self) -> bool:
@@ -299,27 +315,26 @@ class SketchXPRIS(SketchDataset):
             self.raw_data[cnt : cnt + len(samples)] = samples
             cnt += len(samples)
         single_sketch_stroke = self.raw_data[idx]
-        path_list, total_segment_num, width, height = parse_stroke3_format(
+        path_list, total_segment_num, max_width, max_height = parse_stroke3_format(
             np.array(single_sketch_stroke)
         )
-        sketch = Sketch(height=height, width=width, paths=path_list)
+        sketch = Sketch(height=max_height, width=max_width, paths=path_list)
         return sketch
 
 
 if __name__ == "__main__":
-    dataset = SketchXPRIS(cislab_source=True)
+    dataset = SketchXPRIS()
 
     ice_cream = dataset.items_metadata[
         (dataset.items_metadata["category"] == "ice_cream")
     ]
-    ice_cream_sketch = [dataset[row.id] for _, row in ice_cream[:100].iterrows()]
+    ice_cream_sketch = [dataset[row.id] for _, row in ice_cream[:10].iterrows()]
 
-    from PIL import Image
-    from sketchkit.renderer.cairo_renderer import CairoRenderer
+    from sketchkit.renderer import CairoRenderer
 
-    renderer = CairoRenderer(256, (1, 1, 1))
-    raster_image = renderer.render(ice_cream_sketch[1])
-    outpath = "test.png"
-    if outpath is not None:
-        raster_image_png = Image.fromarray(raster_image, "RGB")
-        raster_image_png.save(outpath, "PNG")
+    # Initialize a renderer for rendering
+    renderer = CairoRenderer()
+
+    for si, sketch in enumerate(ice_cream_sketch):
+        raster_image = renderer.render(sketch)
+        raster_image.save(f"sketch-{si}.png")

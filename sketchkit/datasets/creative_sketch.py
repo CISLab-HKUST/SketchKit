@@ -68,7 +68,7 @@ class CreativeSketch(SketchDataset):
     md5_sum = "84c57a01499321bd6080b1f76754d709"
 
     # Metadata columns for each item
-    metadata = ["id", "category", "sub_id", "is_good"]
+    metadata = ["id", "category", "sub_id", "is_good", "split", "label_names"]
 
     # def __init__(
     #     self,
@@ -169,11 +169,28 @@ class CreativeSketch(SketchDataset):
         self.bird_json_base = json.loads(open(bird_json_path).read())
         self.creature_json_base = json.loads(open(creature_json_path).read())
 
+        self.all_class_part_labels = []  # in "class-part" format, such as "dog-head"
+
+        class_part_labels = list(COLORS_BIRD.keys())
+        class_part_labels.sort()
+        self.all_class_part_labels += ["-".join(["bird", item]) for item in class_part_labels]
+        label_names_bird = ",".join(class_part_labels)
+
+        class_part_labels = list(COLORS_CREATURE.keys())
+        class_part_labels.sort()
+        self.all_class_part_labels += ["-".join(["creature", item]) for item in class_part_labels]
+        label_names_creature = ",".join(class_part_labels)
+
         if not os.path.exists(os.path.join(self.root, ".metadata.parquet")):
             items_metadata = pd.DataFrame(
-                columns=["id", "category", "sub_id", "is_good"]
+                columns=["id", "category", "sub_id", "is_good", "split", "label_names"]
             )
             cnt = 0
+
+            # Creative Bird
+            valid_test_num = len(self.bird_json_base) // (10 + 1 + 1)
+            train_num = len(self.bird_json_base) - valid_test_num - valid_test_num
+            split_map = ["train"] * train_num + ["valid"] * valid_test_num + ["test"] * valid_test_num
 
             for sub_id, sketch in tqdm(
                 enumerate(self.bird_json_base),
@@ -185,11 +202,18 @@ class CreativeSketch(SketchDataset):
                     "category": "bird",
                     "sub_id": sub_id,
                     "is_good": sketch["good_sample"],
+                    "split": split_map[sub_id],
+                    "label_names": label_names_bird
                 }
                 items_metadata = pd.concat(
                     [items_metadata, pd.DataFrame([new_row])], ignore_index=True
                 )
                 cnt += 1
+
+            # Creative Creatures
+            valid_test_num = len(self.creature_json_base) // (10 + 1 + 1)
+            train_num = len(self.creature_json_base) - valid_test_num - valid_test_num
+            split_map = ["train"] * train_num + ["valid"] * valid_test_num + ["test"] * valid_test_num
 
             for sub_id, sketch in tqdm(
                 enumerate(self.creature_json_base),
@@ -201,6 +225,8 @@ class CreativeSketch(SketchDataset):
                     "category": "creature",
                     "sub_id": sub_id,
                     "is_good": sketch["good_sample"],
+                    "split": split_map[sub_id],
+                    "label_names": label_names_creature
                 }
                 items_metadata = pd.concat(
                     [items_metadata, pd.DataFrame([new_row])], ignore_index=True
@@ -251,6 +277,9 @@ class CreativeSketch(SketchDataset):
         else:
             single_sketch_json = self.creature_json_base[orig_idx]
             colors = COLORS_CREATURE
+        class_part_labels = list(colors.keys())
+        class_part_labels.sort()
+
         path_list = []
         for j, step in enumerate(single_sketch_json["all_strokes"]):
             stroke_label = single_sketch_json["partsUsed"][j]
@@ -264,8 +293,10 @@ class CreativeSketch(SketchDataset):
                     p_start = [seg[0], seg[1]]
                     p_end = [seg[2], seg[3]]
                     line = np.stack([p_start, p_end], axis=0)
-                    cubic = Curve.from_line(line)
-                    cubic._set_endpoint_attribute("color", stroke_color)
+                    attribute_list = [{"group_id": class_part_labels.index(stroke_label)},
+                                      {"group_id": class_part_labels.index(stroke_label)}]
+                    cubic = Curve.from_line(line, attribute_list=attribute_list)
+                    # cubic._set_endpoint_attribute("color", stroke_color)
                     strokes.append(cubic)
             path_list.append(Path(curves=strokes))
         return Sketch(512, 512, path_list)
@@ -314,56 +345,18 @@ class CreativeSketch(SketchDataset):
 
 
 if __name__ == "__main__":
-    # Default Load
-    dataset = CreativeSketch()
+    dataset = CreativeSketch(cislab_source=True)
 
-    print(f"Dataset summary:\n{dataset.extra_repr()}")
-
-    # 示例：通过items_metadata选择数据
-    # 1. 选择鸟类数据
-    bird_indices = dataset.items_metadata[
-        dataset.items_metadata["category"] == "bird"
-    ].index
-    print(f"Number of bird sketches: {len(bird_indices)}")
-
-    # 2. 选择生物数据
-    creature_indices = dataset.items_metadata[
-        dataset.items_metadata["category"] == "creature"
-    ].index
-    print(f"Number of creature sketches: {len(creature_indices)}")
-
-    # 3. 选择好的样本
-    good_indices = dataset.items_metadata[
-        dataset.items_metadata["is_good"] == True
-    ].index
-    print(f"Number of good sketches: {len(good_indices)}")
-
-    # 4. 组合筛选：鸟类的好样本
-    good_bird_indices = dataset.items_metadata[
+    birds = dataset.items_metadata[
         (dataset.items_metadata["category"] == "bird")
-        & (dataset.items_metadata["is_good"] == True)
-    ].index
-    print(f"Number of good bird sketches: {len(good_bird_indices)}")
+    ]
+    bird_sketches = [dataset[row.id] for _, row in birds[:10].iterrows()]
 
-    # 加载一个鸟类的好样本
-    if len(good_bird_indices) > 0:
-        bird_sketch = dataset[good_bird_indices[0]]
-        print(f"Loaded bird sketch with {len(bird_sketch.paths)} paths")
+    from sketchkit.renderer import CairoRenderer
 
-    # 加载一个生物的样本
-    if len(creature_indices) > 0:
-        creature_sketch = dataset[creature_indices[0]]
-        print(f"Loaded creature sketch with {len(creature_sketch.paths)} paths")
+    # Initialize a renderer for rendering
+    renderer = CairoRenderer()
 
-    # 渲染示例
-    from PIL import Image
-    from sketchkit.renderer.cairo_renderer import CairoRenderer
-
-    renderer = CairoRenderer(800, (1, 1, 1))
-    if "bird_sketch" in locals():
-        raster_image = renderer.render(bird_sketch)
-        outpath = "test.png"
-        if outpath is not None:
-            raster_image_png = Image.fromarray(raster_image, "RGB")
-            raster_image_png.save(outpath, "PNG")
-            print(f"Sketch saved to {outpath}")
+    for si, sketch in enumerate(bird_sketches):
+        raster_image = renderer.render(sketch)
+        raster_image.save(f"sketch-{si}.png")

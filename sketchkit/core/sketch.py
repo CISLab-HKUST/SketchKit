@@ -85,10 +85,11 @@ class Curve:
     """
 
     @classmethod
-    def from_line(cls, line) -> "Curve":
+    def from_line(cls, line, attribute_list=None) -> "Curve":
         """
         Args:
             line: In shape (2, 2), including two points.
+            attribute_list: A list of attributes (dict) for the two endpoints.
 
         Returns:
             cubic: Curve object.
@@ -99,8 +100,12 @@ class Curve:
         start_x, start_y = ps[0], ps[1]
         end_x, end_y = pe[0], pe[1]
 
-        p_start = Point(start_x, start_y)
-        p_end = Point(end_x, end_y)
+        if attribute_list is None:
+            p_start = Point(start_x, start_y)
+            p_end = Point(end_x, end_y)
+        else:
+            p_start = Point(start_x, start_y, attributes=attribute_list[0])
+            p_end = Point(end_x, end_y, attributes=attribute_list[1])
 
         ctrl1_x = 2.0 / 3.0 * start_x + 1.0 / 3.0 * end_x
         ctrl1_y = 2.0 / 3.0 * start_y + 1.0 / 3.0 * end_y

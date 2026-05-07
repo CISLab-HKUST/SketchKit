@@ -34,7 +34,7 @@ def sketch_to_3d_doubao_impl(
         api_key: Doubao API key (if None, will read from environment variable DOUBAO_API_KEY)
         api_base: API base URL (if None, uses default)
         **kwargs: Additional parameters
-            - model_name: Model name (default: "doubao-seed3d-1-0-250928")
+            - model_name: Model name (default: "doubao-seed3d-2-0-260328")
             - file_format: Output format (default: "glb")
             - subdivision_level: Subdivision level (default: "medium")
             - max_wait_time: Maximum wait time in seconds (default: 600)
@@ -76,7 +76,7 @@ def sketch_to_3d_doubao_impl(
         if api_key is None:
             api_key = os.environ.get('DOUBAO_API_KEY')
         
-        model_name = kwargs.get('model_name', 'doubao-seed3d-1-0-250928')
+        model_name = kwargs.get('model_name', 'doubao-seed3d-2-0-260328')
         subdivision_level = kwargs.get('subdivision_level', 'medium')
         file_format = kwargs.get('file_format', 'glb')
         max_wait_time = kwargs.get('max_wait_time', 600)

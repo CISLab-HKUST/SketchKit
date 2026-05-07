@@ -15,6 +15,7 @@ The module currently supports the following methods:
    sketchkit.sketch2image.controlnet.ControlNetModel
    sketchkit.sketch2image.pix2pix.Pix2PixModel
    sketchkit.sketch2image.t2i_adapter.T2IAdapterModel
+   sketchkit.sketch2image.nano_banana2.NanoBanana2Model
 
 ```
 
@@ -35,6 +36,16 @@ The method implements [InstructPix2Pix: Learning to Follow Image Editing Instruc
 ### T2I-Adapter
 
 The method implements [T2I-Adapter: Learning Adapters to Dig Out More Controllable Ability for Text-to-Image Diffusion Models](https://arxiv.org/abs/2302.08453) from AAAI 2024 using a Canny edge adapter (`t2iadapter_canny_sd15v2`). It provides a lightweight way to guide the Stable Diffusion generation using the edges derived from the sketch.
+
+**Output:** Returns a `PIL.Image` (RGB mode).
+
+### Nano Banana 2
+
+This method uses Google's Gemini 3.1 Flash Image Preview API for sketch-to-image generation. It leverages cloud-based multimodal AI to transform sketches into realistic images directly through API calls.
+
+**Requirements:**
+- Get API key from: https://aistudio.google.com/
+- Add API key to `~/.sketchkit/config`: `GOOGLE_API_KEY="your_api_key"`
 
 **Output:** Returns a `PIL.Image` (RGB mode).
 
@@ -76,6 +87,15 @@ img_adapter = adapter_gen.run(
     size=512
 )
 img_adapter.save("cat_real_adapter.png")
+
+# 4) Nano Banana 2: Google Gemini API
+nano_gen = ImageGenerator(method="nano_banana2")
+img_nano = nano_gen.run(
+    sketch,
+    prompt="a realistic photo of a cat in a fancy restaurant",
+    size=1024
+)
+img_nano.save("cat_real_nano.png")
 ```
 
 ## Usage Notes
@@ -83,8 +103,9 @@ img_adapter.save("cat_real_adapter.png")
 **Constructor**
 
 - `ImageGenerator(method="controlnet", device="cuda", **kwargs)`
-  - `method`: backend name. Supported values are `"controlnet"`, `"pix2pix"`, and `"t2i_adapter"`.
-  - `device`: execution device, e.g., `"cuda"` or `"cpu"`.
+  - `method`: backend name. Supported values are `"controlnet"`, `"pix2pix"`, `"t2i_adapter"`, and `"nano_banana2"`.
+  - `device`: execution device, e.g., `"cuda"` or `"cpu"` (not used for `"nano_banana2"`).
+  - `api_key`: (for `"nano_banana2"` only) Google API key. If not provided, reads from `~/.sketchkit/config`.
 
 **Run Method**
 

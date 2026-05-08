@@ -1,6 +1,6 @@
 # QuickDraw
 
-`QuickDraw` is a `SketchDataset` loader for the [Quick Draw](https://github.com/googlecreativelab/quickdraw-dataset) dataset. It contains millions of drawings across 345 categories, collected from the Quick, Draw! game. 
+`QuickDraw` is a `SketchDataset` loader for the [Quick Draw](https://github.com/googlecreativelab/quickdraw-dataset) dataset. It contains millions of drawings across 345 categories, collected from the Quick, Draw! game.
 The vector sketches of each category are stored in an `npz` file, including 75K samples (70K Training, 2.5K Validation, 2.5K Test). Each drawing is represented as a sequence of strokes in stroke-3 format.
 
 **Source**: `datasets/quickdraw.py`
@@ -44,7 +44,8 @@ dataset = QuickDraw()
 
 # search data with "category = cat" and "split = train"
 cats = dataset.items_metadata[
-    (dataset.items_metadata["category"] == "cat") & (dataset.items_metadata["split"] == "train")
+    (dataset.items_metadata["category"] == "cat")
+    & (dataset.items_metadata["split"] == "train")
 ]
 # fetch the first 100 cat sketches
 cats_sketch = [dataset[row.id] for _, row in cats[:100].iterrows()]
@@ -54,18 +55,9 @@ del dataset, cats
 sketch = cats_sketch[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
-
-## Visualization
-from sketchkit.renderer import CairoRenderer
-
-# Initialize a renderer for rendering
-renderer = CairoRenderer()
-raster_image = renderer.render(sketch)
-raster_image.save("datasets/sketch.png")
 ```
 
 **Arguments**
 
 - `"category"`: specify the category name in the `categories.txt`, such as "cat", "airplane", "The Great Wall of China", etc.
 - `"split"`: "train", "valid", or "test".
-

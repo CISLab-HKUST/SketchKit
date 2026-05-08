@@ -2,7 +2,7 @@
 
 The non-photorealistic renderer (NPR) module provides functionality to render 3D models into 2D sketch-like images using various NPR techniques such as suggestive contours, ridges and valleys, and apparent ridges.
 
-**Source**: `sketchkit/renderer/npr_renderer.py`
+**Source**: `tests/unit/test_npr_renderer.py`
 
 ## Usage
 

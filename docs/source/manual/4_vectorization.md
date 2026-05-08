@@ -2,7 +2,7 @@
 
 The vectorization module provides functionality to convert raster images into vector sketches. This is useful for tasks that require stroke-level information from pixel-based inputs.
 
-**Source**: `tests/test_vectorization.py`
+**Source**: `tests/unit/test_vectorization.py`
 
 
 ## Available Methods

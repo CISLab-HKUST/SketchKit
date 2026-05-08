@@ -7,6 +7,8 @@ SketchKit provides a variety of **sketch-based datasets** for research on sketch
 
 All datasets share a unified interface, so you can load them, search sketches by metadata, or convert sketches into the standard Sketch format easily.
 
+.. _dataset-metadata:
+
 Metadata
 ---------------------------
 Each dataset object provides an attribute ``items_metadata``, :class:`pandas.DataFrame`, 
@@ -18,6 +20,8 @@ which contains useful information for searching and filtering sketches.
     - ``category``: sketch category (e.g., "cat", "dog", "chair")
     - ``split``: dataset split (e.g., "train", "test", "val"), available in some datasets
 
+.. _key-concepts-of-dataset-parameters:
+
 Key concepts of dataset parameters
 ---------------------------
 **root**: ``Datatype: str``, ``Default: "~/.sketchkit/datasets"`` 
@@ -26,7 +30,15 @@ Key concepts of dataset parameters
     | If the dataset is not present locally, it will be automatically downloaded to this path. 
     | `root` dictionary can be costumed, if not, it will store datasets in the default path. 
 
-    Example: dataset = QuickDraw(root=tmpdir)
+    Examples:
+
+    .. code-block:: python
+
+        # Store the dataset in a temporary directory
+        dataset = ControlSketch(root=tmpdir)
+
+        # Store the dataset in a custom local directory
+        dataset = ControlSketch(root="./controlsketch")
 
 **load_all**: ``Datatype: bool``, ``Default: False``
 
@@ -35,16 +47,11 @@ Key concepts of dataset parameters
     - ``False``: Load metadata only, sketch can be loaded on demand via metadata. 
     - ``True``: Load the entire dataset into memory, having faster access but higher RAM usage. 
 
-    Example: dataset = QuickDraw(load_all=True)
+    Example: 
+    
+    .. code-block:: python
 
-**cislab_source**: ``Datatype: bool``, ``Default: False``
-
-    Whether to download the dataset from the CIS LAB mirror site or original download link. 
-
-    - ``False``: Use default source (e.g., Github/official download link) to download dataset. 
-    - ``True``: Apply CIS LAB mirror site to download dataset. 
-
-    Example: dataset = QuickDraw(cislab_source=True)
+        dataset = ControlSketch(load_all=True)
 
 **download**: ``Datatype: bool``, ``Default: True``
 
@@ -57,19 +64,26 @@ Key concepts of dataset parameters
 
     Select which split of the dataset to load. (e.g., "train", "test", "val")
 
-    Example: cats = dataset.items_metadata(dataset.items_metadata["split"] == "train")
+    Example: 
+    
+    .. code-block:: python
+      
+        validation = dataset.items_metadata[dataset.items_metadata["split"] == "validation"]
 
 **category**: ``Datatype: list[str]``, ``Default: None``
 
     Load only specific categories of sketches.  (e.g., “cat”, “dog”, “chair”)
 
-    Example: cats = dataset.items_metadata(dataset.items_metadata["category"] == "cat") 
+    Example: 
+    
+    .. code-block:: python
+      
+        bears = dataset.items_metadata[dataset.items_metadata["category"] == "bear"]
 
 .. tip::
 
     - ``load_all`` should be chosen based on dataset size and memory availability: use ``False`` for large datasets.
     - ``split`` and ``categories`` can be combined to load subset you need. 
-    - ``cislab_source`` is applicable to most mainstream dataset.  
 
 Loading a dataset
 --------------
@@ -77,13 +91,10 @@ Loading a dataset
 .. code-block:: python
 
    # Default load (metadata only)
-   dataset = QuickDraw()
+   dataset = ControlSketch()
 
    # Load all data into memory at once
-   dataset = QuickDraw(load_all=True)
-
-   # Download from CISLAB CDN
-   dataset = QuickDraw(root=tmpdir, cislab_source=True)
+   dataset = ControlSketch(load_all=True)
 
 
 Searching sketches by metadata
@@ -92,16 +103,17 @@ Searching sketches by metadata
 .. code-block:: python
 
    # Search items using metadata
-   cats = dataset.items_metadata[
-       (dataset.items_metadata["category"] == "cat") &
-       (dataset.items_metadata["split"] == "train")
-   ]
+   bears = dataset.items_metadata[
+            (dataset.items_metadata["category"] == "bear")
+            & (dataset.items_metadata["split"] == "validation")
+        ]
 
    # Load sketches based on metadata
-   cats_sketch = [dataset[row.id] for _, row in cats[:100].iterrows()]
+   bears_sketch = [dataset[row.id] for _, row in bears[:100].iterrows()]
 
 .. currentmodule:: sketchkit.datasets
 
+.. _available-datasets:
 
 Available Datasets
 --------------
@@ -127,6 +139,7 @@ own manual page in this section so you can customize descriptions and examples.
   datasets/DifferSketching
   datasets/CreativeSketch
 
+.. _dataset-feature:
 
 Dataset feature
 ------------------------------
@@ -171,4 +184,4 @@ The following table shows features of each built-in SketchKit dataset.
 
 How to contribute a new dataset to SketchKit
 ---------------------------
-You can integrate a new or customized dataset into SketchKit following the `step-by-step document <https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/manual/2_1_dataset_contribution.html>`_.
+You can integrate a new or customized dataset into SketchKit following the :doc:`step-by-step document <3_dataset_contribution>`.

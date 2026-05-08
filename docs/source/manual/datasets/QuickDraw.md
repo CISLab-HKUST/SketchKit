@@ -57,7 +57,9 @@ print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
 
-**Arguments**
+**Metadata Columns**
 
-- `"category"`: specify the category name in the `categories.txt`, such as "cat", "airplane", "The Great Wall of China", etc.
-- `"split"`: "train", "valid", or "test".
+- `id`: Global unique identifier across all sketches.
+- `sub_id`: Identifier within the specific category.
+- `category`: specify the category name in the `categories.txt`, such as "cat", "airplane", "The Great Wall of China", etc.
+- `split`: "train", "valid", or "test".

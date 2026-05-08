@@ -55,6 +55,17 @@ good_bird_indices = ds.items_metadata[
 print(f"Number of good bird sketches: {len(good_bird_indices)}")
 ```
 
+**Metadata Columns**
+
+- `id`: Global unique identifier across all sketches.
+- `sub_id`: Identifier within the specific category.
+- `category`: Drawing category name (e.g., "bird", "creature").
+- `is_good`: whether it is a good example drawn by a reliable worker.
+- `split`: Split in the dataset (e.g., "train", "valid", or "test").
+- `label_names`: A string of part label names, separated by ';' (e.g., "part1;part2;part3").
+
+
+
 ## Dataset Summary
 
 The Creative Sketch dataset includes:

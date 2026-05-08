@@ -1,8 +1,8 @@
-# SmartTracer
+# LineDrawer
 
-`SmartTracer` is a `SketchDataset` loader for the SmartTracer dataset, where the sequential drawing process of high-quality anime line arts is stored as `.json` files. The loader extracts coordinate points and dynamic point-level thickness, converting them into a `Sketch` composed of `Path`s and cubic Bézier `Curve`s. The canvas dimensions are dynamically calculated based on the bounding box of the strokes to ensure no clipping occurs.
+`LineDrawer` is a `SketchDataset` loader for the [LineDrawer](https://www.sciencedirect.com/science/article/pii/S0097849325002067) dataset, where the sequential drawing process of high-quality anime line arts is stored as `.json` files. The loader extracts coordinate points and dynamic point-level thickness, converting them into a `Sketch` composed of `Path`s and cubic Bézier `Curve`s. The canvas dimensions are dynamically calculated based on the bounding box of the strokes to ensure no clipping occurs.
 
-**Source**: `datasets/smarttracer.py`
+**Source**: `datasets/linedrawer.py`
 
 ## Data Format
 
@@ -21,7 +21,7 @@ After download and extraction, the dataset is expected under:
 
 ```
 <root>/
-  SmartTracer/
+  LineDrawer/
     json/
       00000.json
       00001.json
@@ -34,7 +34,7 @@ After download and extraction, the dataset is expected under:
 ## Code
 
 ```python
-from sketchkit.datasets import SmartTracer
+from sketchkit.datasets import LineDrawer
 
 ds = SmartTracer()
 

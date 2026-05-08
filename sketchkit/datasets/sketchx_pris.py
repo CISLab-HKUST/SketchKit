@@ -161,7 +161,7 @@ class SketchXPRIS(SketchDataset):
                     part_label_name_file = os.path.join(self.group_folder, f"{'-'.join(category.split('_'))}.txt")
                 with open(part_label_name_file, "r", encoding="utf-8") as f:
                     lines = [line.strip().lower() for line in f.readlines() if line.strip()]
-                label_names = ",".join(lines)
+                label_names = ";".join(lines)
                 self.all_class_part_labels += ["-".join([category, part]) for part in lines]
 
                 for sub_id in range(sample_count):

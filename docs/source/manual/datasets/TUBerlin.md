@@ -43,3 +43,10 @@ sketch = ds[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
+
+**Metadata Columns**
+
+- `id`: Global unique identifier across all sketches.
+- `sub_id`: Identifier within the specific category.
+- `category`: Drawing category name (e.g., "airplane", "alarm clock", etc.).
+- `split`: "train", "valid", or "test".

@@ -55,4 +55,5 @@ sketches = [ds[row.id] for _, row in ice_cream_metadata[:5].iterrows()]
 - `id`: Global unique identifier across all sketches.
 - `sub_id`: Identifier within the specific category.
 - `category`: Drawing category name (e.g., "ice_cream", "apple").
-
+- `split`: Split in the dataset (e.g., "train", "valid", or "test").
+- `label_names`: A string of part label names, separated by ';' (e.g., "part1;part2;part3").

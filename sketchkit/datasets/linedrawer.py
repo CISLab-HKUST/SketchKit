@@ -18,7 +18,7 @@ def download_and_extract_data(
     output_folder, remove_sourcefile=True, cislab_source=True
 ):
     os.makedirs(output_folder, exist_ok=True)
-    url = f"{CISLAB_CDN}/datasets/SmartTracer/{dataset_filename}"
+    url = f"{CISLAB_CDN}/datasets/LineDrawer/{dataset_filename}"
     try:
         download_with_wget(
             url,
@@ -40,7 +40,7 @@ def download_and_extract_data(
         return
 
 
-def load_smarttracer_sketch_json(drawing_path):
+def load_linedrawer_sketch_json(drawing_path):
     """
     Load a vector sketch from a .json file and convert to SketchVG format.
     Args:
@@ -84,8 +84,8 @@ def load_smarttracer_sketch_json(drawing_path):
     return Sketch(paths=paths, height=DEFAULT_CANVAS_HEIGHT, width=DEFAULT_CANVAS_WIDTH)
 
 
-class SmartTracer(SketchDataset):
-    """The SmartTracer dataset contains drawing process for high-quality anime line arts in json files.
+class LineDrawer(SketchDataset):
+    """The LineDrawer dataset contains drawing process for high-quality anime line arts in json files.
 
     Attributes:
         md5_sum (str): MD5 checksum for dataset integrity verification.
@@ -99,7 +99,7 @@ class SmartTracer(SketchDataset):
     #     load_all: bool = False,
     #     cislab_source: bool = False,
     # ):
-    #     """Initializes the SmartTracer dataset loader.
+    #     """Initializes the LineDrawer dataset loader.
 
     #     Checks if the dataset exists locally. If not, it triggers the download
     #     and extraction process. It then scans the SVG directories to populate a
@@ -142,7 +142,7 @@ class SmartTracer(SketchDataset):
 
     def _load_all(self):
         for _, row in self.items_metadata.iterrows():
-            self.raw_data[row["id"]] = load_smarttracer_sketch_json(
+            self.raw_data[row["id"]] = load_linedrawer_sketch_json(
                 os.path.join(self.json_base, row["json"])
             )
 
@@ -181,7 +181,7 @@ class SmartTracer(SketchDataset):
             raise IndexError("Index out of range")
         if self.raw_data[idx] is None:
             self.json_base = os.path.join(self.root, "json")
-            self.raw_data[idx] = load_smarttracer_sketch_json(
+            self.raw_data[idx] = load_linedrawer_sketch_json(
                 os.path.join(self.json_base, self.items_metadata.iloc[idx]["json"])
             )
         sketch = self.raw_data[idx]
@@ -191,7 +191,7 @@ class SmartTracer(SketchDataset):
 
 
 if __name__ == "__main__":
-    dataset = SmartTracer()
+    dataset = LineDrawer()
     print(dataset)
     sketch = dataset[1]
     print(sketch.curve_num, sketch.path_num)

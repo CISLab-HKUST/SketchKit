@@ -28,7 +28,7 @@ Each sketch is represented as polylines, which are converted to cubic Bézier se
 ## Code
 
 ```python
-from sketchkit.dss import CreativeSketch
+from sketchkit.datasets import CreativeSketch
 
 ds = CreativeSketch()
 

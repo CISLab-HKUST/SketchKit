@@ -36,7 +36,7 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import LineDrawer
 
-ds = SmartTracer()
+ds = LineDrawer()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)

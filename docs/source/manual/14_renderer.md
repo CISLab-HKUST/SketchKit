@@ -1,6 +1,6 @@
 # Renderer
 
-The renderer module provides functionality to convert vector sketches into raster images for visualization. 
+The renderer module provides functionality to convert vector sketches into raster images for visualization.
 
 ## Available Methods
 
@@ -18,19 +18,18 @@ The module currently supports the following renderers:
 
 The Cairo renderer module provides functionality to rasterize vector sketches into images using the Cairo backend. This is useful for visualizing sketch data, generating raster outputs for downstream tasks, and applying configurable rendering options such as randomized colors.
 
-**Source**: `tests/test_cairo_renderer.py`
-
+**Source**: `tests/unit/test_renderer_cairo.py`
 
 #### Code
 
-The main interface is the ```CairoRenderer``` class.
+The main interface is the `CairoRenderer` class.
 
 ```python
-from sketchkit.datasets import DifferSketching
+from sketchkit.datasets import OpenSketch
 from sketchkit.renderer import CairoRenderer
 
 # Load a sketch dataset
-my_data = DifferSketching(skip_integrity_check=True)
+my_data = OpenSketch()
 sketch = my_data[0]
 
 # Initialize the renderer
@@ -45,9 +44,9 @@ raster_image.save("cairo_rendering.png")
 
 ### Ciallo Renderer
 
-The method implements [GPU-Accelerated Rendering of Vector Brush Strokes](https://dl.acm.org/doi/10.1145/3641519.3657418) from *SIGGRAPH 2024*. This is useful for high-quality sketch visualization, expressive brush-based rendering, and producing raster outputs with configurable canvas, stroke, brush texture, and background settings.
+The method implements [GPU-Accelerated Rendering of Vector Brush Strokes](https://dl.acm.org/doi/10.1145/3641519.3657418) from _SIGGRAPH 2024_. This is useful for high-quality sketch visualization, expressive brush-based rendering, and producing raster outputs with configurable canvas, stroke, brush texture, and background settings.
 
-**Source**: `tests/test_ciallo_renderer.py`
+**Source**: `tests/unit/test_renderer_ciallo.py`
 
 #### CialloRenderOptions
 
@@ -60,13 +59,13 @@ CialloRenderOptions stores configurable rendering parameters for CialloRenderer.
 
 #### Code
 
-The main interfaces are the ```CialloRenderer``` and ```CialloRenderOptions``` classes.
+The main interfaces are the `CialloRenderer` and `CialloRenderOptions` classes.
 
 ```python
 from sketchkit.datasets import DifferSketching
 from sketchkit.renderer import CialloRenderer, CialloRenderOptions
 
-my_data = DifferSketching(skip_integrity_check=True)
+my_data = DifferSketching()
 sketch = my_data[0]
 
 render_options = CialloRenderOptions()

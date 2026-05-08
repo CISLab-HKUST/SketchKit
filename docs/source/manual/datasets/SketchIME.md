@@ -48,9 +48,7 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import SketchIME
 
-ds = SketchIME(
-    cislab_source=True,
-)
+ds = SketchIME()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
@@ -61,23 +59,7 @@ sketch_items = ds.items_metadata[
     (ds.items_metadata["category"] == "001")
 ]
 sketches = [ds[row.id] for _, row in sketch_items[:5].iterrows()]
-
-## Visualization
-from sketchkit.renderer import CairoRenderer
-
-# Initialize a renderer for rendering
-renderer = CairoRenderer()
-for i, sketch in enumerate(sketches):
-    raster_image = renderer.render(sketch)
-    raster_image.save(f"sketch{i}.png")
 ```
-
-**Arguments**
-
-- `root`: Root directory used for caching and extraction.
-- `load_all`: If `True`, preload all `.json` files into memory to avoid disk I/O during iteration.
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror (`SketchIME.zip`); otherwise it is downloaded directly from the official host.
-  - Official host: Google Drive (ID: 1TbaK46IQvI6MCs0JpCcB1Fcx8Nr3i8g8)
 
 **Metadata Columns**
 
@@ -87,4 +69,3 @@ for i, sketch in enumerate(sketches):
 - `filename`: The name of the json file.
 - `split`: Split in the dataset (e.g., "train", "valid", or "test").
 - `label_names`: A string of part label names, separated by ';' (e.g., "part1;part2;part3").
-

@@ -42,20 +42,7 @@ ds = TUBerlin()
 sketch = ds[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
-
-## Visualization
-from sketchkit.renderer import CairoRenderer
-
-# Initialize a renderer for rendering
-renderer = CairoRenderer()
-raster_image = renderer.render(sketch)
-raster_image.save("sketch.png")
 ```
-
-**Arguments**
-
-- `root`: Root directory used for caching and extraction.
-- `load_all`: If `True`, preload all data into memory to avoid disk I/O during iteration.
 
 **Metadata Columns**
 

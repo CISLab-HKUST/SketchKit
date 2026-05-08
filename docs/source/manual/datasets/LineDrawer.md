@@ -36,19 +36,10 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import LineDrawer
 
-ds = LineDrawer(
-    cislab_source=True,
-)
+ds = LineDrawer()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 
 ```
-
-**Arguments**
-
-* `root`: Root directory used for caching and extraction. LineDrawer data is placed under `<root>/LineDrawer/`.
-* `load_all`: If `True`, preload all `.json` files into memory to avoid disk I/O and JSON decoding overhead during iteration.
-* `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror.
-* CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/LineDrawer/sketch.zip`

@@ -2,7 +2,7 @@
 
 The sketch animation/inbetweening module provides functionality to generate the inbetween frames given a starting and an ending keyframe.
 
-**Source**: `tests/test_animation.py`
+**Source**: `tests/unit/test_animation.py`
 
 
 ## Available Methods

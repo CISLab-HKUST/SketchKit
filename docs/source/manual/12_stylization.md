@@ -2,7 +2,7 @@
 
 The stylization module provides functionality to convert vector sketches or geometry images into stylized raster images with learned brushstroke effects.
 
-**Source**: `tests/test_stylizer.py`
+**Source**: `tests/unit/test_stylizer.py`
 
 ## Available Methods
 

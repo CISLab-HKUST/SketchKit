@@ -38,20 +38,9 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import OpenSketch
 
-ds = OpenSketch(
-    cislab_source=True,
-)
+ds = OpenSketch()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
-
-**Arguments**
-
-- `root`: Root directory used for caching and extraction. OpenSketch data is placed under `<root>/opensketch_svgs/`.
-- `load_all`: If `True`, preload all SVG files into memory to avoid disk I/O during iteration.
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from Google Drive.
-  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/OpenSketch/sketches_svg.zip`
-  - Google Drive: File ID `1wZf3lkqSsqYTIdGqT0wrdryCcfl4f731`
-

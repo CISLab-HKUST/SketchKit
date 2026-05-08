@@ -62,13 +62,13 @@ Sketch
 Here's a example to demonstrate how to explore SketchKit's representation:
 
 ```python
-from sketchkit.datasets import QuickDraw
+from sketchkit.datasets import OpenSketch
 from sketchkit.renderer import CairoRenderer
 from PIL import Image
 
 # Load a dataset and get a sketch
-print("Loading QuickDraw dataset...")
-dataset = QuickDraw()
+print("Loading OpenSketch dataset...")
+dataset = OpenSketch()
 sketch = dataset[0]
 
 print("=== Sketch Overview ===")

@@ -48,9 +48,7 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import DifferSketching
 
-ds = DifferSketching(
-    cislab_source=True,
-)
+ds = DifferSketching()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
@@ -63,11 +61,3 @@ objects = ds.items_metadata[
 ]
 sketches = [ds[row.id] for _, row in objects[:5].iterrows()]
 ```
-
-**Arguments**
-
-- `root`: Root directory used for caching and extraction. DifferSketching data is placed under `<root>/DifferSketching_Dataset/`.
-- `load_all`: If `True`, preload all JSON files into memory to avoid disk I/O during iteration.
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from Google Drive.
-  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/DifferSketching/differsketching.zip`
-  - Google Drive: File ID `1A_3RVc8Y4YdI7nhyM7tb-q7dQw4zTcCO`

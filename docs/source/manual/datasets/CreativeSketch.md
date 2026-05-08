@@ -47,6 +47,17 @@ print(sketch.path_num, sketch.curve_num)
   - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/CreativeSketch/creative_sketch.zip`
   - Official host: Google Drive (ID: 1Dstn3Cv2yAnxt1JXC0zPa1VPVDSz9gc-)
 
+**Metadata Columns**
+
+- `id`: Global unique identifier across all sketches.
+- `sub_id`: Identifier within the specific category.
+- `category`: Drawing category name (e.g., "bird", "creature").
+- `is_good`: whether it is a good example drawn by a reliable worker.
+- `split`: Split in the dataset (e.g., "train", "valid", or "test").
+- `label_names`: A string of part label names, separated by ';' (e.g., "part1;part2;part3").
+
+
+
 ## Dataset Summary
 
 The Creative Sketch dataset includes:

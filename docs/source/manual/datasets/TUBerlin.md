@@ -51,3 +51,15 @@ renderer = CairoRenderer()
 raster_image = renderer.render(sketch)
 raster_image.save("sketch.png")
 ```
+
+**Arguments**
+
+- `root`: Root directory used for caching and extraction.
+- `load_all`: If `True`, preload all data into memory to avoid disk I/O during iteration.
+
+**Metadata Columns**
+
+- `id`: Global unique identifier across all sketches.
+- `sub_id`: Identifier within the specific category.
+- `category`: Drawing category name (e.g., "airplane", "alarm clock", etc.).
+- `split`: "train", "valid", or "test".

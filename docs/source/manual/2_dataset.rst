@@ -113,7 +113,7 @@ own manual page in this section so you can customize descriptions and examples.
   :maxdepth: 1
   :caption: Available Datasets
 
-  datasets/SmartTracer
+  datasets/LineDrawer
   datasets/QuickDraw
   datasets/ControlSketch
   datasets/TUBerlin
@@ -142,7 +142,7 @@ The following table shows features of each built-in SketchKit dataset.
 
     * - Dataset
       - Representation
-    * - :class:`SmartTracer <sketchkit.datasets.SmartTracer>`
+    * - :class:`LineDrawer <sketchkit.datasets.LineDrawer>`
       - Polyline
     * - :class:`QuickDraw <sketchkit.datasets.QuickDraw>`
       - Polyline

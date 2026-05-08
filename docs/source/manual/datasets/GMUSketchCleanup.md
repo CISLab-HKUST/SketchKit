@@ -70,6 +70,7 @@ print(sketch.path_num, sketch.curve_num)
   I/O during iteration. See the class tests for memory benchmarking.
 - `cislab_source`: when `True` the archive is downloaded from the CISLAB CDN
   mirror; otherwise the official GMU website is used. Mirror URL:
-  `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/GMUSketchCleanup/Benchmark_Dataset.zip`
-  Official URL:
-  `https://cragl.cs.gmu.edu/sketchbench/Benchmark_Dataset.zip`.
+
+  - `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/GMUSketchCleanup/Benchmark_Dataset.zip`
+    Official URL:
+  - `https://cragl.cs.gmu.edu/sketchbench/Benchmark_Dataset.zip`.

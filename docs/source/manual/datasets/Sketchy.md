@@ -67,7 +67,8 @@ sketches = [ds[row.id] for _, row in valid_airplanes[:5].iterrows()]
 
 - `id`: Global unique identifier across all sketches.
 - `pruned`: Boolean flag indicating if the sketch was listed in the category's `invalid.txt` file.
-- `class_name`: The class category of the sketch (e.g., "airplane").
+- `category`: The class category of the sketch (e.g., "airplane").
 - `filename`: The specific SVG file name (e.g., "n02691156_58-1.svg").
 - `path`: The absolute path to the SVG file.
 - `sketch_name`: The relative identifier combining class and filename (e.g., "airplane/n02691156_58-1.svg").
+- `split`: Split in the dataset (e.g., "train", "valid", or "test").

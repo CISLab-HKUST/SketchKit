@@ -55,8 +55,8 @@ print(sketch.path_num, sketch.curve_num)
 
 **Arguments**
 
-* `root`: Root directory used for caching and extraction. PhotoSketching data is placed under `<root>/`.
-* `load_all`: If `True`, preload all parsed SVG sketches into memory to avoid repeated disk I/O and SVG parsing during iteration.
-* `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from Google Drive.
-* CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/PhotoSketching/all-in-one.zip`
-* Google Drive: `https://drive.google.com/file/d/1_AIxKnZXQms5Ezb-cEeVIDIoVG-eliHc`
+- `root`: Root directory used for caching and extraction. PhotoSketching data is placed under `<root>/`.
+- `load_all`: If `True`, preload all parsed SVG sketches into memory to avoid repeated disk I/O and SVG parsing during iteration.
+- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from Google Drive.
+  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/PhotoSketching/all-in-one.zip`
+  - Google Drive: `https://drive.google.com/file/d/1_AIxKnZXQms5Ezb-cEeVIDIoVG-eliHc`

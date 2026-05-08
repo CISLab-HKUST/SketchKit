@@ -66,6 +66,13 @@ raster_image.save("datasets/sketch.png")
 
 **Arguments**
 
-- `"category"`: specify the category name in the `categories.txt`, such as "cat", "airplane", "The Great Wall of China", etc.
-- `"split"`: "train", "valid", or "test".
+- `root`: Root directory used for caching and extraction.
+- `load_all`: If `True`, preload all data into memory to avoid disk I/O during iteration.
+
+**Metadata Columns**
+
+- `id`: Global unique identifier across all sketches.
+- `sub_id`: Identifier within the specific category.
+- `category`: specify the category name in the `categories.txt`, such as "cat", "airplane", "The Great Wall of China", etc.
+- `split`: "train", "valid", or "test".
 

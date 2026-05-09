@@ -105,7 +105,6 @@ img_nano.save("cat_real_nano.png")
 - `ImageGenerator(method="controlnet", device="cuda", **kwargs)`
   - `method`: backend name. Supported values are `"controlnet"`, `"pix2pix"`, `"t2i_adapter"`, and `"nano_banana2"`.
   - `device`: execution device, e.g., `"cuda"` or `"cpu"` (not used for `"nano_banana2"`).
-  - `api_key`: (for `"nano_banana2"` only) Google API key. If not provided, reads from `~/.sketchkit/config`.
 
 **Run Method**
 

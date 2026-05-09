@@ -13,17 +13,19 @@ except ImportError:
 
 
 class NanoBanana2Model:
-    """Nano Banana 2 model using Google Gemini API."""
+    """Nano Banana 2 model using Google Gemini API.
     
-    def __init__(self, device: str = "cuda", model_name: str = "gemini-3.1-flash-image-preview", 
-                 api_key: Optional[str] = None, **kwargs):
+    Note:
+        API key must be set in ~/.sketchkit/config as GOOGLE_API_KEY="your_api_key"
+    """
+    
+    def __init__(self, device: str = "cuda", model_name: str = "gemini-3.1-flash-image-preview", **kwargs):
         if not GENAI_AVAILABLE:
             raise ImportError("google-generativeai not installed. Run: pip install google-generativeai")
         
-        if api_key is None:
-            api_key = os.environ.get('GOOGLE_API_KEY')
+        api_key = os.environ.get('GOOGLE_API_KEY')
         if not api_key:
-            raise ValueError("GOOGLE_API_KEY not found in ~/.sketchkit/config")
+            raise ValueError("GOOGLE_API_KEY not found. Please add it to ~/.sketchkit/config")
         
         self.model_name = model_name
         self.device = device

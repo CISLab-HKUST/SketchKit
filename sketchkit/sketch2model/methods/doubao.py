@@ -21,7 +21,6 @@ except ImportError:
 def sketch_to_3d_doubao_impl(
     sketch_input: Union['Sketch', str, np.ndarray, Image.Image],
     output_path: Optional[str] = None,
-    api_key: Optional[str] = None,
     api_base: Optional[str] = None,
     **kwargs
 ) -> str:
@@ -31,7 +30,6 @@ def sketch_to_3d_doubao_impl(
     Args:
         sketch_input: Input sketch, can be Sketch object, file path (str), PIL Image, or numpy array
         output_path: Output file path (if None, will be auto-generated)
-        api_key: Doubao API key (if None, will read from environment variable DOUBAO_API_KEY)
         api_base: API base URL (if None, uses default)
         **kwargs: Additional parameters
             - model_name: Model name (default: "doubao-seed3d-2-0-260328")
@@ -39,6 +37,9 @@ def sketch_to_3d_doubao_impl(
             - subdivision_level: Subdivision level (default: "medium")
             - max_wait_time: Maximum wait time in seconds (default: 600)
             - poll_interval: Polling interval in seconds (default: 5)
+    
+    Note:
+        API key must be set in ~/.sketchkit/config as DOUBAO_API_KEY="your_api_key"
     
     Returns:
         Generated 3D model file path
@@ -73,8 +74,9 @@ def sketch_to_3d_doubao_impl(
                 raster_image = np.stack([raster_image] * 3, axis=-1)
         
         # Get API configuration
-        if api_key is None:
-            api_key = os.environ.get('DOUBAO_API_KEY')
+        api_key = os.environ.get('DOUBAO_API_KEY')
+        if not api_key:
+            raise ValueError("DOUBAO_API_KEY not found. Please add it to ~/.sketchkit/config")
         
         model_name = kwargs.get('model_name', 'doubao-seed3d-2-0-260328')
         subdivision_level = kwargs.get('subdivision_level', 'medium')

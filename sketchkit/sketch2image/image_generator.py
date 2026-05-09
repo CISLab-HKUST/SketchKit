@@ -17,6 +17,7 @@ from sketchkit.renderer.cairo_renderer import CairoRenderer, CairoRenderOptions
 from .controlnet import ControlNetModel
 from .t2i_adapter import T2IAdapterModel
 from .pix2pix import Pix2PixModel
+from .nano_banana2 import NanoBanana2Model
 
 
 class ImageGenerator:
@@ -46,10 +47,11 @@ class ImageGenerator:
                 - 'controlnet': ControlNet with scribble conditioning.
                 - 't2i_adapter': T2I-Adapter with sketch/edge conditioning.
                 - 'pix2pix': InstructPix2Pix for direct image translation.
+                - 'nano_banana2': Google Gemini 3.1 Flash Image Preview API.
                 Defaults to "controlnet".
             device (str): The device to run the model on. Defaults to "cuda".
             **kwargs (Any): Additional parameters for model initialization 
-                (e.g., `sd_model`, `vae_model`).
+                (e.g., `sd_model`, `vae_model`, `api_key` for nano_banana2).
 
         Raises:
             ValueError: If an unsupported method is provided.
@@ -64,8 +66,10 @@ class ImageGenerator:
             self._model = T2IAdapterModel(device=device, **kwargs)
         elif method == "pix2pix":
             self._model = Pix2PixModel(device=device, **kwargs)
+        elif method == "nano_banana2":
+            self._model = NanoBanana2Model(device=device, **kwargs)
         else:
-            raise ValueError(f"Unsupported method: {method}. Available methods: ['controlnet', 't2i_adapter', 'pix2pix']")
+            raise ValueError(f"Unsupported method: {method}. Available methods: ['controlnet', 't2i_adapter', 'pix2pix', 'nano_banana2']")
     
     def run(
         self,
@@ -164,6 +168,8 @@ class ImageGenerator:
                     return self._run_t2i_adapter(control_image, prompt, size, **kwargs)
                 elif self.method == "pix2pix":
                     return self._run_pix2pix(control_image, prompt, size, **kwargs)
+                elif self.method == "nano_banana2":
+                    return self._run_nano_banana2(control_image, prompt, size, **kwargs)
                 else:
                     raise ValueError(f"Unsupported method: {self.method}")
             
@@ -224,6 +230,8 @@ class ImageGenerator:
             return self._run_t2i_adapter(control_image, prompt, size, **kwargs)
         elif self.method == "pix2pix":
             return self._run_pix2pix(control_image, prompt, size, **kwargs)
+        elif self.method == "nano_banana2":
+            return self._run_nano_banana2(control_image, prompt, size, **kwargs)
         else:
             raise ValueError(f"Unsupported method: {self.method}")
     
@@ -358,6 +366,17 @@ class ImageGenerator:
         
         gen_params.update(kwargs)
         return self._model.generate(**gen_params)
+    
+    def _run_nano_banana2(self, control_image: Image.Image, prompt: str, 
+                          size: Union[int, Tuple[int, int], None] = None, **kwargs) -> Image.Image:
+        """Execute Nano Banana 2 (Google Gemini) model."""
+        return self._model.generate(
+            control_image=control_image,
+            prompt=prompt,
+            size=size,
+            negative_prompt=kwargs.get('negative_prompt'),
+            **kwargs
+        )
     
     def _sketch_to_raster(
         self,

@@ -1,6 +1,6 @@
-# Stylization
+# Stroke Stylization
 
-The stylization module provides functionality to convert vector sketches or geometry images into stylized raster images with learned brushstroke effects.
+The stroke stylization module provides functionality to convert vector sketches or geometry images into stylized raster images with learned brushstroke effects.
 
 **Source**: `tests/unit/test_stylizer.py`
 

@@ -39,7 +39,7 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import Sketchy
 
-ds = Sketchy()
+ds = Sketchy(cislab_source=True)
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
@@ -52,6 +52,12 @@ valid_airplanes = ds.items_metadata[
 ]
 sketches = [ds[row.id] for _, row in valid_airplanes[:5].iterrows()]
 ```
+
+**Arguments**
+- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
+  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/Sketchy/sketches-06-04.7z`
+  - Official host: `https://drive.google.com/file/d/1Qr8HhjRuGqgDONHigGszyHG_awCstivo`
+
 
 **Metadata Columns**
 

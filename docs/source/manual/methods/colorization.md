@@ -62,18 +62,14 @@ from PIL import Image
 # 1) ControlNet Lineart: best for clean lines
 lineart_colorizer = Colorizer(method="controlnet_lineart", device="cuda")
 result_lineart = lineart_colorizer.run(
-    sketch, 
-    prompt="vibrant colors, anime style, high quality", 
-    size=512
+    sketch, prompt="vibrant colors, anime style, high quality", size=512
 )
 result_lineart.save("colorized_lineart.png")
 
 # 2) ControlNet Scribble: best for rough sketches
 scribble_colorizer = Colorizer(method="controlnet_scribble", device="cuda")
 result_scribble = scribble_colorizer.run(
-    sketch, 
-    prompt="oil painting style, sunset, masterpiece", 
-    size=512
+    sketch, prompt="oil painting style, sunset, masterpiece", size=512
 )
 result_scribble.save("colorized_scribble.png")
 

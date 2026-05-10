@@ -45,6 +45,7 @@ dependencies = [
     "einops>=0.8.2",
     "basicsr>=1.4.2",
     "accelerate>=1.13.0",
+    "rdp>=0.8",
 ]
 
 [build-system]

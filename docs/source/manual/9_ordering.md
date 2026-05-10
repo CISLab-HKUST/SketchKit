@@ -2,7 +2,7 @@
 
 The ordering module determines the stroke drawing sequence for a static sketch, enabling applications like sketch animation and tutorials.
 
-**Source**: `tests/animated_drawing_test.py`
+**Source**: `tests/unit/test_ordering_Fu.py`, `tests/unit/test_ordering_LineDrawer.py`
 
 ## Available Methods
 
@@ -18,13 +18,13 @@ The module currently supports the following methods:
 
 ### Fu
 
-The method implements [Animated construction of line drawings](https://dl.acm.org/doi/10.1145/2070781.2024167) from *ACM Transactions on Graphics (TOG) 2011*. It analyzes stroke relationships, computes transition costs between strokes, and determines the optimal drawing order using a branch-and-bound algorithm.
+The method implements [Animated construction of line drawings](https://dl.acm.org/doi/10.1145/2070781.2024167) from _ACM Transactions on Graphics (TOG) 2011_. It analyzes stroke relationships, computes transition costs between strokes, and determines the optimal drawing order using a branch-and-bound algorithm.
 
 **Output:** Returns a single `Sketch` object with ordered paths, where the order of `sketch.paths` corresponds to the optimized drawing sequence.
 
 ### LineDrawer
 
-The method implements [LineDrawer: Stroke-Level Process Reconstruction of Complex Line Art Based on Human Perception](https://www.sciencedirect.com/science/article/pii/S0097849325002067) from *Computers & Graphics 2025*. It uses a reference video (e.g., from [Paints-UNDO](https://github.com/lllyasviel/Paints-UNDO)) to recover the drawing order of a vector sketch by matching static vector strokes to the video frames where they first appear.
+The method implements [LineDrawer: Stroke-Level Process Reconstruction of Complex Line Art Based on Human Perception](https://www.sciencedirect.com/science/article/pii/S0097849325002067) from _Computers & Graphics 2025_. It uses a reference video (e.g., from [Paints-UNDO](https://github.com/lllyasviel/Paints-UNDO)) to recover the drawing order of a vector sketch by matching static vector strokes to the video frames where they first appear.
 
 **Output:** Returns a single `Sketch` object with ordered paths, where the order of `sketch.paths` corresponds to the drawing sequence.
 
@@ -42,8 +42,8 @@ import numpy as np
 orderer = Orderer(method="Fu", device="cpu")
 
 # Run ordering using a Sketch object
-from sketchkit.datasets import QuickDraw
-dataset = QuickDraw(cislab_source=True)
+from sketchkit.datasets import OpenSketch
+dataset = OpenSketch()
 sketch = dataset[0]
 sketch = orderer.run(sketch)
 

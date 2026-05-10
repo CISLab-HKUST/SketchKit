@@ -2,7 +2,7 @@
 
 The colorization module provides functionality to colorize vector sketches or raster line art using AI-driven conditional generation.
 
-**Source**: `sketchkit/colorization/colorizer.py`
+**Source**: `tests/unit/test_colorization.py`
 
 ## Available Methods
 

@@ -46,19 +46,9 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import FSCOCO
 
-ds = FSCOCO(
-    cislab_source=True,
-)
+ds = FSCOCO()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
-
-**Arguments**
-
-- `root`: Root directory used for caching and extraction. FS-COCO data is placed under `<root>/fscoco/`.
-- `load_all`: If `True`, preload all `.npy` arrays into memory to avoid disk I/O during iteration.
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from the official host.
-  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/FSCOCO/fscoco.tar.gz`
-  - Official host: `http://cvssp.org/data/fscoco/fscoco.tar.gz`

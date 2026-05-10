@@ -5,6 +5,7 @@ import numpy as np
 from pathlib import Path as PathLibPath
 import pandas as pd
 from tqdm import tqdm
+from rdp import rdp
 
 from sketchkit.core.sketch import Sketch, Path, Curve
 from sketchkit.utils.dataset import SketchDataset
@@ -16,41 +17,42 @@ from sketchkit.utils.file import (
     CISLAB_CDN,
 )
 
-COLORS_BIRD = {
-    "initial": np.array([45, 169, 145]) / 255.0,
-    "eye": np.array([243, 156, 18]) / 255.0,
-    "none": np.array([149, 165, 166]) / 255.0,
-    "beak": np.array([211, 84, 0]) / 255.0,
-    "body": np.array([41, 128, 185]) / 255.0,
-    "details": np.array([171, 190, 191]) / 255.0,
-    "head": np.array([192, 57, 43]) / 255.0,
-    "legs": np.array([142, 68, 173]) / 255.0,
-    "mouth": np.array([39, 174, 96]) / 255.0,
-    "tail": np.array([69, 85, 101]) / 255.0,
-    "wings": np.array([127, 140, 141]) / 255.0,
-}
-
-COLORS_CREATURE = {
-    "initial": np.array([45, 169, 145]) / 255.0,
-    "eye": np.array([243, 156, 18]) / 255.0,
-    "none": np.array([149, 165, 166]) / 255.0,
-    "arms": np.array([211, 84, 0]) / 255.0,
-    "beak": np.array([41, 128, 185]) / 255.0,
-    "mouth": np.array([54, 153, 219]) / 255.0,
-    "body": np.array([192, 57, 43]) / 255.0,
-    "ears": np.array([142, 68, 173]) / 255.0,
-    "feet": np.array([39, 174, 96]) / 255.0,
-    "fin": np.array([69, 85, 101]) / 255.0,
-    "hair": np.array([127, 140, 141]) / 255.0,
-    "hands": np.array([45, 63, 81]) / 255.0,
-    "head": np.array([241, 197, 17]) / 255.0,
-    "horns": np.array([51, 205, 117]) / 255.0,
-    "legs": np.array([232, 135, 50]) / 255.0,
-    "nose": np.array([233, 90, 75]) / 255.0,
-    "paws": np.array([160, 98, 186]) / 255.0,
-    "tail": np.array([58, 78, 99]) / 255.0,
-    "wings": np.array([198, 203, 207]) / 255.0,
-    "details": np.array([171, 190, 191]) / 255.0,
+COLORS_MAP = {
+    "bird": {
+        "initial": np.array([45, 169, 145]) / 255.0,
+        "eye": np.array([243, 156, 18]) / 255.0,
+        # "none": np.array([149, 165, 166]) / 255.0,
+        "beak": np.array([211, 84, 0]) / 255.0,
+        "body": np.array([41, 128, 185]) / 255.0,
+        # "details": np.array([171, 190, 191]) / 255.0,
+        "head": np.array([192, 57, 43]) / 255.0,
+        "legs": np.array([142, 68, 173]) / 255.0,
+        "mouth": np.array([39, 174, 96]) / 255.0,
+        "tail": np.array([69, 85, 101]) / 255.0,
+        "wings": np.array([127, 140, 141]) / 255.0,
+    },
+    "creature": {
+        "initial": np.array([45, 169, 145]) / 255.0,
+        "eye": np.array([243, 156, 18]) / 255.0,
+        # "none": np.array([149, 165, 166]) / 255.0,
+        "arms": np.array([211, 84, 0]) / 255.0,
+        "beak": np.array([41, 128, 185]) / 255.0,
+        "mouth": np.array([54, 153, 219]) / 255.0,
+        "body": np.array([192, 57, 43]) / 255.0,
+        "ears": np.array([142, 68, 173]) / 255.0,
+        "feet": np.array([39, 174, 96]) / 255.0,
+        "fin": np.array([69, 85, 101]) / 255.0,
+        "hair": np.array([127, 140, 141]) / 255.0,
+        "hands": np.array([45, 63, 81]) / 255.0,
+        "head": np.array([241, 197, 17]) / 255.0,
+        "horns": np.array([51, 205, 117]) / 255.0,
+        "legs": np.array([232, 135, 50]) / 255.0,
+        "nose": np.array([233, 90, 75]) / 255.0,
+        "paws": np.array([160, 98, 186]) / 255.0,
+        "tail": np.array([58, 78, 99]) / 255.0,
+        "wings": np.array([198, 203, 207]) / 255.0,
+        # "details": np.array([171, 190, 191]) / 255.0,
+    }
 }
 
 
@@ -70,23 +72,29 @@ class CreativeSketch(SketchDataset):
     # Metadata columns for each item
     metadata = ["id", "category", "sub_id", "is_good", "split", "label_names"]
 
-    # def __init__(
-    #     self,
-    #     root: str | PathLibPath | None = None,
-    #     load_all: bool = False,
-    #     cislab_source: bool = False,
-    # ):
-    #     """Initialize the Creative Sketch dataset.
+    def __init__(
+        self,
+        root: str | PathLibPath | None = None,
+        load_all: bool = False,
+        cislab_source: bool = False,
+        skip_integrity_check: bool = False,
+        rdp_simplification: bool = False,
+    ):
+        """Initialize the Creative Sketch dataset.
 
-    #     Args:
-    #         root (str | PathLibPath | None): Root directory to store/load the dataset.
-    #             If None, uses the default dataset directory.
-    #         load_all (bool): If True, loads all data into memory for faster access.
-    #             If False, loads data on-demand. Defaults to False.
-    #         cislab_source (bool): If True, downloads from CISLAB CDN mirror.
-    #             If False, downloads from original Google storage. Defaults to False.
-    #     """
-    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
+        Args:
+            root (str | PathLibPath | None): Root directory to store/load the dataset.
+                If None, uses the default dataset directory.
+            load_all (bool): If True, loads all data into memory for faster access.
+                If False, loads data on-demand. Defaults to False.
+            cislab_source (bool): If True, downloads from CISLAB CDN mirror.
+                If False, downloads from original Google storage. Defaults to False.
+            rdp_simplification (bool): If True, simplify the path points using RDP algorithm.
+            skip_background (bool): If True, skip the "details" part label for background.
+        """
+        self.rdp_simplification = rdp_simplification
+        super().__init__(root, load_all=load_all, cislab_source=cislab_source,
+                         skip_integrity_check=skip_integrity_check)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset.
@@ -171,15 +179,18 @@ class CreativeSketch(SketchDataset):
 
         self.all_class_part_labels = []  # in "class-part" format, such as "dog-head"
 
-        class_part_labels = list(COLORS_BIRD.keys())
+        class_part_labels = list(COLORS_MAP["bird"].keys())
         class_part_labels.sort()
         self.all_class_part_labels += ["-".join(["bird", item]) for item in class_part_labels]
-        label_names_bird = ",".join(class_part_labels)
+        label_names_bird = ";".join(class_part_labels)
 
-        class_part_labels = list(COLORS_CREATURE.keys())
+        class_part_labels = list(COLORS_MAP["creature"].keys())
         class_part_labels.sort()
         self.all_class_part_labels += ["-".join(["creature", item]) for item in class_part_labels]
-        label_names_creature = ",".join(class_part_labels)
+        label_names_creature = ";".join(class_part_labels)
+
+        self.all_categories = list(COLORS_MAP.keys())
+        self.all_categories.sort()
 
         if not os.path.exists(os.path.join(self.root, ".metadata.parquet")):
             items_metadata = pd.DataFrame(
@@ -273,32 +284,40 @@ class CreativeSketch(SketchDataset):
         category, orig_idx = self.items_metadata.iloc[idx][["category", "sub_id"]]
         if category == "bird":
             single_sketch_json = self.bird_json_base[orig_idx]
-            colors = COLORS_BIRD
+            colors = COLORS_MAP["bird"]
         else:
             single_sketch_json = self.creature_json_base[orig_idx]
-            colors = COLORS_CREATURE
+            colors = COLORS_MAP["creature"]
         class_part_labels = list(colors.keys())
         class_part_labels.sort()
 
         path_list = []
-        for j, step in enumerate(single_sketch_json["all_strokes"]):
+        for j, component in enumerate(single_sketch_json["all_strokes"]):
             stroke_label = single_sketch_json["partsUsed"][j]
-            stroke_color = colors[stroke_label]
+            # stroke_color = colors[stroke_label]
 
-            strokes = []
-            for stroke in step:
-                if len(stroke) == 0:  # skip the empty stroke
+            if stroke_label not in COLORS_MAP[category].keys():
+                continue
+
+            curves = []
+            for path in component:
+                if len(path) == 0:  # skip the empty path
                     continue
-                for seg in stroke:
-                    p_start = [seg[0], seg[1]]
-                    p_end = [seg[2], seg[3]]
+
+                stroke_list =[path[0][:2]] + [stroke[2:4] for stroke in path]  # A list (len=N) of (2)
+                if self.rdp_simplification:
+                    stroke_list = rdp(stroke_list, epsilon=1.0)  # Bigger epsilon, the more simplified.
+
+                for seg_i in range(len(stroke_list) - 1):
+                    p_start = [stroke_list[seg_i][0], stroke_list[seg_i][1]]
+                    p_end = [stroke_list[seg_i + 1][0], stroke_list[seg_i + 1][1]]
                     line = np.stack([p_start, p_end], axis=0)
                     attribute_list = [{"group_id": class_part_labels.index(stroke_label)},
                                       {"group_id": class_part_labels.index(stroke_label)}]
                     cubic = Curve.from_line(line, attribute_list=attribute_list)
                     # cubic._set_endpoint_attribute("color", stroke_color)
-                    strokes.append(cubic)
-            path_list.append(Path(curves=strokes))
+                    curves.append(cubic)
+            path_list.append(Path(curves=curves))
         return Sketch(512, 512, path_list)
 
     def _get_single(self, idx: int) -> Sketch:
@@ -345,7 +364,9 @@ class CreativeSketch(SketchDataset):
 
 
 if __name__ == "__main__":
-    dataset = CreativeSketch(cislab_source=True)
+    dataset = CreativeSketch(cislab_source=True, skip_integrity_check=True,
+                             # rdp_simplification=True
+                             )
 
     birds = dataset.items_metadata[
         (dataset.items_metadata["category"] == "bird")

@@ -2,7 +2,7 @@
 
 The sketch cleanup (a.k.a. simplification) module provides functionality to convert a raster rough sketch into a clean sketch. 
 
-**Source**: `tests/test_cleanup.py`
+**Source**: `tests/unit/test_cleanup.py`
 
 ## Available Methods
 

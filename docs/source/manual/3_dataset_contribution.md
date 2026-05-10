@@ -71,8 +71,6 @@ git pull
 git branch -d new-dataset
 ```
 
-
-
 ## Phase 2: Technical Integration Workflow
 
 Prepare the data and code scripts according to the following steps.
@@ -93,9 +91,9 @@ a) Go to `sketchkit/datasets` directory, and create a `{my_dataset}.py` file. Us
 
 b) Define a `MyDataset` class (use your own name), which inherits from an abstract class `SketchDataset`. Add doc-strings, including:
 
-  - Description of the dataset, including its source, its composition, and the representation of the sketches
-  - Attributes: such as `md5_sum` and `metadata`
-  - References: the URL and paper title of the dataset
+- Description of the dataset, including its source, its composition, and the representation of the sketches
+- Attributes: such as `md5_sum` and `metadata`
+- References: the URL and paper title of the dataset
 
 ```python
 class MyDataset(SketchDataset):
@@ -117,38 +115,39 @@ c) Update the `__init__.py` in `sketchkit/datasets` directory. Add the following
 from .my_dataset import MyDataset
 
 __all__ = [
-    ..., 
+    ...,
     "MyDataset"
 ]
 ```
 
 ### 3. Implement Overridden Methods
 
-The `MyDataset` is inherited from an abstract class `SketchDataset`. The overridden methods should be implemented following the steps below. You can refer to the implementations of [other datasets](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/manual/2_dataset.html#dataset-feature) for a reference.
+The `MyDataset` is inherited from an abstract class `SketchDataset`. The overridden methods should be implemented following the steps below. You can refer to the implementations of {ref}`other datasets <dataset-feature>` for a reference.
 
 a) Add Attributes of the `MyDataset` class, including:
-  - md5_sum: the computed MD5 sum in Step 1
-  - metadata ([reference](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/manual/2_dataset.html#metadata)): it varies across datasets. Common metadata includes:
-    - "category": category of a sketch
-    - "split": split in the dataset, such as "train", "val", or "test"
-    - "id": Global unique identifier across all sketches
-    - "sub_id": Identifier within the category and split
+
+- md5_sum: the computed MD5 sum in Step 1
+- metadata ({ref}`reference <dataset-metadata>`): it varies across datasets. Common metadata includes:
+  - "category": category of a sketch
+  - "split": split in the dataset, such as "train", "val", or "test"
+  - "id": Global unique identifier across all sketches
+  - "sub_id": Identifier within the category and split
 
 b) `_download()`: a method for downloading the data package automatically.
 
-  - Define the URL and path for caching (e.g., `self.root/mydata_package.zip`). 
-  - Download with the method `download_with_wget` and extract with `extract_files`. They are provided in `sketchkit.utils.file`. Extraction is not needed for a data package stored in npz/npy format.
+- Define the URL and path for caching (e.g., `self.root/mydata_package.zip`).
+- Download with the method `download_with_wget` and extract with `extract_files`. They are provided in `sketchkit.utils.file`. Extraction is not needed for a data package stored in npz/npy format.
 
 c) `_check_integrity() -> bool`: a method for checking the integrity of the cached dataset using MD5 checksum.
 
-  - Compute the MD5 with `file_md5` method provided in `sketchkit.utils.file`
-  - Determine whether the computed MD5 is the same as the pre-defined MD5 in the Attributes of the `MyDataset` class
-  - Return True or False
+- Compute the MD5 with `file_md5` method provided in `sketchkit.utils.file`
+- Determine whether the computed MD5 is the same as the pre-defined MD5 in the Attributes of the `MyDataset` class
+- Return True or False
 
 d) `_load_items_metadata()`: a method for loading and caching metadata for all items in the dataset.
 
-  - Creates a parquet file (`self.root/.metadata.parquet`) containing metadata defined above for all sketches
-  - If `.metadata.parquet` does not exist, use the code below:
+- Creates a parquet file (`self.root/.metadata.parquet`) containing metadata defined above for all sketches
+- If `.metadata.parquet` does not exist, use the code below:
 
 ```python
 items_metadata = pd.DataFrame(columns=["category", "split", "id", "sub_id"])
@@ -176,7 +175,7 @@ self.items_metadata.to_parquet(
 )
 ```
 
-  - If `.metadata.parquet` exists, use the code below:
+- If `.metadata.parquet` exists, use the code below:
 
 ```python
 items_metadata = pd.read_parquet(
@@ -185,10 +184,10 @@ items_metadata = pd.read_parquet(
 self.items_metadata = items_metadata
 ```
 
-e) `_load_all()`: a method for loading all sketch data into memory ([reference](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/manual/2_dataset.html#key-concepts-of-dataset-parameters)).
+e) `_load_all()`: a method for loading all sketch data into memory ({ref}`reference <key-concepts-of-dataset-parameters>`).
 
-  - Traverse all the sketches, obtain their widths and heights, and parse them into path lists (see Step 4 below for details)
-  - Fill each sketch data into `self.raw_data`
+- Traverse all the sketches, obtain their widths and heights, and parse them into path lists (see Step 4 below for details)
+- Fill each sketch data into `self.raw_data`
 
 ```python
 (sketch_width, sketch_height), path_list = parse_sketch(sketch_path)
@@ -197,9 +196,9 @@ self.raw_data[cnt] = [path_list, (sketch_width, sketch_height)]
 
 f) `_get_single(idx: int) -> Sketch`: a method for getting a sketch by index.
 
-  - Input: `idx (int)`: Index of the sketch to retrieve.
-  - Output: `Sketch`: A Sketch object containing the drawing data as paths.
-  - Load its path list and obtain its width and height. And then convert it into the `Sketch` instance (see details of the [representation](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/manual/1_representation.html)) by constructing `Vertex/Point`, `Curve`, `Path`, and `Sketch`
+- Input: `idx (int)`: Index of the sketch to retrieve.
+- Output: `Sketch`: A Sketch object containing the drawing data as paths.
+- Load its path list and obtain its width and height. And then convert it into the `Sketch` instance (see details of the [representation](./1_representation.md)) by constructing `Vertex/Point`, `Curve`, `Path`, and `Sketch`
 
 ```python
 path_list, (width, height) = self.raw_data[idx]
@@ -218,13 +217,13 @@ sketch = Sketch(height=height, width=width, paths=paths)
 
 g) `extra_repr() -> str`: a method for returning extra information in the string representation.
 
-  - Such as the number of categories, the number of sketches in each split.
+- Such as the number of categories, the number of sketches in each split.
 
 ### 4. Parsing Sketch Data
 
-The [sketch representation](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/manual/1_representation.html) in SketchKit is organized in a hierarchy of `Sketch` - `Path` - `Curve` - `Vertex/Point`, so you need to parse the raw sketch data according to this hierarchy by constructing a list of paths. Each path is a list of curves (cubic Bezier curve). Each curve is a list of four points. Each point is (x, y) in absolute coordinates. 
+The [sketch representation](./1_representation.md) in SketchKit is organized in a hierarchy of `Sketch` - `Path` - `Curve` - `Vertex/Point`, so you need to parse the raw sketch data according to this hierarchy by constructing a list of paths. Each path is a list of curves (cubic Bezier curve). Each curve is a list of four points. Each point is (x, y) in absolute coordinates.
 
-Note: If the raw sketch data is represented in polylines, they should be converted into cubic Bezier curves. Specifically, the two intermediate control points are defined as the 1/3 and 2/3 positions on the polyline. Refer to the [Curve.from_line](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/_modules/sketchkit/core/sketch.html#Curve.from_line) method for details.
+Note: If the raw sketch data is represented in polylines, they should be converted into cubic Bezier curves. Specifically, the two intermediate control points are defined as the 1/3 and 2/3 positions on the polyline. Refer to the <a href="../_modules/sketchkit/core/sketch.html#Curve.from_line">Curve.from_line</a> method for details.
 
 ## Phase 3: Testing
 
@@ -233,12 +232,14 @@ Use the `sketchkit/tests/test_dataset.py` for testing the integrated dataset.
 Follow the steps below:
 
 a) Initialize a dataset instance
+
 ```python
 from sketchkit.datasets import MyDataset
 dataset = MyDataset()
 ```
 
 b) Load a sketch example using an index or from a specified category and a specified split
+
 ```python
 # Load a sketch using index
 sketch = dataset[0]
@@ -252,12 +253,14 @@ sketch = subset_sketch[0]
 ```
 
 c) Output the attributes of the sketch, such as width, height, path_num, curve_num, etc.
+
 ```python
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
 
-d) Render the vector sketch into a raster image using the built-in renderer (refer to the [document](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/manual/3_renderer.html) for details)
+d) Render the vector sketch into a raster image using the built-in renderer (refer to the [document](./14_renderer.md) for details)
+
 ```python
 from sketchkit.renderer import CairoRenderer
 renderer = CairoRenderer()
@@ -267,15 +270,15 @@ raster_image.save("sketch.png")
 
 ## Phase 4: Documentation
 
-A manual document for the new dataset is required. Follow the steps below to write the document. You can refer to the documents of [other datasets](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/manual/2_dataset.html#available-datasets) for a reference.
+A manual document for the new dataset is required. Follow the steps below to write the document. You can refer to the documents of {ref}`Other documents <available-datasets>` for a reference.
 
 a) Create a markdown file `MyDataset.md` in the `docs/source/manual/datasets` directory.
 
 b) The document includes the following parts:
 
-  - **Introduction** to the dataset: its source (URL), composition, number of categories, number of examples, representation of the raw sketch data, etc.
-  - **Source** of the dataset script: `datasets/my_dataset.py`
-  - **Data Format**: introduce the original data format of the sketches.
-  - **Directory Layout**: the file structure after downloading the dataset.
-  - **Code**: code snippet of quick usage of the dataset, including initializing a dataset instance, loading a sketch example, outputting the attributes, and rendering the vector sketch (similar to the testing).
-  - **Arguments**: introduction of necessary arguments in the code.
+- **Introduction** to the dataset: its source (URL), composition, number of categories, number of examples, representation of the raw sketch data, etc.
+- **Source** of the dataset script: `datasets/my_dataset.py`
+- **Data Format**: introduce the original data format of the sketches.
+- **Directory Layout**: the file structure after downloading the dataset.
+- **Code**: code snippet of quick usage of the dataset, including initializing a dataset instance, loading a sketch example, outputting the attributes, and rendering the vector sketch (similar to the testing).
+- **Arguments**: introduction of necessary arguments in the code.

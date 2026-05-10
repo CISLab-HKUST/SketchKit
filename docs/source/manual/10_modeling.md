@@ -2,7 +2,7 @@
 
 The sketch2model module provides functionality to generate 3D models from sketch inputs, which include both vector sketches and raster images.
 
-**Source**: `tests/test_sketch2model.py`
+**Source**: `tests/unit/test_sketch2model.py`
 
 ## Available Methods
 

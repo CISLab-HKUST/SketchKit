@@ -49,27 +49,14 @@ After download and extraction the cache directory should look like::
 from sketchkit.datasets import GMUSketchCleanup
 
 ds = GMUSketchCleanup(
-    load_all=False,           # set True to load everything into memory
-    cislab_source=True,       # toggle download source
+    load_all=False,  # set True to load everything into memory
 )
 
-print(ds)
-gt_rows = ds.items_metadata[ds.items_metadata["split"] == "GT"] # split can also be "Rough" for rough sketches
+gt_rows = ds.items_metadata[
+    ds.items_metadata["split"] == "GT"
+]  # split can also be "Rough" for rough sketches
 idx = int(gt_rows.iloc[0]["id"])
 sketch = ds[idx]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
-
-**Arguments**
-
-- `root`: root directory used for caching and extraction. The dataset is
-  extracted under `<root>/Benchmark_Dataset` and the loader writes a
-  `.metadata.parquet` file at the root level.
-- `load_all`: if `True`, all sketches are preloaded into memory to avoid disk
-  I/O during iteration. See the class tests for memory benchmarking.
-- `cislab_source`: when `True` the archive is downloaded from the CISLAB CDN
-  mirror; otherwise the official GMU website is used. Mirror URL:
-  `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/GMUSketchCleanup/Benchmark_Dataset.zip`
-  Official URL:
-  `https://cragl.cs.gmu.edu/sketchbench/Benchmark_Dataset.zip`.

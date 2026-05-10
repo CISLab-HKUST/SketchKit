@@ -47,6 +47,8 @@ def parse_stroke_data(stroke_datas, seg_labels, image_size=256):
     max_dim_original = np.max(max_xy - min_xy)
 
     for path_i, xy_ in enumerate(xy_list):
+        if len(xy_) == 0:
+            continue
         xy = (xy_ - min_xy) / max_dim_original * float(image_size)  # (N_point, 2)
         max_dim = max(math.ceil(np.max(xy)), max_dim)
 
@@ -70,7 +72,7 @@ def parse_stroke_data(stroke_datas, seg_labels, image_size=256):
 class SketchIME(SketchDataset):
     """SketchIME Dataset loader and interface.
 
-    The SketchIME contains 209K drawings across 374 categories with segmentation annotation.
+    The SketchIME contains 56K drawings across 374 categories with segmentation annotation.
     Each drawing is represented as a sequence of strokes in stroke-3 format.
 
     Attributes:
@@ -119,7 +121,7 @@ class SketchIME(SketchDataset):
             items_metadata = []
             global_id = 0
 
-            label_names = ",".join([str(i) for i in range(self.TOTAL_PART_NUMBER)])
+            label_names = ";".join([str(i) for i in range(self.TOTAL_PART_NUMBER)])
 
             for category in self.all_categories:
                 category_dir = os.path.join(self.dataset_folder, category)

@@ -2857,6 +2857,15 @@ wheels = [
 ]
 
 [[package]]
+name = "rdp"
+version = "0.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/67/42/80a54cc4387256335c32b48bd42db80967ab5f40d6ffcd8167b3dd988c11/rdp-0.8.tar.gz", hash = "sha256:19ec92f0803587891a00b439441e5e23fc9410500983f02941e4cf9ac3113e4b", size = 4382, upload-time = "2016-12-19T01:34:07.454Z" }
+
+[[package]]
 name = "regex"
 version = "2025.11.3"
 source = { registry = "https://pypi.org/simple" }
@@ -3163,6 +3172,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "python-dotenv" },
     { name = "pyunpack" },
+    { name = "rdp" },
     { name = "rich" },
     { name = "scikit-image" },
     { name = "scipy" },
@@ -3226,6 +3236,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.12.4" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "pyunpack", specifier = ">=0.3" },
+    { name = "rdp", specifier = ">=0.8" },
     { name = "rich", specifier = ">=14.1.0" },
     { name = "scikit-image", specifier = ">=0.25.2" },
     { name = "scipy", specifier = ">=1.13.1" },

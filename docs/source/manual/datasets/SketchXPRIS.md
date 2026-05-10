@@ -38,30 +38,22 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import SketchXPRIS
 
-ds = SketchXPRIS(
-    cislab_source=True,
-)
+ds = SketchXPRIS()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 
 # Filter by category
-ice_cream_metadata = ds.items_metadata[
-    (ds.items_metadata["category"] == "ice_cream")
-]
+ice_cream_metadata = ds.items_metadata[(ds.items_metadata["category"] == "ice_cream")]
 sketches = [ds[row.id] for _, row in ice_cream_metadata[:5].iterrows()]
+
 ```
-
-**Arguments**
-
-- `root`: Root directory used for caching and extraction.
-- `load_all`: If `True`, preload all `.ndjson` arrays into memory to avoid disk I/O during iteration.
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror (`SketchX-PRIS.zip`); otherwise it is downloaded directly from the official GitHub repository.
 
 **Metadata Columns**
 
 - `id`: Global unique identifier across all sketches.
 - `sub_id`: Identifier within the specific category.
 - `category`: Drawing category name (e.g., "ice_cream", "apple").
-
+- `split`: Split in the dataset (e.g., "train", "valid", or "test").
+- `label_names`: A string of part label names, separated by ';' (e.g., "part1;part2;part3").

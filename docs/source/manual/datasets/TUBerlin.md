@@ -42,12 +42,11 @@ ds = TUBerlin()
 sketch = ds[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
-
-## Visualization
-from sketchkit.renderer import CairoRenderer
-
-# Initialize a renderer for rendering
-renderer = CairoRenderer()
-raster_image = renderer.render(sketch)
-raster_image.save("sketch.png")
 ```
+
+**Metadata Columns**
+
+- `id`: Global unique identifier across all sketches.
+- `sub_id`: Identifier within the specific category.
+- `category`: Drawing category name (e.g., "airplane", "alarm clock", etc.).
+- `split`: "train", "valid", or "test".

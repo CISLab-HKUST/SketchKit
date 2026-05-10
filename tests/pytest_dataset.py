@@ -32,7 +32,7 @@ def test_quickdraw_dataset_loading_all(tmp_path):
 @pytest.mark.slow
 def test_photosketching_dataset_loading(tmp_path):
     try:
-        dataset = PhotoSketching(cislab_source=True)
+        dataset = PhotoSketching()
     except Exception as exc:
         pytest.skip(f"PhotoSketching dataset unavailable: {exc}")
 

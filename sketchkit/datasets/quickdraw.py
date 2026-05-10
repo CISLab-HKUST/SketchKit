@@ -10,7 +10,7 @@ import math
 
 from sketchkit.core.sketch import Sketch, Path, Curve
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN
+from sketchkit.utils.file import download_with_wget, dir_md5
 
 
 def parse_stroke3_format(stroke_data):
@@ -89,7 +89,6 @@ class QuickDraw(SketchDataset):
     #     self,
     #     root: str | PathLibPath | None = None,
     #     load_all: bool = False,
-    #     cislab_source: bool = False,
     # ):
     #     """Initialize the QuickDraw dataset.
 
@@ -98,10 +97,8 @@ class QuickDraw(SketchDataset):
     #             If None, uses the default dataset directory.
     #         load_all (bool): If True, loads all data into memory for faster access.
     #             If False, loads data on-demand. Defaults to False.
-    #         cislab_source (bool): If True, downloads from CISLAB CDN mirror.
     #             If False, downloads from original Google storage. Defaults to False.
     #     """
-    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.
@@ -116,9 +113,8 @@ class QuickDraw(SketchDataset):
     def _download(self):
         """Download the QuickDraw dataset.
 
-        Downloads the categories.txt file and all category .npz files from either
-        the original Google storage or CISLAB CDN mirror. Creates the root directory
-        if it doesn't exist.
+        Downloads the categories.txt file and all category .npz files from
+        the original Google storage. Creates the root directory if it doesn't exist.
 
         Raises:
             Exception: If download fails for any file.
@@ -130,13 +126,7 @@ class QuickDraw(SketchDataset):
 
         category_txt = os.path.join(self.root, "categories.txt")
         try:
-            if self.cislab_source:
-                url = (
-                    f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/"
-                    + "categories.txt"
-                )
-            else:
-                url = "https://raw.githubusercontent.com/googlecreativelab/quickdraw-dataset/refs/heads/master/categories.txt"
+            url = "https://raw.githubusercontent.com/googlecreativelab/quickdraw-dataset/refs/heads/master/categories.txt"
             download_with_wget(
                 url,
                 file_path=category_txt,
@@ -154,18 +144,11 @@ class QuickDraw(SketchDataset):
         for category in tqdm(all_categories, desc="Downloading categories"):
             npz_path = os.path.join(self.root, category + ".npz")
             try:
-                if self.cislab_source:
-                    url = (
-                        f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/"
-                        + category
-                        + ".npz"
-                    )
-                else:
-                    url = (
-                        "https://storage.googleapis.com/quickdraw_dataset/sketchrnn/"
-                        + category
-                        + ".npz"
-                    )
+                url = (
+                    "https://storage.googleapis.com/quickdraw_dataset/sketchrnn/"
+                    + category
+                    + ".npz"
+                )
                 download_with_wget(url, npz_path, desc=f"Downloading {category}")
 
             except Exception as e:
@@ -333,13 +316,13 @@ if __name__ == "__main__":
 
     # console.print()
 
-    console.print("3. Load from CISLAB CDN", style="green")
+    console.print("3. Load from original source", style="green")
 
     # tempfile can create a temporary directory
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        dataset = QuickDraw(root=tmpdir, cislab_source=True)
+        dataset = QuickDraw(root=tmpdir)
         # show brief information of the dataset
         console.print(dataset)
         process = psutil.Process()

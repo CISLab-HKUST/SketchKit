@@ -2,7 +2,7 @@
 
 ## Documentation
 
-The docs can found on [https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/). The api docs will be auto generated after each commit.
+The API docs are auto generated after each commit.
 
 If you want to contribute to manual docs, please refer to documents in `docs/source/manual` folder, just like:
 
@@ -97,4 +97,3 @@ git branch -d your_local_branch
 - Create separate branches for unrelated changes.
 - Link issues with keywords so they close automatically upon merge.
 - Use status checks to catch errors before merging.
-

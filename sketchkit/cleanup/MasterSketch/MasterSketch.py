@@ -7,8 +7,6 @@ import cv2
 from PIL import Image
 
 from sketchkit.cleanup.MasterSketch.model.model_gan import model, immean, imstd
-from sketchkit.utils.file import download_with_wget, CISLAB_CDN
-
 
 class MasterSketch:
     """
@@ -45,12 +43,10 @@ class MasterSketch:
         filename = "model_gan.pth"
         self.model_path = os.path.join(root, filename)
         if not os.path.exists(self.model_path):
-            cislab_url = f"{CISLAB_CDN}/weights/MasterSketch/{filename}"
-            print(f"Attempting download from CISLAB: {cislab_url}")
-            download_with_wget(
-                cislab_url, self.model_path, desc="Downloading from CISLAB CDN"
+            raise RuntimeError(
+                "Automatic download is not configured for MasterSketch weights. "
+                f"Place {filename} at {self.model_path}."
             )
-            print("CISLAB download completed successfully!")
 
     def run(
         self,

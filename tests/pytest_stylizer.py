@@ -6,7 +6,7 @@ from sketchkit.stylization import Stylizer
 
 def test_stylizer_run_and_png_conversion(tmp_path):
     try:
-        dataset = PhotoSketching(cislab_source=True)
+        dataset = PhotoSketching()
     except Exception as exc:
         pytest.skip(f"PhotoSketching dataset unavailable: {exc}")
 

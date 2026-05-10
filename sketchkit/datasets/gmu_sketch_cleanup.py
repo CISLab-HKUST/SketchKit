@@ -10,7 +10,7 @@ from svg.path import parse_path, Path as SvgPath, Move, CubicBezier, Line, Arc
 
 from sketchkit.core.sketch import Curve, Point, Sketch, Path
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
+from sketchkit.utils.file import download_with_wget, dir_md5, extract_files
 
 INVALID_SVG_SHAPES = {"rect", "circle", "ellipse", "line", "polyline", "polygon"}
 
@@ -128,7 +128,7 @@ class GMUSketchCleanup(SketchDataset):
     - Only the `id` column is mandatory; additional columns like `split` (GT/Rough)
       and `file_path` (SVG path) are optional.
     - _get_single: Reads from raw_data; if missing, parses the SVG from disk and caches it.
-    - Supports downloading from the official website or CISLAB mirror.
+    - Supports downloading from the official website.
     """
 
     # Replace this value with the actual directory MD5 (MD5 of the Benchmark_Dataset directory or the entire root after download and extraction).
@@ -147,19 +147,13 @@ class GMUSketchCleanup(SketchDataset):
         """Downloads and extracts the GMU-Sketch-Cleanup dataset.
 
         - Official: https://cragl.cs.gmu.edu/sketchbench/Benchmark_Dataset.zip
-        - CISLAB: {CISLAB_CDN}/datasets/GMUSketchCleanup/Benchmark_Dataset.zip
         """
         if os.path.exists(self.root):
             shutil.rmtree(self.root)
         os.makedirs(self.root, exist_ok=True)
 
-        if self.cislab_source:
-            url = (
-                f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/Benchmark_Dataset.zip"
-            )
-        else:
-            ssl._create_default_https_context = ssl._create_unverified_context
-            url = "https://cragl.cs.gmu.edu/sketchbench/Benchmark_Dataset.zip"
+        ssl._create_default_https_context = ssl._create_unverified_context
+        url = "https://cragl.cs.gmu.edu/sketchbench/Benchmark_Dataset.zip"
 
         zip_fp = os.path.join(self.root, "Benchmark_Dataset.zip")
 
@@ -284,10 +278,10 @@ if __name__ == "__main__":
     console = Console()
     console.print("GMUSketchCleanup Dataset Test", style="bold blue")
 
-    # 1) Default download (CISLAB) to a temporary directory
+    # 1) Download to a temporary directory
     # with tempfile.TemporaryDirectory() as tmpdir:
-    #     console.print("[green]1) Load from CISLAB CDN (if available)[/green]")
-    #     ds = GMUSketchCleanup(root=tmpdir, cislab_source=True, load_all=False)
+    #     console.print("[green]1) Load from original source[/green]")
+    #     ds = GMUSketchCleanup(root=tmpdir, load_all=False)
     #     console.print(ds)
     #     mem = psutil.Process().memory_info().rss / 1024 / 1024
     #     console.print(f"Memory: {mem:.2f} MB")
@@ -299,7 +293,7 @@ if __name__ == "__main__":
     # 2) Test preloading all items at once
     with tempfile.TemporaryDirectory() as tmpdir:
         console.print("[green]2) Load All[/green]")
-        ds = GMUSketchCleanup(root=tmpdir, cislab_source=True, load_all=True)
+        ds = GMUSketchCleanup(root=tmpdir, load_all=True)
         console.print(ds)
         mem = psutil.Process().memory_info().rss / 1024 / 1024
         console.print(f"Memory: {mem:.2f} MB")

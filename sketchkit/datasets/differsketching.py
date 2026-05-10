@@ -7,13 +7,7 @@ import pandas as pd
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import (
-    download_with_wget,
-    download_with_gdown,
-    dir_md5,
-    CISLAB_CDN,
-    extract_files,
-)
+from sketchkit.utils.file import download_with_gdown, dir_md5, extract_files
 
 
 def load_differsketching_json(json_path: str) -> Sketch:
@@ -95,7 +89,6 @@ class DifferSketching(SketchDataset):
     #     self,
     #     root: str | PathLibPath | None = None,
     #     load_all: bool = False,
-    #     cislab_source: bool = False,
     # ):
     #     """Initialize the DifferSketching dataset.
 
@@ -104,10 +97,8 @@ class DifferSketching(SketchDataset):
     #             If None, uses the default dataset directory.
     #         load_all (bool): If True, loads all data into memory for faster access.
     #             If False, loads data on-demand. Defaults to False.
-    #         cislab_source (bool): If True, downloads from CISLAB CDN mirror.
     #             If False, downloads from Google Drive. Defaults to False.
     #     """
-    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.
@@ -122,7 +113,7 @@ class DifferSketching(SketchDataset):
     def _download(self):
         """Download the DifferSketching dataset.
 
-        Downloads the dataset archive from either Google Drive or CISLAB CDN mirror.
+        Downloads the dataset archive from Google Drive.
         Creates the root directory if it doesn't exist.
 
         Raises:
@@ -134,15 +125,11 @@ class DifferSketching(SketchDataset):
 
         archive_path = os.path.join(self.root, "differsketching.zip")
         try:
-            if self.cislab_source:
-                url = f"{CISLAB_CDN}/datasets/DifferSketching/differsketching.zip"
-                download_with_wget(url, archive_path)
-            else:
-                download_with_gdown(
-                    self.root,
-                    "1A_3RVc8Y4YdI7nhyM7tb-q7dQw4zTcCO",
-                    "differsketching.zip",
-                )
+            download_with_gdown(
+                self.root,
+                "1A_3RVc8Y4YdI7nhyM7tb-q7dQw4zTcCO",
+                "differsketching.zip",
+            )
         except Exception as e:
             raise e
 
@@ -245,9 +232,6 @@ if __name__ == "__main__":
     # # Load all data to memory at once
     # dataset = DifferSketching(load_all=True)
     #
-    # # Download from CISLAB CDN
-    # dataset = DifferSketching(cislab_source=True)
-
     # Search items using metadata - filter by drawing types
     objects = dataset.items_metadata[
         (dataset.items_metadata["category"] == "Animal_Head")

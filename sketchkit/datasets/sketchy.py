@@ -11,7 +11,7 @@ from svg.path import parse_path, path
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
+from sketchkit.utils.file import dir_md5, extract_files
 
 
 invalid_svg_shapes = ["rect", "circle", "ellipse", "line", "polyline", "polygon"]
@@ -216,10 +216,8 @@ class Sketchy(SketchDataset):
     #     self,
     #     root: str | None = None,
     #     load_all: bool = False,
-    #     cislab_source: bool = False,
     # ):
 
-    #     super().__init__(root=root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.
@@ -243,17 +241,9 @@ class Sketchy(SketchDataset):
         archive_path = os.path.join(self.root, self.filename)
 
         try:
-            if self.cislab_source:
-                cislab_url = f"{CISLAB_CDN}/datasets/Sketchy/{self.filename}"
-                print(f"Attempting download from CISLAB: {cislab_url}")
-                download_with_wget(
-                    cislab_url, archive_path, desc="Downloading from CISLAB CDN"
-                )
-                print("CISLAB download completed successfully!")
-            else:
-                print("Using gdown for Google Drive download...")
-                gdown.download(id=self.gdrive_id, output=archive_path, quiet=False)
-                print("Google Drive download completed successfully!")
+            print("Using gdown for Google Drive download...")
+            gdown.download(id=self.gdrive_id, output=archive_path, quiet=False)
+            print("Google Drive download completed successfully!")
         except Exception:
             traceback.print_exc()
             print("Download failed.")

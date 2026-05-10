@@ -12,8 +12,8 @@ sys.path.insert(0, os.path.abspath("../.."))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "SketchKit"
-copyright = "2025, CIS Lab"
-author = "CIS Lab"
+copyright = "2025, SketchKit Contributors"
+author = "SketchKit Contributors"
 
 # -- Determine current docs version ------------------------------------------
 version = os.environ.get("SKETCHKIT_DOCS_VERSION", "main")

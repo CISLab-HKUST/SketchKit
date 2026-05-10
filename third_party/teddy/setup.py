@@ -88,11 +88,10 @@ setup(
     version="0.1.0",
     description="Teddy/MonsterMash C++ module for sketch-to-3D conversion",
     author="SketchKit Contributors",
-    url="https://github.com/CISLab-HKUST/SketchKit",
+    url="https://github.com/SketchKit/SketchKit",
     py_modules=[],
     cmdclass={
         "build_ext": TeddyBuildExt,
     },
     zip_safe=False,
 )
-

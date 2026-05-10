@@ -7,7 +7,7 @@ import math
 
 from sketchkit.core.sketch import Sketch, Path, Curve
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import dir_md5, CISLAB_CDN, download_with_wget, download_with_gdown, extract_files
+from sketchkit.utils.file import dir_md5, download_with_gdown, extract_files
 
 
 def parse_stroke_data(stroke_datas, seg_labels, image_size=256):
@@ -93,9 +93,7 @@ class SketchIME(SketchDataset):
     #     self,
     #     data_root: str | None = None,
     #     load_all: bool = False,
-    #     cislab_source: bool = False,
     # ):
-    #     super().__init__(data_root, load_all=load_all, cislab_source=cislab_source)
 
     def _load_items_metadata(self):
         """Load and cache metadata for all items in the dataset.
@@ -188,18 +186,11 @@ class SketchIME(SketchDataset):
 
         zip_path = os.path.join(self.root, "SketchIME.zip")
         try:
-            if self.cislab_source:
-                url = (
-                        f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/"
-                        + "SketchIME.zip"
-                )
-                download_with_wget(url, file_path=zip_path)
-            else:
-                download_with_gdown(
-                    output_folder=self.root,
-                    gdrive_id="1TbaK46IQvI6MCs0JpCcB1Fcx8Nr3i8g8",
-                    filename="SketchIME.zip",
-                )
+            download_with_gdown(
+                output_folder=self.root,
+                gdrive_id="1TbaK46IQvI6MCs0JpCcB1Fcx8Nr3i8g8",
+                filename="SketchIME.zip",
+            )
         except Exception as e:
             raise e
 

@@ -8,9 +8,38 @@ import torch.nn.functional as F
 from torchvision import transforms
 import torchvision.transforms.functional as TF
 from torchvision.utils import save_image
-from torch.hub import load_state_dict_from_url  
+from torch.hub import load_state_dict_from_url
 
-WEIGHTS_URL_BASE = "https://cislab.hkust-gz.edu.cn/projects/sketchkit/weights/LineDrawer/"
+DEFAULT_WEIGHTS_DIR = os.path.expanduser("~/.sketchkit/weights/LineDrawer")
+WEIGHTS_URL_BASE = "https://cislab.hkust-gz.edu.cn/projects/linedrawer/weights/"
+
+
+def _resolve_weight_path(model_name: str, suffix: str = "") -> str:
+    model_name = os.fspath(model_name)
+    base_name = os.path.basename(model_name)
+    filename = base_name if base_name.endswith(".pth") else f"{base_name}{suffix}.pth"
+    if os.path.isdir(model_name):
+        return os.path.join(model_name, filename)
+    if os.path.isabs(model_name) or os.path.sep in model_name or os.path.exists(model_name):
+        return model_name if model_name.endswith(".pth") else f"{model_name}{suffix}.pth"
+    return os.path.join(DEFAULT_WEIGHTS_DIR, filename)
+
+
+def _resolve_weight_url(model_name: str, suffix: str = "") -> str:
+    base_name = os.path.basename(os.fspath(model_name))
+    filename = base_name if base_name.endswith(".pth") else f"{base_name}{suffix}.pth"
+    return f"{WEIGHTS_URL_BASE}{filename}"
+
+
+def _load_weight_state_dict(model_name: str, suffix: str, device):
+    model_path = _resolve_weight_path(model_name, suffix)
+    if os.path.exists(model_path):
+        print(f"Loading weights from {model_path}")
+        return torch.load(model_path, map_location=device)
+
+    model_url = _resolve_weight_url(model_name, suffix)
+    print(f"Loading weights from {model_url}")
+    return load_state_dict_from_url(model_url, map_location=device)
 
 
 def rect_boudary(t_big_img ,rect):#paste_back
@@ -230,18 +259,14 @@ class stNet(nn.Module):
         return self.conv(x)
 
     def load(self, model_name): 
-        """Loads pre-trained weights into the model from a URL.
-
-        Constructs the URL from `WEIGHTS_URL_BASE` and `model_name`.
+        """Loads pre-trained weights into the model.
 
         Args:
             model_name (str): The base name of the model file (e.g., "model").
-                It expects to find a file named '{model_name}.pth' at the base URL.
+                It first checks the default weights directory or explicit file path,
+                then falls back to the configured remote weights directory.
         """
-        # self.load_state_dict(torch.load('./%s.pth' % model_name, map_location=self.DEVICE))
-        model_url = f"{WEIGHTS_URL_BASE}{model_name}.pth"
-        print(f"Loading weights from {model_url}")
-        state_dict = load_state_dict_from_url(model_url, map_location=self.DEVICE)
+        state_dict = _load_weight_state_dict(model_name, "", self.DEVICE)
         self.load_state_dict(state_dict)
         
 class stNet_double(nn.Module):
@@ -275,27 +300,19 @@ class stNet_double(nn.Module):
         self.net_refine.eval()
         
     def load(self, model_name):
-        """Loads pre-trained weights for both rough and refine networks from URLs.
-
-        Constructs URLs for '{model_name}_rough.pth' and
-        '{model_name}_ref.pth'.
+        """Loads pre-trained weights for both rough and refine networks.
 
         Args:
             model_name (str): The base name for the model files.
         """
-        # self.net_rough.load_state_dict(torch.load('./%s_rough.pth' % model_name, map_location=self.DEVICE)) 
-        # self.net_refine.load_state_dict(torch.load('./%s_ref.pth' % model_name, map_location=self.DEVICE))
-        
-        # 加载 rough 权重
-        rough_url = f"{WEIGHTS_URL_BASE}{model_name}_rough.pth"
-        print(f"Loading rough weights from {rough_url}")
-        rough_state_dict = load_state_dict_from_url(rough_url, map_location=self.DEVICE)
+        rough_state_dict = _load_weight_state_dict(
+            model_name, "_rough", self.DEVICE
+        )
         self.net_rough.load_state_dict(rough_state_dict)
         
-        # 加载 refine 权重
-        refine_url = f"{WEIGHTS_URL_BASE}{model_name}_ref.pth"
-        print(f"Loading refine weights from {refine_url}")
-        refine_state_dict = load_state_dict_from_url(refine_url, map_location=self.DEVICE)
+        refine_state_dict = _load_weight_state_dict(
+            model_name, "_ref", self.DEVICE
+        )
         self.net_refine.load_state_dict(refine_state_dict)
 
     @torch.no_grad()   

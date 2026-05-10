@@ -13,7 +13,7 @@ from typing import List, Tuple
 from svg.path import parse_path, path
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.core.sketch import Sketch, Path, Curve, Point
-from sketchkit.utils.file import extract_files, download_with_wget, dir_md5, CISLAB_CDN
+from sketchkit.utils.file import extract_files, dir_md5
 
 
 _INVALID = {"rect", "circle", "ellipse", "line", "polyline", "polygon"}
@@ -172,7 +172,6 @@ class ControlSketch(SketchDataset):
     #     self,
     #     root: str | PathLibPath | None = None,
     #     load_all: bool = False,
-    #     cislab_source: bool = False,
     # ):
     #     """Initialize the ControlSketch dataset.
 
@@ -181,11 +180,9 @@ class ControlSketch(SketchDataset):
     #             If None, uses the default dataset directory.
     #         load_all (bool): If True, loads all data into memory for faster access.
     #             If False, loads data on-demand. Defaults to False.
-    #         cislab_source (bool): If True, downloads from CISLAB CDN mirror.
     #             If False, downloads from original Google storage. Defaults to False.
     #     """
 
-    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.
@@ -205,8 +202,8 @@ class ControlSketch(SketchDataset):
     def _download(self):
         """Download and extract the ControlSketch dataset.
 
-        Downloads the dataset archive from CISLAB CDN or Google Drive,
-        extracts it into the dataset root, and removes the source file if successful.
+        Downloads the dataset archive from Google Drive, extracts it into the
+        dataset root, and removes the source file if successful.
         """
         if os.path.exists(self.root):
             shutil.rmtree(self.root)
@@ -215,29 +212,14 @@ class ControlSketch(SketchDataset):
         zip_name = "controlsketch_sketches.zip"
         zip_path = os.path.join(self.root, zip_name)
 
-        if self.cislab_source:
-            try:
-                url = f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/{zip_name}"
-                print(f"Downloading ControlSketch from CISLAB CDN: {url}")
-                download_with_wget(url, file_path=zip_path, pg_bar=True)
-            except Exception:
-                print(
-                    "CISLAB mirror unavailable. Falling back to Google Drive (gdown)."
-                )
-                file_id = "1-kffChm6RXwTuP8qxUOT-QDf8-bSCH0w"
-                if not os.path.exists(zip_path):
-                    print("Downloading ControlSketch from Google Drive…")
-                    gdown.download(id=file_id, output=zip_path, quiet=False)
-                    print("Download finished.")
-        else:
-            file_id = "1-kffChm6RXwTuP8qxUOT-QDf8-bSCH0w"
-            if not os.path.exists(zip_path):
-                print("Downloading ControlSketch from Google Drive…")
-                gdown.download(id=file_id, output=zip_path, quiet=False)
-                print("Download finished.")
+        file_id = "1-kffChm6RXwTuP8qxUOT-QDf8-bSCH0w"
+        if not os.path.exists(zip_path):
+            print("Downloading ControlSketch from Google Drive...")
+            gdown.download(id=file_id, output=zip_path, quiet=False)
+            print("Download finished.")
 
         try:
-            print("Extracting ControlSketch…")
+            print("Extracting ControlSketch...")
             extract_files(zip_path, self.root, remove_sourcefile=True)
             print("Extraction finished.")
         except Exception as e:
@@ -412,13 +394,13 @@ if __name__ == "__main__":
 
     # console.print()
 
-    console.print("3. Load from CISLAB CDN", style="green")
+    console.print("3. Load from original source", style="green")
 
     # tempfile can create a temporary directory
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        dataset = ControlSketch(root=tmpdir, cislab_source=True)
+        dataset = ControlSketch(root=tmpdir)
         # show brief information of the dataset
         console.print(dataset)
         process = psutil.Process()

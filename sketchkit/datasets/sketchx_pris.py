@@ -6,7 +6,7 @@ import pandas as pd
 
 from sketchkit.core.sketch import Sketch, Path, Curve
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import dir_md5, CISLAB_CDN, download_with_wget, extract_files
+from sketchkit.utils.file import dir_md5, download_with_wget, extract_files
 
 
 def parse_stroke3_format(stroke_data):
@@ -99,9 +99,7 @@ class SketchXPRIS(SketchDataset):
     #     self,
     #     data_root: str | None = None,
     #     load_all: bool = False,
-    #     cislab_source: bool = False,
     # ):
-    #     super().__init__(data_root, load_all=load_all, cislab_source=cislab_source)
 
     def _load_items_metadata(self):
         """Load and cache metadata for all items in the dataset.
@@ -218,12 +216,7 @@ class SketchXPRIS(SketchDataset):
         Raises:
             Exception: If download fails for any file.
         """
-        if self.cislab_source:
-            url = (
-                f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/" + "SketchX-PRIS.zip"
-            )
-        else:
-            url = "https://github.com/KeLi-SketchX/SketchX-PRIS-Dataset/archive/refs/heads/master.zip"
+        url = "https://github.com/KeLi-SketchX/SketchX-PRIS-Dataset/archive/refs/heads/master.zip"
         os.makedirs(self.root, exist_ok=True)
         zip_path = os.path.join(self.root, "SketchX-PRIS.zip")
 

@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from sketchkit.animation.RIFE.model.RIFE_HDv3 import Model
-from sketchkit.utils.file import download_with_wget, CISLAB_CDN, extract_files
+from sketchkit.utils.file import extract_files
 
 
 class RIFE:
@@ -39,7 +39,7 @@ class RIFE:
         self._download_models()
         self.model = Model(self.model_dir, device)
 
-    def _download_models(self, cislab_source=False):
+    def _download_models(self):
         """Download the pretrained models"""
         root = os.path.join(
             os.environ.get("HOME", "/"),
@@ -54,25 +54,17 @@ class RIFE:
         archive_path = os.path.join(root, filename)
 
         if not os.path.exists(self.model_path):
-            if cislab_source:
-                cislab_url = f"{CISLAB_CDN}/datasets/Sketchy/{filename}"
-                print(f"Attempting download from CISLAB: {cislab_url}")
-                download_with_wget(
-                    cislab_url, archive_path, desc="Downloading from CISLAB CDN"
-                )
-                print("CISLAB download completed successfully!")
-            else:
-                gdrive_id = "1ZKjcbmt1hypiFprJPIKW0Tt0lr_2i7bg"
-                print("Using gdown for Google Drive download...")
-                gdown.download(id=gdrive_id, output=archive_path, quiet=False)
-                print("Google Drive download completed successfully!")
+            gdrive_id = "1ZKjcbmt1hypiFprJPIKW0Tt0lr_2i7bg"
+            print("Using gdown for Google Drive download...")
+            gdown.download(id=gdrive_id, output=archive_path, quiet=False)
+            print("Google Drive download completed successfully!")
 
-                extract_files(
-                    file_path=archive_path, output_dir=root, remove_sourcefile=True
-                )
-                os.remove(os.path.join(self.model_dir, "IFNet_HDv3.py"))
-                os.remove(os.path.join(self.model_dir, "refine.py"))
-                os.remove(os.path.join(self.model_dir, "RIFE_HDv3.py"))
+            extract_files(
+                file_path=archive_path, output_dir=root, remove_sourcefile=True
+            )
+            os.remove(os.path.join(self.model_dir, "IFNet_HDv3.py"))
+            os.remove(os.path.join(self.model_dir, "refine.py"))
+            os.remove(os.path.join(self.model_dir, "RIFE_HDv3.py"))
 
     def run(
         self,

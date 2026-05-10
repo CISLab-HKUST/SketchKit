@@ -9,7 +9,7 @@ from pathlib import Path as PathLibPath
 # Import your core definitions
 from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
+from sketchkit.utils.file import download_with_wget, dir_md5, extract_files
 
 def parse_hex_color(hex_str: str) -> tuple[float, float, float]:
     """Parses a hex color string (e.g., '#000000') into an RGB tuple (0.0-1.0)."""
@@ -30,11 +30,10 @@ class TracingVsFreehand(SketchDataset):
     
     Attributes:
         md5_sum (str): MD5 checksum for dataset integrity verification.
-        URL (str): Download URL for the dataset zip file.
     """
 
     md5_sum = "d069ddc535281d50e271ee8bcbcd091e"
-    URL = f"{CISLAB_CDN}/datasets/TracingVsFreehand/sketch.zip"
+    URL = "https://cislab.hkust-gz.edu.cn/projects/tracing-vs-freehand/data/sketch.zip"
     
     # Official canvas size stated in the dataset documentation
     CANVAS_WIDTH = 800
@@ -47,11 +46,10 @@ class TracingVsFreehand(SketchDataset):
         self,
         root: PathLibPath | str | None = None,
         load_all: bool = False,
-        cislab_source: bool = True,
     ):
-        super().__init__(root, load_all=load_all, cislab_source=cislab_source)
         # Cache for holding loaded JSON content to avoid repeated I/O
         self._json_cache = {}
+        super().__init__(root, load_all=load_all)
 
     def _check_integrity(self) -> bool:
         """Checks if the dataset is present and uncorrupted."""

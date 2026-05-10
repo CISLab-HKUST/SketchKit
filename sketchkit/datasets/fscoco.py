@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from sketchkit.core.sketch import Sketch, Path, Curve
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
+from sketchkit.utils.file import download_with_wget, dir_md5, extract_files
 
 
 class FSCOCO(SketchDataset):
@@ -30,7 +30,6 @@ class FSCOCO(SketchDataset):
     #         self,
     #         root: str | PathLibPath | None = None,
     #         load_all: bool = False,
-    #         cislab_source: bool = False,
     # ):
     #     """Initialize the FSCOCO dataset.
 
@@ -38,10 +37,8 @@ class FSCOCO(SketchDataset):
     #         root: Root directory of the dataset. The dataset will be extracted
     #             under `<root>/fscoco/`. If None, the parent class default is used.
     #         load_all: If True, preload all `.npy` files into memory.
-    #         cislab_source: If True, download from the CISLAB mirror; otherwise
     #             use the official source.
     #     """
-    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check on-disk dataset integrity.
@@ -61,18 +58,14 @@ class FSCOCO(SketchDataset):
     def _download(self):
         """Download and extract FS-COCO if the integrity check fails.
 
-        The archive is fetched from the CISLAB mirror or the official host,
-        extracted into `self.root`, and a checksum is printed for verification.
+        The archive is fetched from the official host, extracted into
+        `self.root`, and a checksum is printed for verification.
         """
         if os.path.exists(self.root):
             shutil.rmtree(self.root)
         os.makedirs(self.root, exist_ok=True)
 
-        url = (
-            f"{CISLAB_CDN}/datasets/FSCOCO/fscoco.tar.gz"
-            if self.cislab_source
-            else "http://cvssp.org/data/fscoco/fscoco.tar.gz"
-        )
+        url = "http://cvssp.org/data/fscoco/fscoco.tar.gz"
 
         print(f"[FS-COCO] Downloading from: {url}")
 
@@ -262,10 +255,9 @@ if __name__ == "__main__":
     console = Console()
     console.print("FSCOCO Dataset Test", style="bold blue")
 
-    # 1) Default download (CISLAB) to a temporary directory.
     with tempfile.TemporaryDirectory() as tmpdir:
-        console.print("[green]1) Load from CISLAB CDN (if available)[/green]")
-        ds = FSCOCO(root=tmpdir, cislab_source=True, load_all=True)
+        console.print("[green]1) Load from original source[/green]")
+        ds = FSCOCO(root=tmpdir, load_all=True)
         console.print(ds)
         mem = psutil.Process().memory_info().rss / 1024 / 1024
         console.print(f"Memory: {mem:.2f} MB")
@@ -287,7 +279,7 @@ if __name__ == "__main__":
     # 2) Test preloading all items at once.
     # with tempfile.TemporaryDirectory() as tmpdir:
     #     console.print("[green]2) Load All[/green]")
-    #     ds = FSCOCO(root=tmpdir, cislab_source=False, load_all=True)
+    #     ds = FSCOCO(root=tmpdir, load_all=True)
     #     console.print(ds)
     #     mem = psutil.Process().memory_info().rss / 1024 / 1024
     #     console.print(f"Memory: {mem:.2f} MB")

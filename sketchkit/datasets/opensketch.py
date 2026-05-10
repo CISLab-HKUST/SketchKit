@@ -11,8 +11,6 @@ from pathlib import Path as PathLibPath
 from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import (
-    download_with_wget,
-    CISLAB_CDN,
     extract_files,
     file_md5,
 )
@@ -133,7 +131,6 @@ class OpenSketch(SketchDataset):
     #     self,
     #     root: str | PathLibPath | None = None,
     #     load_all: bool = False,
-    #     cislab_source: bool = True,
     # ):
     #     """Initialize the OpenSketch dataset.
 
@@ -142,10 +139,8 @@ class OpenSketch(SketchDataset):
     #             If None, uses the default dataset directory.
     #         load_all (bool): If True, loads all data into memory for faster access.
     #             If False, loads data on-demand. Defaults to False.
-    #         cislab_source (bool): If True, downloads from CISLAB CDN mirror.
     #             If False, downloads from original Google storage. Defaults to False.
     #     """
-    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.
@@ -171,25 +166,14 @@ class OpenSketch(SketchDataset):
 
         svg_zip_path = os.path.join(self.root, "sketches_svg.zip")
 
-        if self.cislab_source:
-            print("Using CISLAB CDN for download...")
-            url = (
-                f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/" + "sketches_svg.zip"
-            )
-            download_with_wget(
-                url,
-                file_path=svg_zip_path,
-                pg_bar=True,
-            )
-        else:
-            try:
-                print("Using gdown for Google Drive download...")
-                # Prefer gdown when available, it handles confirm tokens and cookies internally.
-                gdown.download(id=self.gdrive_id, output=svg_zip_path, quiet=False)
-                print("\nDownload finished!")
-            except Exception as e:
-                traceback.print_exc()
-                print("Download failed.")
+        try:
+            print("Using gdown for Google Drive download...")
+            # Prefer gdown when available, it handles confirm tokens and cookies internally.
+            gdown.download(id=self.gdrive_id, output=svg_zip_path, quiet=False)
+            print("\nDownload finished!")
+        except Exception as e:
+            traceback.print_exc()
+            print("Download failed.")
 
         try:
             extract_files(
@@ -311,8 +295,7 @@ if __name__ == "__main__":
     # # Load all data to memory at once
     # dataset = OpenSketch(load_all=True)
 
-    # Download from CISLAB CDN
-    dataset = OpenSketch(cislab_source=True, load_all=True)
+    dataset = OpenSketch(load_all=True)
 
     # Load sketches
 

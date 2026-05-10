@@ -11,10 +11,8 @@ from sketchkit.core.sketch import Sketch, Path, Curve
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import (
     download_with_gdown,
-    download_with_wget,
     extract_files,
     file_md5,
-    CISLAB_CDN,
 )
 
 COLORS_MAP = {
@@ -76,7 +74,6 @@ class CreativeSketch(SketchDataset):
         self,
         root: str | PathLibPath | None = None,
         load_all: bool = False,
-        cislab_source: bool = False,
         skip_integrity_check: bool = False,
         rdp_simplification: bool = False,
     ):
@@ -87,14 +84,15 @@ class CreativeSketch(SketchDataset):
                 If None, uses the default dataset directory.
             load_all (bool): If True, loads all data into memory for faster access.
                 If False, loads data on-demand. Defaults to False.
-            cislab_source (bool): If True, downloads from CISLAB CDN mirror.
-                If False, downloads from original Google storage. Defaults to False.
             rdp_simplification (bool): If True, simplify the path points using RDP algorithm.
             skip_background (bool): If True, skip the "details" part label for background.
         """
         self.rdp_simplification = rdp_simplification
-        super().__init__(root, load_all=load_all, cislab_source=cislab_source,
-                         skip_integrity_check=skip_integrity_check)
+        super().__init__(
+            root,
+            load_all=load_all,
+            skip_integrity_check=skip_integrity_check,
+        )
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset.
@@ -136,18 +134,11 @@ class CreativeSketch(SketchDataset):
 
         svg_zip_path = os.path.join(self.root, "creative_sketch.zip")
         try:
-            if self.cislab_source:
-                url = (
-                    f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/"
-                    + "creative_sketch.zip"
-                )
-                download_with_wget(url, file_path=svg_zip_path)
-            else:
-                download_with_gdown(
-                    output_folder=self.root,
-                    gdrive_id="1Dstn3Cv2yAnxt1JXC0zPa1VPVDSz9gc-",
-                    filename="creative_sketch.zip",
-                )
+            download_with_gdown(
+                output_folder=self.root,
+                gdrive_id="1Dstn3Cv2yAnxt1JXC0zPa1VPVDSz9gc-",
+                filename="creative_sketch.zip",
+            )
         except Exception as e:
             raise e
 
@@ -364,9 +355,10 @@ class CreativeSketch(SketchDataset):
 
 
 if __name__ == "__main__":
-    dataset = CreativeSketch(cislab_source=True, skip_integrity_check=True,
-                             # rdp_simplification=True
-                             )
+    dataset = CreativeSketch(
+        skip_integrity_check=True,
+        # rdp_simplification=True
+    )
 
     birds = dataset.items_metadata[
         (dataset.items_metadata["category"] == "bird")

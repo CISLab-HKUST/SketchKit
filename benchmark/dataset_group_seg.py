@@ -30,7 +30,7 @@ class SketchDatasetGroupSeg:
                 self.part_list_all += ds.all_class_part_labels
                 print(len(ds.all_class_part_labels))
             elif dataset_name == "CreativeSketch":
-                ds = CreativeSketch(cislab_source=True)
+                ds = CreativeSketch()
                 self.dataset_group[dataset_name] = ds
                 self.part_list_all += ds.all_class_part_labels
                 print(len(ds.all_class_part_labels))

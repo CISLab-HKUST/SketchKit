@@ -17,7 +17,6 @@ class SketchDataset(ABC, Sequence):
         root (str): Root directory where the dataset is stored.
         items_metadata (pandas.DataFrame): DataFrame containing metadata for all dataset items.
         load_all (bool): Whether to load all data into memory at initialization.
-        cislab_source (bool): Whether to use CISLAB as the data source.
         raw_data: Container for all loaded data when load_all is True.
         items_metadata (pandas.DataFrame): DataFrame containing metadata for all dataset items.
         raw_data (list): List containing memory-loaded data. If the item is not loaded, raw_data[id] is None. __getitem__ return item from this list.
@@ -31,7 +30,6 @@ class SketchDataset(ABC, Sequence):
         self,
         root: str | PathLibPath | None = None,
         load_all: bool = False,
-        cislab_source: bool = False,
         skip_integrity_check: bool = False,
     ):
         """
@@ -40,8 +38,6 @@ class SketchDataset(ABC, Sequence):
             root (str | PathLibPath | None, optional): Root directory for the dataset.
                 If None, defaults to ~/.sketchkit/datasets/{ClassName}/. Defaults to None.
             load_all (bool, optional): Whether to load all data into memory at initialization.
-                Defaults to False.
-            cislab_source (bool, optional): Whether to use CISLAB as the data source.
                 Defaults to False.
         Raises:
             RuntimeError: If the dataset is not found or corrupted after download attempt.
@@ -63,7 +59,6 @@ class SketchDataset(ABC, Sequence):
 
         self.items_metadata = []
         self.load_all = load_all
-        self.cislab_source = cislab_source
         self.raw_data = None
         self.skip_integrity_check = skip_integrity_check
 
@@ -214,7 +209,6 @@ class SketchDataset(ABC, Sequence):
         if self.root is not None:
             body.append(f"Root location: {self.root}")
             body.append(f"Load all data into memory: {self.load_all}")
-            body.append(f"Use CISLAB as data source: {self.cislab_source}")
         body += self.extra_repr().splitlines()
 
         lines = [head] + [" " * 4 + line for line in body]

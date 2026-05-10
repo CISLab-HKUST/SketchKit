@@ -1,4 +1,5 @@
 import os
+import traceback
 
 import numpy as np
 import cv2
@@ -10,7 +11,6 @@ from tqdm import tqdm
 from pyunpack import Archive
 import gdown
 
-CISLAB_CDN = "https://cislab.hkust-gz.edu.cn/projects/sketchkit"
 CACHE_DIR = os.path.expanduser("~/.sketchkit/")
 
 

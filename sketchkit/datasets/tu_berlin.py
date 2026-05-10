@@ -15,7 +15,6 @@ from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import (
     download_with_wget,
-    CISLAB_CDN,
     extract_files,
     file_md5,
 )
@@ -347,7 +346,6 @@ class TUBerlin(SketchDataset):
     #     self,
     #     root: str | PathLibPath | None = None,
     #     load_all: bool = False,
-    #     cislab_source: bool = False,
     # ):
     #     """Initialize the TU-Berlin dataset.
 
@@ -356,10 +354,8 @@ class TUBerlin(SketchDataset):
     #             If None, uses the default dataset directory.
     #         load_all (bool): If True, loads all data into memory for faster access.
     #             If False, loads data on-demand. Defaults to False.
-    #         cislab_source (bool): If True, downloads from CISLAB CDN mirror.
     #             If False, downloads from original Google storage. Defaults to False.
     #     """
-    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum.
@@ -377,8 +373,7 @@ class TUBerlin(SketchDataset):
     def _download(self):
         """Download the TU-Berlin dataset.
 
-        Downloads the categories.txt file and all category .npz files from either
-        the original Google storage or CISLAB CDN mirror. Creates the root directory
+        Downloads the archive from the original host. Creates the root directory
         if it doesn't exist.
 
         Raises:
@@ -391,13 +386,7 @@ class TUBerlin(SketchDataset):
 
         svg_zip_path = os.path.join(self.root, "sketches_svg.zip")
         try:
-            if self.cislab_source:
-                url = (
-                    f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/"
-                    + "sketches_svg.zip"
-                )
-            else:
-                url = "http://cybertron.cg.tu-berlin.de/eitz/projects/classifysketch/sketches_svg.zip"
+            url = "http://cybertron.cg.tu-berlin.de/eitz/projects/classifysketch/sketches_svg.zip"
             download_with_wget(url, file_path=svg_zip_path)
         except Exception as e:
             raise e
@@ -551,9 +540,6 @@ if __name__ == "__main__":
     # # Load all data to memory at once
     # dataset = TUBerlin(load_all=True)
     #
-    # # Download from CISLAB CDN
-    # dataset = TUBerlin(cislab_source=True)
-
     # Search items using metadata
     objects = dataset.items_metadata[
         (dataset.items_metadata["category"] == "airplane")

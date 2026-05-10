@@ -10,7 +10,7 @@ from tqdm import tqdm
 from sketchkit.core import Sketch
 from sketchkit.core.sketch import Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import download_with_wget, dir_md5, extract_files, CISLAB_CDN
+from sketchkit.utils.file import dir_md5, extract_files
 
 
 # SVG parsing constants and functions
@@ -171,10 +171,8 @@ class PhotoSketching(SketchDataset):
     #     self,
     #     root: str | PathLibPath | None = None,
     #     load_all: bool = False,
-    #     cislab_source: bool = False,
     # ):
     #     """Initialize the PhotoSketching dataset."""
-    #     super().__init__(root, load_all=load_all, cislab_source=cislab_source)
 
     def _check_integrity(self) -> bool:
         """Check the integrity of the cached dataset using MD5 checksum."""
@@ -186,7 +184,7 @@ class PhotoSketching(SketchDataset):
     def _download(self):
         """Download the PhotoSketching dataset.
 
-        Downloads the all-in-one.zip archive from either Google Drive or CISLAB CDN mirror.
+        Downloads the all-in-one.zip archive from Google Drive.
         Extracts the archive to the root directory.
         """
         if os.path.exists(self.root):
@@ -198,16 +196,8 @@ class PhotoSketching(SketchDataset):
         archive_path = os.path.join(self.root, "all-in-one.zip")
 
         try:
-            if self.cislab_source:
-                # Use fixed mirror folder name "PhotoSketching"
-                url = f"{CISLAB_CDN}/datasets/PhotoSketching/all-in-one.zip"
-                download_with_wget(
-                    url, archive_path, desc="Downloading PhotoSketching dataset"
-                )
-            else:
-                # Use Google Drive download
-                file_id = "1_AIxKnZXQms5Ezb-cEeVIDIoVG-eliHc"
-                gdown.download(id=file_id, output=archive_path, quiet=False)
+            file_id = "1_AIxKnZXQms5Ezb-cEeVIDIoVG-eliHc"
+            gdown.download(id=file_id, output=archive_path, quiet=False)
 
             print("Extracting archive...")
             extract_files(
@@ -401,14 +391,13 @@ if __name__ == "__main__":
 
     console.print()
 
-    console.print("3. Load from CISLAB CDN", style="green")
+    console.print("3. Load from original source", style="green")
 
     # tempfile can create a temporary directory
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        dataset = PhotoSketching(root=tmpdir, cislab_source=True)
-        # dataset = PhotoSketching(cislab_source=True)
+        dataset = PhotoSketching(root=tmpdir)
         # show brief information of the dataset
         console.print(dataset)
         process = psutil.Process()

@@ -151,6 +151,21 @@ class TaskProcessor:
 
 ```
 
+## Phase 4: Documentation
+
+A manual document for the new dataset is required. Follow the steps below to write the document. You can refer to the documents of {ref}`Other documents <available-datasets>` for a reference.
+
+a) Create a markdown file `MyDataset.md` in the `docs/source/manual/datasets` directory.
+
+b) The document includes the following parts:
+
+- **Introduction** to the dataset: its source (URL), composition, number of categories, number of examples, representation of the raw sketch data, etc.
+- **Source** of the dataset script: `datasets/my_dataset.py`
+- **Data Format**: introduce the original data format of the sketches.
+- **Directory Layout**: the file structure after downloading the dataset.
+- **Code**: code snippet of quick usage of the dataset, including initializing a dataset instance, loading a sketch example, outputting the attributes, and rendering the vector sketch (similar to the testing).
+- **Arguments**: introduction of necessary arguments in the code.
+
 ---
 
 ## Final Checklist

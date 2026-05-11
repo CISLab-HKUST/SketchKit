@@ -1,5 +1,34 @@
 # Get Started
 
+## Install uv
+
+SketchKit uses [`uv`](https://docs.astral.sh/uv/) to manage Python dependencies and the project environment. Install `uv` before installing SketchKit.
+
+**macOS and Linux:**
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+If `curl` is not available, you can use `wget` instead:
+
+```bash
+wget -qO- https://astral.sh/uv/install.sh | sh
+```
+
+**Windows PowerShell:**
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+After installation, restart your terminal or reload your shell, then verify that `uv` is available:
+
+```bash
+uv --version
+```
+
+
 ## Install SketchKit
 
 #### Step 1: Prepare SketchKit Files
@@ -48,7 +77,7 @@ print("SketchKit installed successfully!")
 
 **Note**: Use `pip install -e .` (with `-e`) for development installation, which allows you to modify the code and see changes immediately.
 
-## Example
+## Examples
 
 ### Example 1: Dataset Loading and Rendering
 
@@ -70,7 +99,7 @@ from sketchkit.renderer import CairoRenderer
 
 if __name__ == "__main__":
     # Load a sketch dataset
-    dataset = OpenSketch()
+    dataset = OpenSketch(cislab_source=True)
 
     # Get the first sketch from the dataset
     sketch = dataset[0]
@@ -91,7 +120,7 @@ if __name__ == "__main__":
 
 After running this script, you should see an output image: `rendering.png`. This image is the rendered raster version of the loaded sketch.
 
-### Sketch Vectorization and Stroke Ordering
+### Example 2: Sketch Vectorization and Stroke Ordering
 
 This example shows how to convert a raster sketch into a vector sketch and generate a stroke-by-stroke drawing animation.
 
@@ -173,7 +202,7 @@ outputs/test/
 
 The file sketch.gif shows the sketch being drawn progressively stroke by stroke.
 
-#### NPR Rendering, Vectorization, and Stylization
+### Example 3: NPR Rendering, Vectorization, and Stylization
 
 This example demonstrates a complete pipeline that combines non-photorealistic rendering (NPR), vectorization, and stylization.
 

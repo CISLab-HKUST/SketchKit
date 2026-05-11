@@ -60,4 +60,3 @@ print(f"Total curves: {sketch.curve_num}")
 # Save to an SVG file
 sketch.to_svg(filename="vectorization.svg")
 ```
-

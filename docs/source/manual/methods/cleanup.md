@@ -1,4 +1,4 @@
-# Cleanup
+# Sketch Cleanup
 
 The sketch cleanup (a.k.a. simplification) module provides functionality to convert a raster rough sketch into a clean sketch. 
 

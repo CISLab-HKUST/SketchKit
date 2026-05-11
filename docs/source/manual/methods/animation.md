@@ -1,4 +1,4 @@
-# Animation
+# Sketch Animation
 
 The sketch animation/inbetweening module provides functionality to generate the inbetween frames given a starting and an ending keyframe.
 

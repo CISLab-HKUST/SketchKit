@@ -1,6 +1,6 @@
-# Image2Sketch
+# Image-to-Sketch Generation
 
-The image2sketch module provides functionality to convert raster images into sketch-style outputs, including both raster edge maps and vector sketches.
+The image-to-sketch generation module provides functionality to convert raster images into sketch-style outputs, including both raster edge maps and vector sketches.
 
 **Source**: `tests/unit/test_image2sketch.py`
 

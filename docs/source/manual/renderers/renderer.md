@@ -1,6 +1,6 @@
-# Renderer
+# 2D Sketch Rendering
 
-The renderer module provides functionality to convert vector sketches into raster images for visualization.
+The 2D sketch rendering module provides functionality to convert vector sketches into raster images for visualization.
 
 ## Available Methods
 

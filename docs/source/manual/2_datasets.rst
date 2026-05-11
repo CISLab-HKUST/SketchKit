@@ -1,4 +1,4 @@
-Sketch Datasets
+Supported Datasets
 ===============
 
 Overview
@@ -16,9 +16,11 @@ which contains useful information for searching and filtering sketches.
 
 ``items_metadata`` is your main tool to search, filter, and batch load sketches efficiently.
 
-    - ``id``: unique identifier of each sketch
-    - ``category``: sketch category (e.g., "cat", "dog", "chair")
-    - ``split``: dataset split (e.g., "train", "test", "val"), available in some datasets
+    - ``id``: unique identifier of each sketch.
+    - ``sub_id``: optional sub-identifier used when one original item contains multiple sketches or derived samples.
+    - ``category``: sketch category (e.g., "cat", "dog", "chair").
+    - ``split``: dataset split (e.g., "train", "test", "val"), available in some datasets.
+    - ...
 
 .. _key-concepts-of-dataset-parameters:
 
@@ -53,6 +55,19 @@ Key concepts of dataset parameters
 
         dataset = ControlSketch(load_all=True)
 
+**cislab_source**: ``Datatype: bool``, ``Default: False``
+
+    Whether to download the dataset from the CIS LAB mirror site or original download link. 
+
+    - ``False``: Use default source (e.g., Github/official download link) to download dataset. 
+    - ``True``: Apply CIS LAB mirror site to download dataset. 
+
+    Example: 
+    
+    .. code-block:: python
+
+        dataset = ControlSketch(cislab_source=True)
+
 **download**: ``Datatype: bool``, ``Default: True``
 
     Automatically download the dataset if it is missing locally.
@@ -84,6 +99,7 @@ Key concepts of dataset parameters
 
     - ``load_all`` should be chosen based on dataset size and memory availability: use ``False`` for large datasets.
     - ``split`` and ``categories`` can be combined to load subset you need. 
+    - ``cislab_source`` is applicable to most mainstream dataset.  
 
 Loading a dataset
 --------------
@@ -123,7 +139,6 @@ own manual page in this section so you can customize descriptions and examples.
 
 .. toctree::
   :maxdepth: 1
-  :caption: Available Datasets
 
   datasets/LineDrawer
   datasets/QuickDraw
@@ -138,15 +153,16 @@ own manual page in this section so you can customize descriptions and examples.
   datasets/FSCOCO
   datasets/DifferSketching
   datasets/CreativeSketch
+  datasets/SketchIME
 
 .. _dataset-feature:
 
-Dataset feature
+Dataset Feature
 ------------------------------
 
 The following table shows features of each built-in SketchKit dataset.
 
-- vector representation (polyline or bezier curve) used in each built-in SketchKit dataset.
+- Vector representation (polyline or Bézier curve) used in the original datasets.
 
 .. list-table::
     :widths: 1 1
@@ -160,9 +176,9 @@ The following table shows features of each built-in SketchKit dataset.
     * - :class:`QuickDraw <sketchkit.datasets.QuickDraw>`
       - Polyline
     * - :class:`ControlSketch <sketchkit.datasets.ControlSketch>`
-      - Bezier
+      - Bézier
     * - :class:`TUBerlin <sketchkit.datasets.TUBerlin>`
-      - Bezier
+      - Bézier
     * - :class:`TracingVsFreehand <sketchkit.datasets.TracingVsFreehand>`
       - Polyline
     * - :class:`OpenSketch <sketchkit.datasets.OpenSketch>`
@@ -170,16 +186,18 @@ The following table shows features of each built-in SketchKit dataset.
     * - :class:`SketchXPRIS <sketchkit.datasets.SketchXPRIS>`
       - Polyline
     * - :class:`Sketchy <sketchkit.datasets.Sketchy>`
-      - Bezier
+      - Bézier
     * - :class:`PhotoSketching <sketchkit.datasets.PhotoSketching>`
-      - Bezier
+      - Bézier
     * - :class:`GMUSketchCleanup <sketchkit.datasets.GMUSketchCleanup>`
-      - Bezier
+      - Bézier
     * - :class:`FSCOCO <sketchkit.datasets.FSCOCO>`
       - Polyline
     * - :class:`DifferSketching <sketchkit.datasets.DifferSketching>`
       - Polyline
     * - :class:`CreativeSketch <sketchkit.datasets.CreativeSketch>`
+      - Polyline
+    * - :class:`SketchIME <sketchkit.datasets.SketchIME>`
       - Polyline
 
 How to contribute a new dataset to SketchKit

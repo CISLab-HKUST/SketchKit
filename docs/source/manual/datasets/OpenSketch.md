@@ -13,7 +13,7 @@ Each sample is an SVG file containing:
 
 The loader parses SVG paths and converts them into cubic Bézier curves. Supported SVG path commands include:
 - `Move` (M): Starting point
-- `CubicBezier` (C): Cubic Bézier curves
+- `Cubicezier` (C): Cubic Bézier curves
 - `Line` (L): Straight lines (converted to cubic Bézier curves)
 
 Each path is converted into a `Path` composed of cubic Bézier `Curve`s. The canvas dimensions are extracted from the SVG `viewBox` attribute.
@@ -38,9 +38,14 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import OpenSketch
 
-ds = OpenSketch()
+ds = OpenSketch(cislab_source=True)
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
+
+**Arguments**
+- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
+  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/OpenSketch/sketches_svg.zip`
+  - Official host: `https://repo-sam.inria.fr/d3/OpenSketch/Data/sketches/sketches_svgs.zip`

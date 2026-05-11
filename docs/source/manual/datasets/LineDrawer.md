@@ -13,7 +13,7 @@ Each sample is a JSON array of strokes, where each stroke contains a sequence of
 * `w`: local stroke thickness/width at the current point (float)
 * `t`: time stamp
 
-The loader groups these points into strokes and converts each consecutive point pair into a cubic Bézier curve, applying the `w` attribute to the `thickness` of the corresponding `Vertex`.
+The loader groups these points into strokes and converts each consecutive point pair into a cubic Bézier curve, applying the `w` attribute to the `thickness` of the corresponding `Point`.
 
 ## Directory Layout
 
@@ -26,7 +26,6 @@ After download and extraction, the dataset is expected under:
       00000.json
       00001.json
       ...
-
 ```
 
 * Each `.json` file in the `json/` directory corresponds to a single sketch.
@@ -36,10 +35,13 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import LineDrawer
 
-ds = LineDrawer()
+ds = LineDrawer(cislab_source=True)
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
-
 ```
+
+**Arguments**
+- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
+  - CISLAB mirror & Official host: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/LineDrawer/sketch.zip`

@@ -1,6 +1,6 @@
-# Modeling
+# Sketch-Based Modeling
 
-The sketch2model module provides functionality to generate 3D models from sketch inputs, which include both vector sketches and raster images.
+The sketch-based modeling module provides functionality to generate 3D models from sketch inputs, which include both vector sketches and raster images.
 
 **Source**: `tests/unit/test_sketch2model.py`
 
@@ -49,16 +49,16 @@ sketch = dataset[0]
 
 
 # 1) Teddy
-modeler = Modeler(method = 'teddy')
-out_teddy = modeler.run(sketch, output_path = 'teddy_model.obj')
+modeler = Modeler(method="teddy")
+out_teddy = modeler.run(sketch, output_path="teddy_model.obj")
 
 # 2) SENS
-modeler = Modeler(method = 'SENS')
-out_teddy = modeler.run(sketch, output_path = 'sens_model.obj')
+modeler = Modeler(method="SENS")
+out_teddy = modeler.run(sketch, output_path="sens_model.obj")
 
 # 3) Doubao
-modeler = Modeler(method = 'doubao')
-out_teddy = modeler.run(sketch, output_path = 'seed3d_model.glb')
+modeler = Modeler(method="doubao")
+out_teddy = modeler.run(sketch, output_path="seed3d_model.glb")
 
 # You can view the models by tools like Meshlab.
 ```

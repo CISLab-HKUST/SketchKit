@@ -40,7 +40,7 @@ After downloading, the dataset is stored in the following structure:
 ```python
 from sketchkit.datasets import QuickDraw
 
-dataset = QuickDraw()
+dataset = QuickDraw(cislab_source=True)
 
 # search data with "category = cat" and "split = train"
 cats = dataset.items_metadata[
@@ -56,6 +56,14 @@ sketch = cats_sketch[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
+
+**Arguments**
+
+- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
+  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/QuickDraw/<category>.npz`
+  - Official host: `https://storage.googleapis.com/quickdraw_dataset/sketchrnn/<category>.npz`
+
+> **Note:** `QuickDraw()` currently downloads all categories by iterating through `categories.txt` and fetching every `.npz` file. The initial download is therefore very large and may take a long time.
 
 **Metadata Columns**
 

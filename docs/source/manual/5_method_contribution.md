@@ -147,7 +147,7 @@ class TaskProcessor:
 
 ## Phase 4: Documentation
 
-A manual document for the new method is required. Follow the steps below to write the document. You can refer to the documents of {ref}`Other documents <methods>` for a reference.
+A manual document for the new method is required. Follow the steps below to write the document. You can refer to the documents of [Other documents](4_methods) for a reference.
 
 a) Create a markdown file `MyMethod.md` in the `docs/source/manual/methods` directory.
 

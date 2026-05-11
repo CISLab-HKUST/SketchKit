@@ -1,6 +1,6 @@
-# Sketch2Image
+# Sketch-to-Image Generation
 
-The sketch2image module provides functionality to convert vector sketches into realistic images using various AI-driven image synthesis methods.
+The sketch-to-image generation module provides functionality to convert vector sketches into realistic images using various AI-driven image synthesis methods.
 
 **Source**: `tests/unit/test_sketch2img.py`
 

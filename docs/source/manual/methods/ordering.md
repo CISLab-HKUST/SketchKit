@@ -1,6 +1,6 @@
-# Ordering
+# Stroke Ordering
 
-The ordering module determines the stroke drawing sequence for a static sketch, enabling applications like sketch animation and tutorials.
+The stroke ordering module determines the stroke drawing sequence for a static sketch, enabling applications like sketch animation and tutorials.
 
 **Source**: `tests/unit/test_ordering_Fu.py`, `tests/unit/test_ordering_LineDrawer.py`
 
@@ -43,6 +43,7 @@ orderer = Orderer(method="Fu", device="cpu")
 
 # Run ordering using a Sketch object
 from sketchkit.datasets import OpenSketch
+
 dataset = OpenSketch()
 sketch = dataset[0]
 sketch = orderer.run(sketch)

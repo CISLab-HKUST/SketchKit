@@ -1,6 +1,6 @@
-# Modeling
+# Sketch-Based Modeling
 
-The sketch2model module provides functionality to generate 3D models from sketch inputs, which include both vector sketches and raster images.
+The sketch-based modeling module provides functionality to generate 3D models from sketch inputs, which include both vector sketches and raster images.
 
 **Source**: `tests/unit/test_sketch2model.py`
 
@@ -31,7 +31,8 @@ The method implements [SENS: Part-Aware Sketch-based Implicit Neural Shape Model
 
 ### Seed3D
 
-The method implements [Seed3D 1.0: From Images to High-Fidelity Simulation-Ready 3D Assets](https://bytedance.github.io/seed3d/) from *ByteDance Seed, 2025*. It leverages large-scale generative models to generate high-fidelity, simulation-ready 3D assets from sketches or images, including complete modeling of geometry, materials, and physical properties.
+The method implements [Seed3D 2.0 Released: Higher Precision and Greater Usability
+](https://seed.bytedance.com/zh/blog/seed3d-2-0-released-higher-precision-and-greater-usability) from *ByteDance Seed, 2025*. It leverages large-scale generative models to generate high-fidelity, simulation-ready 3D assets from sketches or images, including complete modeling of geometry, materials, and physical properties.
 
 **Output:** Returns a high-quality 3D mesh model with optional PBR materials. In the example below, the saved file is `seed3d_model.glb`.
 
@@ -49,26 +50,21 @@ sketch = dataset[0]
 
 
 # 1) Teddy
-modeler = Modeler(method = 'teddy')
-out_teddy = modeler.run(sketch, output_path = 'teddy_model.obj')
+modeler = Modeler(method="teddy")
+out_teddy = modeler.run(sketch, output_path="teddy_model.obj")
 
 # 2) SENS
-modeler = Modeler(method = 'SENS')
-out_teddy = modeler.run(sketch, output_path = 'sens_model.obj')
+modeler = Modeler(method="SENS")
+out_teddy = modeler.run(sketch, output_path="sens_model.obj")
 
 # 3) Doubao
-modeler = Modeler(method = 'doubao')
-out_teddy = modeler.run(sketch, output_path = 'seed3d_model.glb')
+modeler = Modeler(method="doubao-seed3d")
+out_teddy = modeler.run(sketch, output_path="seed3d_model.glb")
 
 # You can view the models by tools like Meshlab.
 ```
 
 ## Usage Notes
-
-**Constructor**
-
-- `Modeler(method=...)`
-  - `method`: backend name. Supported values are `"teddy"`, `"sens"`, `"doubao"`, `"seed3d"`, `"seed-3d"`, `"doubao-seed3d"` (uppercase aliases are also accepted).
 
 **Run Method**
 

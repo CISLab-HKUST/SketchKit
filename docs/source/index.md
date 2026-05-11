@@ -13,20 +13,26 @@ Whether you're a researcher studying human drawing behavior (new to the field or
 
 ## Key Features
 
-- **One-Line Solutions**: Complex operations made simple
-- **10 Datasets Supported**: QuickDraw, TU Berlin, Sketchy, and more
-- **Unified Representation**: Work with any dataset using the same API
-- **High-Quality Rendering**: Vector-based rendering with Cairo
+- **One-Line Solutions**: Complex operations made simple.
+- **14 Datasets Supported**: QuickDraw, TU Berlin, Sketchy, and more.
+- **Unified Representation**: Work with any dataset using the same API.
+- **High-Quality Rendering**: Vector-based rendering with conventional and brush-based renderers.
+- **Integrated systems**: different methods can be combined into a unified workflow.
 
 
 ## Manual
 
 Get started with SketchKit through our comprehensive guides covering installation, core concepts, and practical examples.
 ```{toctree}
-:glob:
 :maxdepth: 1
 
-manual/*
+manual/0_get_started
+manual/1_representation
+manual/2_datasets
+manual/3_dataset_contribution
+manual/4_methods
+manual/5_method_contribution
+manual/6_renderers
 ```
 
 ## API Reference

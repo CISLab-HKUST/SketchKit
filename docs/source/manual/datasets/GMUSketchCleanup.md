@@ -1,7 +1,7 @@
 # GMUSketchCleanup
 
-`GMUSketchCleanup` is a `SketchDataset` loader for the GMU Rough Sketch
-Cleanup benchmark. The dataset provides paired `GT` (clean) and `Rough`
+`GMUSketchCleanup` is a `SketchDataset` loader for the [GMU Rough Sketch
+Cleanup benchmark](https://cragl.cs.gmu.edu/sketchbench/). The dataset provides paired `GT` (clean) and `Rough`
 sketches in SVG format and is primarily used for research on sketch cleaning,
 vectorization and stroke refinement. The loader parses SVG outlines into
 `Sketch` objects composed of `Path`s and cubic Bézier `Curve`s.
@@ -11,7 +11,7 @@ vectorization and stroke refinement. The loader parses SVG outlines into
 ## Data Format
 
 - Raw files are standard SVG drawings where strokes are represented as path
-  elements. Only cubic bezier (`C`/`c`) and line segments are supported;
+  elements. Only cubic Bézier (`C`/`c`) and line segments are supported;
   arcs and basic shapes (rect/circle/ellipse/line/polyline/polygon) are
   ignored or rejected.
 - Each path is converted into one or more strokes, each stroke represented by a
@@ -50,6 +50,7 @@ from sketchkit.datasets import GMUSketchCleanup
 
 ds = GMUSketchCleanup(
     load_all=False,  # set True to load everything into memory
+    cislab_source=True
 )
 
 gt_rows = ds.items_metadata[
@@ -60,3 +61,8 @@ sketch = ds[idx]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
+
+**Arguments**
+- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
+  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/GMUSketchCleanup/Benchmark_Dataset.zip`
+  - Official host: `https://cragl.cs.gmu.edu/sketchbench/Benchmark_Dataset.zip`

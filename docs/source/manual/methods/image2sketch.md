@@ -1,6 +1,6 @@
-# Image2Sketch
+# Image-to-Sketch Generation
 
-The image2sketch module provides functionality to convert raster images into sketch-style outputs, including both raster edge maps and vector sketches.
+The image-to-sketch generation module provides functionality to convert raster images into sketch-style outputs, including both raster edge maps and vector sketches.
 
 **Source**: `tests/unit/test_image2sketch.py`
 
@@ -16,6 +16,7 @@ The module currently supports the following methods:
    sketchkit.image2sketch.HEDModel
    sketchkit.image2sketch.PhotoSketchModel
    sketchkit.image2sketch.SwiftSketchModel
+   sketchkit.image2sketch.AniLinesModel
 ```
 
 ### HED
@@ -35,6 +36,12 @@ The method implements [Photo-Sketching: Inferring Contour Drawings from Images](
 The method implements [SwiftSketch: A Diffusion Model for Image-to-Vector Sketch Generation](https://arxiv.org/abs/2502.08642) from *SIGGRAPH 2025*. It predicts Bézier control points and converts them into SketchKit's vector `Sketch` representation.
 
 **Output:** Returns a `Sketch` object. In the example below, it is rendered and saved as `angel_swiftsketch.png`, and can also be exported to SVG.
+
+### AniLines
+
+The method integrates [AniLines](https://github.com/style2paints/AniLines-Anime-Line-Extractor), an anime-style line extractor. It processes raster images to predict high-quality continuous line art for anime illustrations. It operates primarily in two modes: `basic` and `detail`.
+
+**Output:** Returns a grayscale `PIL.Image` (`"L"` mode). In the example below, the saved file is `angel_anilines.png`.
 
 
 
@@ -71,7 +78,20 @@ rendered_image.save("angel_swiftsketch.png")
 
 # Optional: save vector output
 sketch.to_svg("angel_swiftsketch.svg")
+
+
+# 4) AniLines: anime-style line extraction
+anilines_generator = SketchGenerator(method="AniLines")
+anilines_result = anilines_generator.run(input_image, size=512)
+anilines_result.save("angel_anilines.png")
 ```
+
+## Usage Notes
+
+**Constructor**
+
+- `SketchGenerator(method=...)`
+  - `method`: backend name. Supported values are `"HED"`, `"PhotoSketch"`, `"SwiftSketch"`, and `"AniLines"`
 
 ## Usage Notes
 

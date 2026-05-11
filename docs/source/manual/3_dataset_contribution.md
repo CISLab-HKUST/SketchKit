@@ -77,7 +77,7 @@ Prepare the data and code scripts according to the following steps.
 
 ### 1. Prepare Your Data Package
 
-a) Prepare the vector data of the customized dataset in polyline or Bezier curve representation.
+a) Prepare the vector data of the customized dataset in polyline or Bézier curve representation.
 
 b) Archive the data package, for example, in ZIP format.
 
@@ -132,6 +132,7 @@ a) Add Attributes of the `MyDataset` class, including:
   - "split": split in the dataset, such as "train", "val", or "test"
   - "id": Global unique identifier across all sketches
   - "sub_id": Identifier within the category and split
+  - ... (other necessary metadata in your dataset)
 
 b) `_download()`: a method for downloading the data package automatically.
 
@@ -198,7 +199,7 @@ f) `_get_single(idx: int) -> Sketch`: a method for getting a sketch by index.
 
 - Input: `idx (int)`: Index of the sketch to retrieve.
 - Output: `Sketch`: A Sketch object containing the drawing data as paths.
-- Load its path list and obtain its width and height. And then convert it into the `Sketch` instance (see details of the [representation](./1_representation.md)) by constructing `Vertex/Point`, `Curve`, `Path`, and `Sketch`
+- Load its path list and obtain its width and height. And then convert it into the `Sketch` instance (see details of the [representation](./1_representation.md)) by constructing `Point`, `Curve`, `Path`, and `Sketch`
 
 ```python
 path_list, (width, height) = self.raw_data[idx]
@@ -206,8 +207,8 @@ paths = []
 for path in path_list:
     curves = []
     for raw_curve in path:
-        p_start = Vertex(raw_curve[0][0], raw_curve[0][1])
-        p_end = Vertex(raw_curve[3][0], raw_curve[3][1])
+        p_start = Point(raw_curve[0][0], raw_curve[0][1])
+        p_end = Point(raw_curve[3][0], raw_curve[3][1])
         p_ctrl1 = Point(raw_curve[1][0], raw_curve[1][1])
         p_ctrl2 = Point(raw_curve[2][0], raw_curve[2][1])
         curves.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))
@@ -221,9 +222,9 @@ g) `extra_repr() -> str`: a method for returning extra information in the string
 
 ### 4. Parsing Sketch Data
 
-The [sketch representation](./1_representation.md) in SketchKit is organized in a hierarchy of `Sketch` - `Path` - `Curve` - `Vertex/Point`, so you need to parse the raw sketch data according to this hierarchy by constructing a list of paths. Each path is a list of curves (cubic Bezier curve). Each curve is a list of four points. Each point is (x, y) in absolute coordinates.
+The [sketch representation](./1_representation.md) in SketchKit is organized in a hierarchy of `Sketch` - `Path` - `Curve` - `Point`, so you need to parse the raw sketch data according to this hierarchy by constructing a list of paths. Each path is a list of curves (cubic Bézier curve). Each curve is a list of four points. Each point is (x, y) in absolute coordinates.
 
-Note: If the raw sketch data is represented in polylines, they should be converted into cubic Bezier curves. Specifically, the two intermediate control points are defined as the 1/3 and 2/3 positions on the polyline. Refer to the <a href="../_modules/sketchkit/core/sketch.html#Curve.from_line">Curve.from_line</a> method for details.
+Note: If the raw sketch data is represented in polylines, they should be converted into cubic Bézier curves. Specifically, the two intermediate control points are defined as the 1/3 and 2/3 positions on the polyline. Refer to the <a href="../_modules/sketchkit/core/sketch.html#Curve.from_line">Curve.from_line</a> method for details.
 
 ## Phase 3: Testing
 

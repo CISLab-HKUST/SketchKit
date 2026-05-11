@@ -38,7 +38,7 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import SketchXPRIS
 
-ds = SketchXPRIS()
+ds = SketchXPRIS(cislab_source=True)
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
@@ -47,8 +47,12 @@ print(sketch.path_num, sketch.curve_num)
 # Filter by category
 ice_cream_metadata = ds.items_metadata[(ds.items_metadata["category"] == "ice_cream")]
 sketches = [ds[row.id] for _, row in ice_cream_metadata[:5].iterrows()]
-
 ```
+
+**Arguments**
+- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
+  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/SketchXPRIS/SketchX-PRIS.zip`
+  - Official host: `https://github.com/KeLi-SketchX/SketchX-PRIS-Dataset/archive/refs/heads/master.zip`
 
 **Metadata Columns**
 

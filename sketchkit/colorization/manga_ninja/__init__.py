@@ -235,6 +235,20 @@ def _prefetch_hf_models():
 
 
 class MangaNinjaModel:
+    """MangaNinja model for reference-based line art colorization using SD 1.5.
+
+    Paper: "MangaNinja: Line Art Colorization with Precise Reference Following" (CVPR 2025)
+    Repository: https://github.com/ali-vilab/MangaNinjia
+
+    Note: MangaNinja is built on SD 1.5, not SDXL. It uses a reference image
+    (instead of text prompts) to guide colorization, achieving remarkable
+    consistency with the reference.
+
+    Attributes:
+        pipeline (MangaNinjiaPipeline): The loaded custom pipeline.
+        device (str): Computation device.
+        preprocessor (BatchLineartDetector): Line art detection preprocessor.
+    """
 
     def __init__(
         self,
@@ -246,6 +260,25 @@ class MangaNinjaModel:
         auto_download: bool = True,
         **kwargs: Any,
     ):
+        """Initializes the MangaNinja pipeline.
+
+        Args:
+            device (str): Hardware device to run the model on. Defaults to "cuda".
+            pretrained_model_name_or_path (str): HuggingFace hub path or local path
+                for the base SD 1.5 model.
+            image_encoder_path (str): HuggingFace hub path or local path for the CLIP
+                image encoder.
+            controlnet_model_name_or_path (str): HuggingFace hub path or local path
+                for the ControlNet model.
+            torch_dtype (torch.dtype): PyTorch data type for model weights.
+            auto_download (bool): Whether to automatically download missing weights.
+                Defaults to True.
+            **kwargs (Any): Additional kwargs passed to diffusers loading methods.
+
+        Raises:
+            FileNotFoundError: If weights are missing and auto_download is False.
+            RuntimeError: If model initialization fails.
+        """
         print("Loading MangaNinja model...")
 
         if not _check_weights_available():

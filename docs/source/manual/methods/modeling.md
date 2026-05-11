@@ -58,7 +58,7 @@ modeler = Modeler(method="SENS")
 out_teddy = modeler.run(sketch, output_path="sens_model.obj")
 
 # 3) Doubao
-modeler = Modeler(method="doubao")
+modeler = Modeler(method="doubao-seed3d")
 out_teddy = modeler.run(sketch, output_path="seed3d_model.glb")
 
 # You can view the models by tools like Meshlab.

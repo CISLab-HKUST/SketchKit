@@ -5,8 +5,8 @@ This page summarizes the methods supported by SketchKit and links to detailed do
 
 SketchKit organizes its methods around sketches as the central representation, connecting sketch data with images and 3D shapes. The supported methods can be grouped into three categories:
 
-- **Intra-sketch processing**: Operations where both the input and output are sketches, including cleanup, vectorization, ordering, animation, colorization, and stylization.
-- **Sketch-image transformation**: Methods that convert between sketches and images, such as image-to-sketch extraction and sketch-to-image generation.
+- **Intra-sketch processing**: Operations where both the input and output are sketches, including cleanup, vectorization, stylization, ordering, and animation.
+- **Sketch-image transformation**: Methods that convert between sketches and images, such as image-to-sketch extraction, sketch-to-image generation, and colorization.
 - **Sketch-shape transformation**: Methods that connect sketches with 3D geometry, including 3D modeling from sketches and line drawing or non-photorealistic rendering from 3D shapes.
 
 .. toctree::
@@ -20,5 +20,10 @@ SketchKit organizes its methods around sketches as the central representation, c
   methods/image2sketch
   methods/sketch2image
   methods/colorization
-  methods/non_photorealistic_renderer
+  methods/non_photorealistic_rendering
   methods/modeling
+
+
+How to contribute a new method to SketchKit
+---------------------------
+You can integrate a new method into SketchKit following the :doc:`step-by-step document <5_method_contribution>`.

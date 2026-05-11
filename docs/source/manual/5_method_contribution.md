@@ -1,6 +1,7 @@
-# SketchKit Contribution Guide: Integrating New Sketch Methods
+# Method Contribution Guide
 
-This guide provides a comprehensive walkthrough for developers who want to contribute a new category of sketch processing (e.g., Sketch-to-Image, Sketch Rendering, Sketch Simplification) to the SketchKit toolkit.
+
+This guide provides a comprehensive walkthrough for developers who want to contribute a new method of sketch processing to the SketchKit toolkit.
 
 ---
 
@@ -17,7 +18,6 @@ If you don't have write access to the main SketchKit repository, fork it to your
 ```bash
 git clone https://github.com/{your_username}/SketchKit.git
 cd SketchKit
-
 ```
 
 
@@ -29,7 +29,6 @@ Create a branch with a descriptive name related to the task or method you are ad
 ```bash
 # Example: git checkout -b feature/sketch2image-gan
 git checkout -b feature/{task_name}-{method_name}
-
 ```
 
 ### 3. Make Changes
@@ -47,7 +46,6 @@ git add sketchkit/{task_name}/processor.py
 
 # Commit with a clear message 
 git commit -m "feat: add new_method to {task_name} module."
-
 ```
 
 ### 4. Push Changes
@@ -56,7 +54,6 @@ Upload your branch to your remote fork.
 
 ```bash
 git push origin feature/{task_name}-{method_name}
-
 ```
 
 ### 5. Create a Pull Request (PR)
@@ -75,7 +72,6 @@ If reviewers suggest changes, apply them locally and push again. The PR updates 
 git add path/to/revised_file.py
 git commit -m "fix: input handling for high-res sketches."
 git push origin feature/{task_name}-{method_name}
-
 ```
 
 ### 7. Merge & Cleanup
@@ -86,7 +82,6 @@ Once merged, sync your local environment and delete the feature branch.
 git checkout main
 git pull origin main
 git branch -d feature/{task_name}-{method_name}
-
 ```
 
 ---
@@ -148,22 +143,20 @@ class TaskProcessor:
     def _run_new_method(self, input_data, output_path, **kwargs):
         # Implementation logic goes here
         pass
-
 ```
 
 ## Phase 4: Documentation
 
-A manual document for the new dataset is required. Follow the steps below to write the document. You can refer to the documents of {ref}`Other documents <available-datasets>` for a reference.
+A manual document for the new method is required. Follow the steps below to write the document. You can refer to the documents of {ref}`Other documents <methods>` for a reference.
 
-a) Create a markdown file `MyDataset.md` in the `docs/source/manual/datasets` directory.
+a) Create a markdown file `MyMethod.md` in the `docs/source/manual/methods` directory.
 
 b) The document includes the following parts:
 
-- **Introduction** to the dataset: its source (URL), composition, number of categories, number of examples, representation of the raw sketch data, etc.
-- **Source** of the dataset script: `datasets/my_dataset.py`
-- **Data Format**: introduce the original data format of the sketches.
-- **Directory Layout**: the file structure after downloading the dataset.
-- **Code**: code snippet of quick usage of the dataset, including initializing a dataset instance, loading a sketch example, outputting the attributes, and rendering the vector sketch (similar to the testing).
+- **Introduction** to the method: a brief description of the input and output of the method.
+- **Source**: `tests/unit/test_mymethod.py`
+- **Available Methods**: a list of supported implementations. Introduce each method in detail about the paper title, its source (URL), publication venue and year, etc.
+- **Code**: code snippet of quick usage of the method, including initializing a method instance, loading an input, and executing the method for the output.
 - **Arguments**: introduction of necessary arguments in the code.
 
 ---

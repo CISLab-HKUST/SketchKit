@@ -31,6 +31,7 @@ manual/1_representation
 manual/2_datasets
 manual/3_dataset_contribution
 manual/4_methods
+manual/5_method_contribution
 manual/6_renderers
 ```
 

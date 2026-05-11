@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # 2) Stylize from a PNG geometry image
     png_result = stylizer.run_from_png(
-        "test_images/plane.png",
+        "test_files/plane.png",
         output_path=f"{output_path}/image_output.png",
         style_id="misc05",
     )

@@ -6,7 +6,7 @@ from PIL import Image
 if __name__ == "__main__":
     vectorizer = Vectorizer(method="LineDrawer")
 
-    img_path = "test_images/a1-2.png"
+    img_path = "test_files/a1-2.png"
     img_np = np.array(Image.open(img_path).convert("L"))
     sketch = vectorizer.run(img_np)
 

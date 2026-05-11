@@ -11,7 +11,7 @@ if __name__ == "__main__":
     pd.set_option("display.max_colwidth", None)
     renderer = CairoRenderer()
 
-    sketch = Sketch.from_svg("test_images/angel.svg")
+    sketch = Sketch.from_svg("test_files/angel.svg")
     outpath = "outputs/ordering/Fu/sketch.png"
     svg_outpath = "outputs/ordering/Fu/sketch.svg"
     output_gif_path = "outputs/ordering/Fu/sketch.gif"

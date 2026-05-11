@@ -10,7 +10,7 @@ if __name__ == "__main__":
     renderer = CialloRenderer()
 
     render_options.canvas_size = (1024, 1024)
-    render_options.brush_texture_path = "test_images/stamp1.png"
+    render_options.brush_texture_path = "test_files/stamp1.png"
     render_options.background_color = (2, 0, 0, 1.0)
     render_options.stroke_color = (1, 0, 0, 255)
 

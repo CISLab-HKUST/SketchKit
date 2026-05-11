@@ -12,11 +12,11 @@ if __name__ == "__main__":
     orderer = Orderer.create(method="LineDrawer")
 
     # Load image
-    img_path = "test_images/a1-2.png"
+    img_path = "test_files/a1-2.png"
     img_np = np.array(Image.open(img_path).convert("L"))
 
     # Video path
-    video_path = "test_images/a1-2.mp4"
+    video_path = "test_files/a1-2.mp4"
     output_path = "outputs/ordering/LineDrawer"
     os.makedirs(output_path, exist_ok=True)
 

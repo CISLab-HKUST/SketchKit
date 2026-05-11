@@ -183,9 +183,13 @@ class OpenSketch(SketchDataset):
             )
         else:
             try:
-                print("Using gdown for Google Drive download...")
-                # Prefer gdown when available, it handles confirm tokens and cookies internally.
-                gdown.download(id=self.gdrive_id, output=svg_zip_path, quiet=False)
+                print("Downloading from offical hosting...")
+                url = "https://repo-sam.inria.fr/d3/OpenSketch/Data/sketches/sketches_svgs.zip"
+                download_with_wget(
+                    url,
+                    file_path=svg_zip_path,
+                    pg_bar=True,
+                )
                 print("\nDownload finished!")
             except Exception as e:
                 traceback.print_exc()
@@ -321,7 +325,7 @@ if __name__ == "__main__":
 
     renderer = CairoRenderer()
     raster_image = renderer.render(dataset[100])
-    
+
     outpath = "opensketch-test.png"
     raster_image.save(outpath)
     # if outpath is not None:

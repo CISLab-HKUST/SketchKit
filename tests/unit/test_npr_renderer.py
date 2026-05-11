@@ -7,7 +7,7 @@ from sketchkit.core.camera import Camera
 if __name__ == "__main__":
     output_path = "outputs/npr_renderer"
     os.makedirs(output_path, exist_ok=True)
-    renderer = NPRRenderer(obj_path="test_images/head.obj")
+    renderer = NPRRenderer(obj_path="test_files/head.obj")
     cameras = []
     r = 2.5
     for angle in range(0, 360, 30):

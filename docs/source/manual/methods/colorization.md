@@ -33,18 +33,65 @@ The method implements [ControlNet](https://arxiv.org/abs/2302.05543) with a Scri
 
 ### MangaNinja
 
-The method implements [MangaNinja: Line Art Colorization with Precise Reference Following](https://arxiv.org/abs/2501.04552) from CVPR 2025. Unlike the ControlNet-based methods that rely on text prompts, MangaNinja uses a **reference image** to guide the colorization of line art, achieving remarkable consistency with the reference in terms of color, shading, and style. It also supports optional **point control** for precise spatial colorization guidance.
+The method implements **MangaNinja: Line Art Colorization with Precise Reference Following** (CVPR 2025, [arXiv:2501.04552](https://arxiv.org/abs/2501.04552)). This approach represents a significant advancement in reference-guided colorization, addressing the limitations of text-prompt based methods when precise color transfer is required.
 
-Key features:
-- **Reference-guided**: Colors are transferred from a reference image instead of a text prompt.
-- **Point control**: Optionally specify matching points on the reference and line art for precise color placement.
-- **Auto lineart extraction**: When `is_lineart=False`, the built-in lineart detector extracts line art from the input automatically.
+**Technical Overview:**
+- **Reference-guided Architecture**: Unlike ControlNet methods that rely on text prompts, MangaNinja directly transfers color information from a reference image to the line art. This ensures faithful color reproduction and style consistency.
+- **Dual UNet Design**: The model consists of a reference encoder UNet that extracts color features, and a denoising UNet that generates the final colorized output while preserving line art structure.
+- **Cross-Attention Mechanism**: Enables precise alignment between reference features and line art features, ensuring accurate color placement.
+- **Point Control Module**: An optional point guidance mechanism allows users to specify corresponding points between reference and line art for fine-grained color control.
 
-**Model weights** are automatically downloaded on first use:
-- MangaNinja-specific weights (4 files, ~8 GB) → `~/.sketchkit/weights/colorization/manga_ninja/`
-- SD 1.5, CLIP, ControlNet base models → `~/.cache/huggingface/`
+**Key Features:**
+- **Reference-guided color transfer**: Achieves remarkable consistency with the reference image in terms of color, shading, and style.
+- **Point control**: Optionally specify matching points on the reference and line art for precise spatial colorization guidance.
+- **Auto lineart extraction**: When `is_lineart=False`, the built-in lineart detector (based on HED edge detection) automatically extracts line art from the input image.
+- **Style preservation**: Maintains the original artistic style of the reference image while respecting the line art structure.
+
+**Model Architecture:**
+```
+Reference Image → Reference UNet → Feature Extraction → Cross-Attention
+                                                           ↓
+Line Art → ControlNet → Line Feature Extraction → Denoising UNet → Colorized Output
+                                                           ↓
+Point Maps (Optional) → Point Control Module → Attention Guidance
+```
+
+**Model Weights** are automatically downloaded on first use:
+- **MangaNinja-specific weights** (4 files, ~8 GB):
+  - `denoising_unet.pth` - Main denoising UNet weights
+  - `reference_unet.pth` - Reference feature encoder
+  - `controlnet.pth` - Line art control module
+  - `point_net.pth` - Point control network
+  - **Storage**: `~/.sketchkit/weights/colorization/manga_ninja/`
+- **Base models** (automatically cached by HuggingFace):
+  - Stable Diffusion 1.5 (`runwayml/stable-diffusion-v1-5`)
+  - CLIP ViT-L/14 (`openai/clip-vit-large-patch14`)
+  - ControlNet Lineart (`lllyasviel/control_v11p_sd15_lineart`)
+  - **Storage**: `~/.cache/huggingface/`
+
+**Comparison with ControlNet Methods:**
+
+| Aspect | ControlNet Lineart | ControlNet Scribble | MangaNinja |
+|--------|-------------------|---------------------|------------|
+| Guidance | Text prompt | Text prompt | Reference image |
+| Color Accuracy | Moderate | Moderate | **High** |
+| Style Consistency | Variable | Variable | **Excellent** |
+| Point Control | No | No | **Yes** |
+| Auto Lineart | No | No | **Yes** |
+| Model Size | ~8 GB | ~8 GB | ~16 GB |
+
+**Best Use Cases:**
+- **Manga/Comic Colorization**: When you have a colored reference and want to apply the same palette to line art
+- **Style Transfer**: Transferring color style from one image to a line drawing
+- **Precise Colorization**: When exact color placement is critical
+- **Batch Processing**: Applying consistent coloring across multiple sketches
 
 **Output:** Returns a `PIL.Image` (RGB mode).
+
+**Limitations:**
+- Requires a reference image (cannot work with just text prompts)
+- Larger model size (~16 GB total) requires more GPU memory
+- Processing time is slightly longer due to dual UNet architecture
 
 ## Code
 

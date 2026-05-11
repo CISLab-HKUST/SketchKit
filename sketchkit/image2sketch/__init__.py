@@ -17,6 +17,7 @@ from sketchkit.core import Sketch
 from .hed import HEDModel
 from .photosketch import PhotoSketchModel
 from .swiftsketch.generate import SwiftSketchModel
+from .anilines.generate import AniLinesModel
 
 ImageInput = Union[Image.Image, np.ndarray, str]
 Image2SketchResult = Union[Sketch, Image.Image, list[Sketch], list[Image.Image]]
@@ -46,6 +47,8 @@ _METHOD_ALIASES: Dict[str, str] = {
     "PhotoSketch": "photosketch",
     "swiftsketch": "swiftsketch",
     "SwiftSketch": "swiftsketch",
+    "anilines": "anilines",
+    "AniLines": "anilines",
 }
 
 
@@ -160,9 +163,11 @@ def image2sketch(
 register_method("hed", HEDModel)
 register_method("photosketch", PhotoSketchModel)
 register_method("swiftsketch", SwiftSketchModel)
+register_method("anilines", AniLinesModel)
 hed = cast(HEDModel, _get_default_model("hed"))
 photosketch = cast(PhotoSketchModel, _get_default_model("photosketch"))
 swiftsketch = cast(SwiftSketchModel, _get_default_model("swiftsketch"))
+anilines = cast(AniLinesModel, _get_default_model("anilines"))
 
 __all__ = [
     "SketchGenerator",
@@ -178,4 +183,6 @@ __all__ = [
     "PhotoSketchModel",
     "swiftsketch",
     "SwiftSketchModel",
+    "anilines",
+    "AniLinesModel",
 ]

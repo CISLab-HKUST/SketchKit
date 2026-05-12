@@ -44,7 +44,7 @@ print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
 
-> **Note:** `TUBerlin()` automatically downloads the dataset from the [official host](https://drive.google.com/file/d/1FWUAblnh_UmY-xkwYRjyWfpxQBv_Z7qQ) if it is not already available locally.
+> **Note:** `TUBerlin()` automatically downloads the dataset from the [official host](https://drive.google.com/file/d/1cH6o3me9-M-azJQLc52Ntm4hlvAVIzyR) if it is not already available locally.
 
 
 **Metadata Columns**

@@ -6,8 +6,8 @@ from sketchkit.animation import Animator
 
 
 def test_animator_runs_on_example_images(tmp_path):
-    img0_path = os.path.join("test_images", "0-0.png")
-    img1_path = os.path.join("test_images", "0-1.png")
+    img0_path = os.path.join("test_files", "0-0.png")
+    img1_path = os.path.join("test_files", "0-1.png")
     if not os.path.exists(img0_path) or not os.path.exists(img1_path):
         pytest.skip("Required test image files are missing")
 

@@ -48,7 +48,7 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import DifferSketching
 
-ds = DifferSketching(cislab_source=True)
+ds = DifferSketching()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
@@ -62,7 +62,4 @@ objects = ds.items_metadata[
 sketches = [ds[row.id] for _, row in objects[:5].iterrows()]
 ```
 
-**Arguments**
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
-  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/DifferSketching/differsketching.zip`
-  - Official host: `https://drive.google.com/file/d/1A_3RVc8Y4YdI7nhyM7tb-q7dQw4zTcCO`
+> **Note:** `DifferSketching()` automatically downloads the dataset from the [official host](https://drive.google.com/file/d/1A_3RVc8Y4YdI7nhyM7tb-q7dQw4zTcCO) if it is not already available locally.

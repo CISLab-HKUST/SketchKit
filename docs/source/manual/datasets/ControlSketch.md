@@ -35,7 +35,7 @@ Splits are organized as `train`, `validation`, and `test`.
 ```python
 from sketchkit.datasets import ControlSketch
 
-ds = ControlSketch(cislab_source=True)
+ds = ControlSketch()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
@@ -48,7 +48,4 @@ bears = ds.items_metadata[
 bears_sketch = [ds[row.id] for _, row in bears[:100].iterrows()]
 ```
 
-**Arguments**
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
-  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/ControlSketch/controlsketch_sketches.zip`
-  - Official host: `https://drive.google.com/drive/folders/1L5kubR416QoTD_UAqH2FtSgNL4leUcys`
+> **Note:** `ControlSketch()` automatically downloads the dataset from the [official host](https://drive.google.com/uc?id=1-kffChm6RXwTuP8qxUOT-QDf8-bSCH0w) if it is not already available locally.

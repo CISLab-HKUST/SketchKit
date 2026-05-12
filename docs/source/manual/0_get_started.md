@@ -99,7 +99,7 @@ from sketchkit.renderer import CairoRenderer
 
 if __name__ == "__main__":
     # Load a sketch dataset
-    dataset = OpenSketch(cislab_source=True)
+    dataset = OpenSketch()
 
     # Get the first sketch from the dataset
     sketch = dataset[0]

@@ -44,14 +44,11 @@ Each `.svg` file under `sketch/` corresponds to a single vector sketch. The load
 ```python
 from sketchkit.datasets import PhotoSketching
 
-ds = PhotoSketching(cislab_source=True)
+ds = PhotoSketching()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
 
-**Arguments**
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
-  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/PhotoSketching/all-in-one.zip`
-  - Official host: `https://drive.google.com/file/d/1_AIxKnZXQms5Ezb-cEeVIDIoVG-eliHc`
+> **Note:** `PhotoSketching()` automatically downloads the dataset from the [official host](https://drive.google.com/file/d/1_AIxKnZXQms5Ezb-cEeVIDIoVG-eliHc) if it is not already available locally.

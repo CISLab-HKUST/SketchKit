@@ -5,6 +5,7 @@ from torchvision import transforms
 import numpy as np
 import cv2
 from PIL import Image
+import gdown
 
 from sketchkit.cleanup.MasterSketch.model.model_gan import model, immean, imstd
 
@@ -32,21 +33,22 @@ class MasterSketch:
         self.model.eval()
 
     def _download_models(self):
-        """Download the pretrained models
-        """
+        """Download the pretrained models from Google Drive."""
         root = os.path.join(
             os.environ.get("HOME", "/"),
             ".sketchkit/weights/cleanup/",
             self.method,
         )
         os.makedirs(root, exist_ok=True)
+
         filename = "model_gan.pth"
         self.model_path = os.path.join(root, filename)
+
         if not os.path.exists(self.model_path):
-            raise RuntimeError(
-                "Automatic download is not configured for MasterSketch weights. "
-                f"Place {filename} at {self.model_path}."
-            )
+            gdrive_id = "1Pkjr-BPxwEBpk0Dl97JGWAgrrI4SNo96"
+            print("Downloading MasterSketch model from Google Drive...")
+            gdown.download(id=gdrive_id, output=self.model_path, quiet=False)
+            print("Google Drive download completed successfully!")
 
     def run(
         self,

@@ -35,13 +35,11 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import LineDrawer
 
-ds = LineDrawer(cislab_source=True)
+ds = LineDrawer()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
 
-**Arguments**
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
-  - CISLAB mirror & Official host: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/LineDrawer/sketch.zip`
+> **Note:** `LineDrawer()` automatically downloads the dataset from the [official host](https://cislab.hkust-gz.edu.cn/projects/linedrawer/datasets/sketch.zip) if it is not already available locally.

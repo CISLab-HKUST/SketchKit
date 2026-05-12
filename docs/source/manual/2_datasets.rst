@@ -55,19 +55,6 @@ Key concepts of dataset parameters
 
         dataset = ControlSketch(load_all=True)
 
-**cislab_source**: ``Datatype: bool``, ``Default: False``
-
-    Whether to download the dataset from the CIS LAB mirror site or original download link. 
-
-    - ``False``: Use default source (e.g., Github/official download link) to download dataset. 
-    - ``True``: Apply CIS LAB mirror site to download dataset. 
-
-    Example: 
-    
-    .. code-block:: python
-
-        dataset = ControlSketch(cislab_source=True)
-
 **download**: ``Datatype: bool``, ``Default: True``
 
     Automatically download the dataset if it is missing locally.
@@ -99,7 +86,6 @@ Key concepts of dataset parameters
 
     - ``load_all`` should be chosen based on dataset size and memory availability: use ``False`` for large datasets.
     - ``split`` and ``categories`` can be combined to load subset you need. 
-    - ``cislab_source`` is applicable to most mainstream dataset.  
 
 Loading a dataset
 --------------

@@ -40,14 +40,11 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import TracingVsFreehand
 
-ds = TracingVsFreehand(cislab_source=True)
+ds = TracingVsFreehand()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
 
-**Arguments**
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
-  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/TracingVsFreehand/sketch.zip`
-  - Official host: `https://hkustgz-my.sharepoint.com/:f:/g/personal/zeyuwang_hkust-gz_edu_cn/Eo_B_23qW9NKia9JHsZFQUkB5dpD_3sa17NGDaqu0O0RqQ?e=39PUqB`
+> **Note:** `TracingVsFreehand()` automatically downloads the dataset from the [official host](https://cislab.hkust-gz.edu.cn/projects/tracing-vs-freehand/data/sketch.zip) if it is not already available locally.

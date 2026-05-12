@@ -7,7 +7,7 @@ from sketchkit.core.camera import Camera
 
 
 def test_npr_renderer_renders_example_obj(tmp_path):
-    obj_path = os.path.join("test_images", "head.obj")
+    obj_path = os.path.join("test_files", "head.obj")
     if not os.path.exists(obj_path):
         pytest.skip("NPR renderer test object file is missing")
 

@@ -2,6 +2,7 @@ import os
 import shutil
 import re
 import math
+import traceback
 
 import xml.etree.ElementTree as ET
 
@@ -9,12 +10,12 @@ from svg.path import parse_path, path
 
 from tqdm import tqdm
 import pandas as pd
+import gdown
 
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import (
-    download_with_wget,
     extract_files,
     file_md5,
 )
@@ -338,6 +339,9 @@ class TUBerlin(SketchDataset):
 
     # MD5 Sum of the whole dir, you set a list for zip files
     md5_sum = "aa7d8ae9c8bf5f5cb6d28cee9741737c"
+    # Google Drive file id for sketches_svg.zip
+    gdrive_id: str = "1FWUAblnh_UmY-xkwYRjyWfpxQBv_Z7qQ"
+    filename: str = "sketches_svg.zip"
 
     # Metadata columns for each items
     metadata = ["id", "sub_id", "category", "split"]
@@ -371,34 +375,37 @@ class TUBerlin(SketchDataset):
         return current_md5 == self.md5_sum
 
     def _download(self):
-        """Download the TU-Berlin dataset.
-
-        Downloads the archive from the original host. Creates the root directory
-        if it doesn't exist.
-
-        Raises:
-            Exception: If download fails for any file.
-        """
+        """Download and extract the TU-Berlin dataset from Google Drive."""
 
         if os.path.exists(self.root):
             shutil.rmtree(self.root)
         os.makedirs(self.root, exist_ok=True)
 
-        svg_zip_path = os.path.join(self.root, "sketches_svg.zip")
+        print("Downloading TU-Berlin dataset...")
+
+        archive_path = os.path.join(self.root, self.filename)
+
         try:
-            url = "http://cybertron.cg.tu-berlin.de/eitz/projects/classifysketch/sketches_svg.zip"
-            download_with_wget(url, file_path=svg_zip_path)
-        except Exception as e:
-            raise e
+            print("Using gdown for Google Drive download...")
+            gdown.download(id=self.gdrive_id, output=archive_path, quiet=False)
+            print("Google Drive download completed successfully!")
+        except Exception:
+            traceback.print_exc()
+            print("Download failed.")
+            return
 
         try:
             extract_files(
-                file_path=svg_zip_path,
+                file_path=archive_path,
                 output_dir=self.root,
                 remove_sourcefile=False,
             )
-        except Exception as e:
-            raise e
+        except Exception:
+            traceback.print_exc()
+            print("Extraction failed.")
+            return
+
+        print("MD5 Checksum:", file_md5(archive_path))
 
     def _load_items_metadata(self):
         """Load and cache metadata for all items in the dataset.

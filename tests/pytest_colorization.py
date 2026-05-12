@@ -7,7 +7,7 @@ from sketchkit.colorization import Colorizer
 from sketchkit.renderer.cairo_renderer import CairoRenderer, CairoRenderOptions
 
 TESTS_DIR = Path(__file__).resolve().parent
-TEST_IMAGES_DIR = TESTS_DIR / "test_images"
+TEST_IMAGES_DIR = TESTS_DIR / "test_files"
 
 
 def convert_sketch_to_image(sketch, size=(1024, 1024)):

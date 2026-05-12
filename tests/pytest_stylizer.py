@@ -13,9 +13,9 @@ def test_stylizer_run_and_png_conversion(tmp_path):
     assert len(dataset) > 0
     sketch = dataset[0]
 
-    plane_png = os.path.join("test_images", "plane.png")
+    plane_png = os.path.join("test_files", "plane.png")
     if not os.path.exists(plane_png):
-        pytest.skip("Stylizer PNG input test_images/plane.png is missing")
+        pytest.skip("Stylizer PNG input test_files/plane.png is missing")
 
     stylizer = Stylizer(
         method="NeuralBrushstroke",

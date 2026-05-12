@@ -38,14 +38,11 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import OpenSketch
 
-ds = OpenSketch(cislab_source=True)
+ds = OpenSketch()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
 
-**Arguments**
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
-  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/OpenSketch/sketches_svg.zip`
-  - Official host: `https://repo-sam.inria.fr/d3/OpenSketch/Data/sketches/sketches_svgs.zip`
+> **Note:** `OpenSketch()` automatically downloads the dataset from the [official host](https://repo-sam.inria.fr/d3/OpenSketch/Data/sketches/sketches_svgs.zip) if it is not already available locally.

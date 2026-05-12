@@ -50,7 +50,6 @@ from sketchkit.datasets import GMUSketchCleanup
 
 ds = GMUSketchCleanup(
     load_all=False,  # set True to load everything into memory
-    cislab_source=True
 )
 
 gt_rows = ds.items_metadata[
@@ -62,7 +61,4 @@ print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
 
-**Arguments**
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
-  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/GMUSketchCleanup/Benchmark_Dataset.zip`
-  - Official host: `https://cragl.cs.gmu.edu/sketchbench/Benchmark_Dataset.zip`
+> **Note:** `GMUSketchCleanup()` automatically downloads the dataset from the [official host](https://cragl.cs.gmu.edu/sketchbench/Benchmark_Dataset.zip) if it is not already available locally.

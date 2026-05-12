@@ -13,7 +13,7 @@ def test_ciallo_renderer_renders_differ_sketch(tmp_path):
     assert len(dataset) > 0
     sketch = dataset[0]
 
-    brush_texture_path = os.path.join("test_images", "stamp1.png")
+    brush_texture_path = os.path.join("test_files", "stamp1.png")
     if not os.path.exists(brush_texture_path):
         pytest.skip("Ciallo renderer brush texture is missing")
 

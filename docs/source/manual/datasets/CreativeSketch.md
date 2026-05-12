@@ -30,7 +30,7 @@ Each sketch is represented as polylines, which are converted to cubic Bézier se
 ```python
 from sketchkit.datasets import CreativeSketch
 
-ds = CreativeSketch(cislab_source=True)
+ds = CreativeSketch()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
@@ -55,10 +55,7 @@ good_bird_indices = ds.items_metadata[
 print(f"Number of good bird sketches: {len(good_bird_indices)}")
 ```
 
-**Arguments**
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
-  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/CreativeSketch/creative_sketch.zip`
-  - Official host: `https://drive.google.com/file/d/1Dstn3Cv2yAnxt1JXC0zPa1VPVDSz9gc-`
+> **Note:** `CreativeSketch()` automatically downloads the dataset from the [official host](https://drive.google.com/file/d/1Dstn3Cv2yAnxt1JXC0zPa1VPVDSz9gc-) if it is not already available locally.
 
 
 **Metadata Columns**

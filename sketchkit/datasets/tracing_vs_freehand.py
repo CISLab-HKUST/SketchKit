@@ -2,14 +2,14 @@ import os
 import json
 import shutil
 import pandas as pd
-import numpy as np
+import traceback
 from tqdm import tqdm
 from pathlib import Path as PathLibPath
 
-# Import your core definitions
 from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_wget, dir_md5, extract_files
+
 
 def parse_hex_color(hex_str: str) -> tuple[float, float, float]:
     """Parses a hex color string (e.g., '#000000') into an RGB tuple (0.0-1.0)."""
@@ -21,20 +21,20 @@ def parse_hex_color(hex_str: str) -> tuple[float, float, float]:
     except ValueError:
         return (0.0, 0.0, 0.0)
 
+
 class TracingVsFreehand(SketchDataset):
     """
     Tracing-vs-Freehand dataset loader.
-    
+
     This loader reads from the raw JSON files (tracings.json, drawings.json, etc.)
     instead of the SVG files to access rich attributes like pressure and opacity.
-    
+
     Attributes:
         md5_sum (str): MD5 checksum for dataset integrity verification.
     """
 
     md5_sum = "d069ddc535281d50e271ee8bcbcd091e"
-    URL = "https://cislab.hkust-gz.edu.cn/projects/tracing-vs-freehand/data/sketch.zip"
-    
+
     # Official canvas size stated in the dataset documentation
     CANVAS_WIDTH = 800
     CANVAS_HEIGHT = 800
@@ -64,18 +64,36 @@ class TracingVsFreehand(SketchDataset):
         os.makedirs(self.root, exist_ok=True)
 
         zip_path = os.path.join(self.root, "sketch.zip")
-        try:
-            download_with_wget(self.URL, zip_path, desc="Downloading dataset")
-        except Exception as e:
-            raise RuntimeError(f"Download failed: {e}")
 
-        extract_files(zip_path, self.root, remove_sourcefile=True)
+        try:
+            print("Downloading from official hosting...")
+            url = "https://cislab.hkust-gz.edu.cn/projects/tracing-vs-freehand/data/sketch.zip"
+            download_with_wget(
+                url,
+                file_path=zip_path,
+                pg_bar=True,
+            )
+            print("\nDownload finished!")
+        except Exception as e:
+            traceback.print_exc()
+            print("Download failed.")
+            raise e
+
+        try:
+            extract_files(
+                file_path=zip_path,
+                output_dir=self.root,
+                remove_sourcefile=True,
+            )
+        except Exception as e:
+            raise e
+
         print("MD5 Checksum:", dir_md5(self.root))
 
     def _load_items_metadata(self):
         """
         Scans the main JSON files to build a metadata index.
-        
+
         The dataset is organized into three large JSON files:
         - tracings.json
         - drawings.json
@@ -83,7 +101,7 @@ class TracingVsFreehand(SketchDataset):
         """
         metadata_cache_path = os.path.join(self.root, ".metadata_json.parquet")
         target_files = ["tracings.json", "drawings.json", "drawings_registered.json"]
-        
+
         # Load from cache if available
         if os.path.exists(metadata_cache_path):
             self.items_metadata = pd.read_parquet(metadata_cache_path)
@@ -95,33 +113,35 @@ class TracingVsFreehand(SketchDataset):
         print("Scanning JSON files to build metadata index...")
         metadata_list = []
         cnt = 0
-        
+
         data_dir = os.path.join(self.root, "data")
         if not os.path.isdir(data_dir):
-             raise FileNotFoundError(f"Data directory not found at {data_dir}")
+            raise FileNotFoundError(f"Data directory not found at {data_dir}")
 
         for json_file in target_files:
             full_path = os.path.join(data_dir, json_file)
             if not os.path.exists(full_path):
                 print(f"Warning: {json_file} not found, skipping.")
                 continue
-            
+
             print(f"Indexing {json_file}...")
             try:
-                with open(full_path, 'r', encoding='utf-8') as f:
+                with open(full_path, "r", encoding="utf-8") as f:
                     # We only read the keys to build the index
                     data = json.load(f)
-                    
+
                 # Structure: { "image_filename.png": { "participant_id": [strokes...], ... }, ... }
                 for prompt_key, participants in data.items():
                     for participant_id in participants.keys():
-                        metadata_list.append({
-                            "id": cnt,
-                            "json_filename": json_file,
-                            "prompt_key": prompt_key,
-                            "participant_id": participant_id,
-                            "sketch_type": json_file.replace(".json", "")
-                        })
+                        metadata_list.append(
+                            {
+                                "id": cnt,
+                                "json_filename": json_file,
+                                "prompt_key": prompt_key,
+                                "participant_id": participant_id,
+                                "sketch_type": json_file.replace(".json", ""),
+                            }
+                        )
                         cnt += 1
             except json.JSONDecodeError as e:
                 print(f"Error parsing {json_file}: {e}")
@@ -141,7 +161,7 @@ class TracingVsFreehand(SketchDataset):
         if json_filename not in self._json_cache:
             path = os.path.join(self.root, "data", json_filename)
             print(f"Loading {json_filename} into memory...")
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(path, "r", encoding="utf-8") as f:
                 self._json_cache[json_filename] = json.load(f)
         return self._json_cache[json_filename]
 
@@ -157,7 +177,7 @@ class TracingVsFreehand(SketchDataset):
         """
         if not 0 <= idx < len(self):
             raise IndexError("Index out of range")
-        
+
         if self.raw_data[idx] is not None:
             return self.raw_data[idx]
 
@@ -169,7 +189,7 @@ class TracingVsFreehand(SketchDataset):
 
         # Get full dataset content (cached)
         full_data = self._get_json_content(json_filename)
-        
+
         # Extract the specific sketch data (list of strokes)
         if prompt_key not in full_data or p_id not in full_data[prompt_key]:
             # Fallback for data inconsistency
@@ -183,15 +203,15 @@ class TracingVsFreehand(SketchDataset):
             path_str = stroke_entry.get("path", "")
             if not path_str:
                 continue
-            
+
             try:
                 path_vals = [float(v) for v in path_str.split(",")]
             except ValueError:
                 continue
 
             if len(path_vals) % 3 != 0:
-                continue 
-            
+                continue
+
             # Extract x and y, ignore timestamp (t)
             # data structure: [t0, x0, y0, t1, x1, y1, ...]
             xs = path_vals[1::3]
@@ -209,7 +229,7 @@ class TracingVsFreehand(SketchDataset):
                     pressures = [float(v) for v in pres_str.split(",")]
                 except ValueError:
                     pressures = []
-            
+
             # Pad pressures if length mismatch (or default to None)
             if len(pressures) < num_points:
                 pressures.extend([None] * (num_points - len(pressures)))
@@ -217,11 +237,11 @@ class TracingVsFreehand(SketchDataset):
             # 3. Parse Attributes
             # Width is defined per stroke in this dataset (integer)
             stroke_width = float(stroke_entry.get("width", 1.0))
-            
+
             # Color is a hex string
             color_hex = stroke_entry.get("color", "#000000")
             color_rgb = parse_hex_color(color_hex)
-            
+
             # Opacity is a float (0.0 - 1.0)
             opacity = float(stroke_entry.get("opacity", 1.0))
 
@@ -229,44 +249,42 @@ class TracingVsFreehand(SketchDataset):
             curves = []
             for i in range(num_points - 1):
                 x0, y0 = xs[i], ys[i]
-                x1, y1 = xs[i+1], ys[i+1]
-                
+                x1, y1 = xs[i + 1], ys[i + 1]
+
                 # Pressure for start and end endpoints
                 p0 = pressures[i]
-                p1 = pressures[i+1]
+                p1 = pressures[i + 1]
 
                 v_start = Point(
-                    x=x0, y=y0, 
-                    pressure=p0, 
-                    thickness=stroke_width, 
-                    color=color_rgb, 
-                    opacity=opacity
+                    x=x0,
+                    y=y0,
+                    pressure=p0,
+                    thickness=stroke_width,
+                    color=color_rgb,
+                    opacity=opacity,
                 )
                 v_end = Point(
-                    x=x1, y=y1, 
-                    pressure=p1, 
-                    thickness=stroke_width, 
-                    color=color_rgb, 
-                    opacity=opacity
+                    x=x1,
+                    y=y1,
+                    pressure=p1,
+                    thickness=stroke_width,
+                    color=color_rgb,
+                    opacity=opacity,
                 )
-                
+
                 # Use linear interpolation for control points (straight lines)
                 # Since the raw data is dense sampling points, straight lines are appropriate.
-                ctrl1 = Point(2/3 * x0 + 1/3 * x1, 2/3 * y0 + 1/3 * y1)
-                ctrl2 = Point(1/3 * x0 + 2/3 * x1, 1/3 * y0 + 2/3 * y1)
-                
+                ctrl1 = Point(2 / 3 * x0 + 1 / 3 * x1, 2 / 3 * y0 + 1 / 3 * y1)
+                ctrl2 = Point(1 / 3 * x0 + 2 / 3 * x1, 1 / 3 * y0 + 2 / 3 * y1)
+
                 curves.append(Curve(v_start, v_end, ctrl1, ctrl2))
 
             if curves:
                 paths.append(Path(curves=curves))
 
         # Create Sketch object with fixed official dimensions
-        sketch = Sketch(
-            paths=paths, 
-            height=self.CANVAS_HEIGHT, 
-            width=self.CANVAS_WIDTH
-        )
-        
+        sketch = Sketch(paths=paths, height=self.CANVAS_HEIGHT, width=self.CANVAS_WIDTH)
+
         self.raw_data[idx] = sketch
         return sketch
 

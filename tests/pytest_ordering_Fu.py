@@ -7,7 +7,7 @@ from sketchkit.utils.file import save_seq_gif
 
 
 def test_ordering_fu_progressive_frames(tmp_path):
-    svg_path = os.path.join("test_images", "angel.svg")
+    svg_path = os.path.join("test_files", "angel.svg")
     if not os.path.exists(svg_path):
         pytest.skip("Ordering Fu test SVG is missing")
 

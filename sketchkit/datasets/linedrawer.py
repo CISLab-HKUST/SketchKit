@@ -1,33 +1,16 @@
 import os
-import shutil
 
 import pandas
 import json
+import traceback
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_wget, dir_md5, extract_files
 from sketchkit.core import Sketch
 
-dataset_filename = "sketch.zip"
-DATASET_URL = "https://cislab.hkust-gz.edu.cn/projects/linedrawer/datasets/sketch.zip"
-
-DEFAULT_CANVAS_HEIGHT= 1024
+DEFAULT_CANVAS_HEIGHT = 1024
 DEFAULT_CANVAS_WIDTH = 1024
-
-def download_and_extract_data(output_folder, remove_sourcefile=True):
-    os.makedirs(output_folder, exist_ok=True)
-    archive_path = os.path.join(output_folder, dataset_filename)
-    download_with_wget(
-        DATASET_URL,
-        archive_path,
-        desc="Downloading LineDrawer dataset",
-    )
-    extract_files(
-        file_path=archive_path,
-        output_dir=output_folder,
-        remove_sourcefile=remove_sourcefile,
-    )
 
 
 def load_linedrawer_sketch_json(drawing_path):
@@ -81,6 +64,7 @@ class LineDrawer(SketchDataset):
         md5_sum (str): MD5 checksum for dataset integrity verification.
 
     """
+
     md5_sum = "473c51ae0259f1435994a9cea090b5e7"
 
     # def __init__(
@@ -111,14 +95,40 @@ class LineDrawer(SketchDataset):
         return current_md5 == self.md5_sum
 
     def _download(self):
-        """Download and extract the LineDrawer dataset."""
-        if os.path.exists(self.root):
-            shutil.rmtree(self.root)
-        os.makedirs(self.root, exist_ok=True)
+        """Download the LineDrawer dataset.
 
-        download_and_extract_data(self.root)
+        Raises:
+            Exception: If download fails for any file.
+        """
 
-        print("MD5 Checksum:", dir_md5(self.root))
+        print("Downloading LineDrawer dataset...")
+
+        zip_path = os.path.join(self.root, "sketch.zip")
+
+        try:
+            print("Downloading from official hosting...")
+            url = (
+                "https://cislab.hkust-gz.edu.cn/projects/linedrawer/datasets/sketch.zip"
+            )
+            download_with_wget(
+                url,
+                file_path=zip_path,
+                pg_bar=True,
+            )
+            print("\nDownload finished!")
+        except Exception as e:
+            traceback.print_exc()
+            print("Download failed.")
+            raise e
+
+        try:
+            extract_files(
+                file_path=zip_path,
+                output_dir=self.root,
+                remove_sourcefile=True,
+            )
+        except Exception as e:
+            raise e
 
     def _load_all(self):
         for _, row in self.items_metadata.iterrows():

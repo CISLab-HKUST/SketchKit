@@ -10,10 +10,8 @@ from pathlib import Path as PathLibPath
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.utils.file import (
-    extract_files,
-    file_md5,
-)
+from sketchkit.utils.file import download_with_wget, extract_files, file_md5
+
 
 
 def parse_single_path(path_str: str) -> list[tuple[float, float]] | None:
@@ -121,7 +119,7 @@ class OpenSketch(SketchDataset):
     """
 
     # MD5 Sum of the whole dir, you set a list for zip files
-    md5_sum = "e1e5ec89ac1345c87ae5d92ab90a0725"
+    md5_sum = "cd29bb2b1990beaf727c857629c931f6"
 
     gdrive_id = "1wZf3lkqSsqYTIdGqT0wrdryCcfl4f731"
 
@@ -149,7 +147,7 @@ class OpenSketch(SketchDataset):
             bool: True if the dataset integrity is verified, False otherwise.
         """
         print(f"Checking integrity of cached {self.__class__.__name__} dataset...")
-        zip_path = os.path.join(self.root, "sketches_svg.zip")
+        zip_path = os.path.join(self.root, "sketches_svgs.zip")
         if not os.path.exists(zip_path):
             return False
         current_md5 = file_md5(zip_path)
@@ -164,12 +162,16 @@ class OpenSketch(SketchDataset):
 
         print("Downloading OpenSketch Database...")
 
-        svg_zip_path = os.path.join(self.root, "sketches_svg.zip")
+        svg_zip_path = os.path.join(self.root, "sketches_svgs.zip")
 
         try:
-            print("Using gdown for Google Drive download...")
-            # Prefer gdown when available, it handles confirm tokens and cookies internally.
-            gdown.download(id=self.gdrive_id, output=svg_zip_path, quiet=False)
+            print("Downloading from offical hosting...")
+            url = "https://repo-sam.inria.fr/d3/OpenSketch/Data/sketches/sketches_svgs.zip"
+            download_with_wget(
+                url,
+                file_path=svg_zip_path,
+                pg_bar=True,
+            )
             print("\nDownload finished!")
         except Exception as e:
             traceback.print_exc()
@@ -198,7 +200,7 @@ class OpenSketch(SketchDataset):
         """
         if not os.path.exists(os.path.join(self.root, ".metadata.parquet")):
             items_metadata = pd.DataFrame(columns=self.metadata)
-            class_base = os.path.join(self.root, "opensketch_svgs")
+            class_base = os.path.join(self.root, "sketches_svgs")
             file_names = os.listdir(class_base)
             for id, file_name in tqdm(
                 enumerate(sorted(file_names)),
@@ -262,7 +264,7 @@ class OpenSketch(SketchDataset):
         # check if in memory, if not load from disk, along with all items in the same category to avoid I/O cost
         if self.raw_data[idx] is None:
             item_metadata = self.items_metadata.iloc[idx]
-            class_base = os.path.join(self.root, "opensketch_svgs")
+            class_base = os.path.join(self.root, "sketches_svgs")
             svg_path = os.path.join(
                 class_base, str(item_metadata["file_name"]) + ".svg"
             )
@@ -304,7 +306,7 @@ if __name__ == "__main__":
 
     renderer = CairoRenderer()
     raster_image = renderer.render(dataset[100])
-    
+
     outpath = "opensketch-test.png"
     raster_image.save(outpath)
     # if outpath is not None:

@@ -48,7 +48,7 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import SketchIME
 
-ds = SketchIME(cislab_source=True)
+ds = SketchIME()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
@@ -61,10 +61,7 @@ sketch_items = ds.items_metadata[
 sketches = [ds[row.id] for _, row in sketch_items[:5].iterrows()]
 ```
 
-**Arguments**
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
-  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/SketchIME/SketchIME.zip`
-  - Official host: `https://drive.google.com/file/d/1TbaK46IQvI6MCs0JpCcB1Fcx8Nr3i8g8`
+> **Note:** `SketchIME()` automatically downloads the dataset from the [official host](https://drive.google.com/file/d/1TbaK46IQvI6MCs0JpCcB1Fcx8Nr3i8g8) if it is not already available locally.
 
 
 **Metadata Columns**

@@ -46,13 +46,11 @@ After download and extraction, the dataset is expected under:
 ```python
 from sketchkit.datasets import FSCOCO
 
-ds = FSCOCO(cislab_source=True)
+ds = FSCOCO()
 
 sketch = ds[0]
 print(sketch.width, sketch.height)
 print(sketch.path_num, sketch.curve_num)
 ```
 
-- `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
-  - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/FSCOCO/fscoco.tar.gz`
-  - Official host: `http://cvssp.org/data/fscoco/fscoco.tar.gz`
+> **Note:** `FSCOCO()` automatically downloads the dataset from the [official host](http://cvssp.org/data/fscoco/fscoco.tar.gz) if it is not already available locally.

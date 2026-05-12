@@ -7,8 +7,8 @@ from sketchkit.animation import Animator
 if __name__ == "__main__":
     animator = Animator()
 
-    img0_path = "test_images/0-0.png"
-    img1_path = "test_images/0-1.png"
+    img0_path = "test_files/0-0.png"
+    img1_path = "test_files/0-1.png"
     img0_np = np.array(Image.open(img0_path).convert("RGB"))
     img1_np = np.array(Image.open(img1_path).convert("RGB"))
 

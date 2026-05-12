@@ -6,7 +6,7 @@ from sketchkit.cleanup import Cleaner
 
 
 def test_cleaner_master_sketch(tmp_path):
-    image_path = os.path.join("test_images", "cleanup.png")
+    image_path = os.path.join("test_files", "cleanup.png")
     if not os.path.exists(image_path):
         pytest.skip("Cleanup test image is missing")
 

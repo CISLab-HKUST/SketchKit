@@ -44,4 +44,5 @@ print(sketch.path_num, sketch.curve_num)
 
 **Arguments**
 - `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
-  - CISLAB mirror & Official host: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/LineDrawer/sketch.zip`
+  - CISLAB mirror : `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/LineDrawer/sketch.zip`
+  - Official host: `https://cislab.hkust-gz.edu.cn/projects/linedrawer/datasets/sketch.zip`

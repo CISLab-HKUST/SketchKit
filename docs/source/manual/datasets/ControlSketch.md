@@ -51,4 +51,4 @@ bears_sketch = [ds[row.id] for _, row in bears[:100].iterrows()]
 **Arguments**
 - `cislab_source`: Selects the download source. If `True`, the dataset is downloaded from the CISLAB CDN mirror; otherwise it is downloaded from official host.
   - CISLAB mirror: `https://cislab.hkust-gz.edu.cn/projects/sketchkit/datasets/ControlSketch/controlsketch_sketches.zip`
-  - Official host: `https://drive.google.com/drive/folders/1L5kubR416QoTD_UAqH2FtSgNL4leUcys`
+  - Official host: `https://drive.google.com/uc?id=1-kffChm6RXwTuP8qxUOT-QDf8-bSCH0w`

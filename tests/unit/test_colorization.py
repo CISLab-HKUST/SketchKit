@@ -84,7 +84,7 @@ def test_image_input(image, output_path, prompt):
 
 
 def main():
-    sketch = Sketch.from_svg("test_images/plane.svg")
+    sketch = Sketch.from_svg("test_files/plane.svg")
     sketch_image = convert_sketch_to_image(sketch, size=(1024, 1024))
     output_path = "outputs/colorization"
     os.makedirs(output_path, exist_ok=True)

@@ -6,7 +6,7 @@ from sketchkit.vectorization import Vectorizer
 
 
 def test_vectorizer_line_drawer(tmp_path):
-    img_path = os.path.join("test_images", "a1-2.png")
+    img_path = os.path.join("test_files", "a1-2.png")
     if not os.path.exists(img_path):
         pytest.skip("Vectorization test image is missing")
 

@@ -2,11 +2,10 @@ import os
 import json
 import shutil
 import pandas as pd
-import numpy as np
+import traceback
 from tqdm import tqdm
 from pathlib import Path as PathLibPath
 
-# Import your core definitions
 from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
@@ -30,11 +29,9 @@ class TracingVsFreehand(SketchDataset):
     
     Attributes:
         md5_sum (str): MD5 checksum for dataset integrity verification.
-        URL (str): Download URL for the dataset zip file.
     """
 
     md5_sum = "d069ddc535281d50e271ee8bcbcd091e"
-    URL = f"{CISLAB_CDN}/datasets/TracingVsFreehand/sketch.zip"
     
     # Official canvas size stated in the dataset documentation
     CANVAS_WIDTH = 800
@@ -66,12 +63,41 @@ class TracingVsFreehand(SketchDataset):
         os.makedirs(self.root, exist_ok=True)
 
         zip_path = os.path.join(self.root, "sketch.zip")
-        try:
-            download_with_wget(self.URL, zip_path, desc="Downloading dataset")
-        except Exception as e:
-            raise RuntimeError(f"Download failed: {e}")
 
-        extract_files(zip_path, self.root, remove_sourcefile=True)
+        if self.cislab_source:
+            print("Using CISLAB CDN for download...")
+            url = (
+                f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/" + "sketch.zip"
+            )
+            download_with_wget(
+                url,
+                file_path=zip_path,
+                pg_bar=True,
+            )
+        else:
+            try:
+                print("Downloading from official hosting...")
+                url = "https://cislab.hkust-gz.edu.cn/projects/tracing-vs-freehand/data/sketch.zip"
+                download_with_wget(
+                    url,
+                    file_path=zip_path,
+                    pg_bar=True,
+                )
+                print("\nDownload finished!")
+            except Exception as e:
+                traceback.print_exc()
+                print("Download failed.")
+                raise e
+
+        try:
+            extract_files(
+                file_path=zip_path,
+                output_dir=self.root,
+                remove_sourcefile=True,
+            )
+        except Exception as e:
+            raise e
+
         print("MD5 Checksum:", dir_md5(self.root))
 
     def _load_items_metadata(self):

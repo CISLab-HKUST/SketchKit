@@ -9,8 +9,8 @@ from sketchkit.utils.file import save_seq_gif
 
 
 def test_ordering_linedrawer_with_video(tmp_path):
-    img_path = os.path.join("test_images", "a1-2.png")
-    video_path = os.path.join("test_images", "a1-2.mp4")
+    img_path = os.path.join("test_files", "a1-2.png")
+    video_path = os.path.join("test_files", "a1-2.mp4")
     if not os.path.exists(img_path) or not os.path.exists(video_path):
         pytest.skip("LineDrawer ordering test image or video is missing")
 

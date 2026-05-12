@@ -25,9 +25,9 @@ def convert_sketch_to_image(sketch, size=(1024, 1024)):
 
 @pytest.fixture(scope="module")
 def sample_data():
-    svg_path = os.path.join("test_images", "plane.svg")
+    svg_path = os.path.join("test_files", "plane.svg")
     if not os.path.exists(svg_path):
-        pytest.skip("Required test file test_images/plane.svg is missing")
+        pytest.skip("Required test file test_files/plane.svg is missing")
 
     sketch = Sketch.from_svg(svg_path)
     sketch_image = convert_sketch_to_image(sketch, size=(1024, 1024))

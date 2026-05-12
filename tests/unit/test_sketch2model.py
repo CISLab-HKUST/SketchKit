@@ -100,10 +100,11 @@ if __name__ == "__main__":
     output_dir = Path("outputs/sketch2model")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # print("Testing Teddy/MonsterMash...")
-    # test_teddy_methods(output_dir=output_dir)
+    print("Testing Teddy/MonsterMash...")
+    test_teddy_methods(output_dir=output_dir)
 
-    # print("Testing SENS...")
-    # test_sens_methods(output_dir=output_dir)
+    print("Testing SENS...")
+    test_sens_methods(output_dir=output_dir)
+    
     print("Testing Doubao...")
     test_doubao_methods(output_dir=output_dir)

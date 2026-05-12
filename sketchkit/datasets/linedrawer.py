@@ -1,43 +1,16 @@
 import os
-import shutil
 
 import pandas
 import json
+import traceback
 
 from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
 from sketchkit.core import Sketch
 
-dataset_filename = "sketch.zip"
-
-DEFAULT_CANVAS_HEIGHT= 1024
+DEFAULT_CANVAS_HEIGHT = 1024
 DEFAULT_CANVAS_WIDTH = 1024
-
-def download_and_extract_data(
-    output_folder, remove_sourcefile=True, cislab_source=True
-):
-    os.makedirs(output_folder, exist_ok=True)
-    url = f"{CISLAB_CDN}/datasets/LineDrawer/{dataset_filename}"
-    try:
-        download_with_wget(
-            url,
-            os.path.join(output_folder, dataset_filename),
-        )
-    except Exception as e:
-        print(e)
-        return
-
-    try:
-        extract_files(
-            file_path=os.path.join(output_folder, dataset_filename),
-            output_dir=output_folder,
-            remove_sourcefile=remove_sourcefile,
-        )
-
-    except Exception as e:
-        print(e)
-        return
 
 
 def load_linedrawer_sketch_json(drawing_path):
@@ -91,6 +64,7 @@ class LineDrawer(SketchDataset):
         md5_sum (str): MD5 checksum for dataset integrity verification.
 
     """
+
     md5_sum = "473c51ae0259f1435994a9cea090b5e7"
 
     # def __init__(
@@ -123,22 +97,47 @@ class LineDrawer(SketchDataset):
         return current_md5 == self.md5_sum
 
     def _download(self):
-        """Download the QuickDraw dataset.
-
-        Downloads the categories.txt file and all category .npz files from either
-        the original Google storage or CISLAB CDN mirror. Creates the root directory
-        if it doesn't exist.
+        """Download the LineDrawer dataset.
 
         Raises:
             Exception: If download fails for any file.
         """
-        if os.path.exists(self.root):
-            shutil.rmtree(self.root)
-        os.makedirs(self.root, exist_ok=True)
 
-        download_and_extract_data(self.root)
+        print("Downloading LineDrawer dataset...")
 
-        print("MD5 Checksum:", dir_md5(self.root))
+        zip_path = os.path.join(self.root, "sketch.zip")
+
+        if self.cislab_source:
+            print("Using CISLAB CDN for download...")
+            url = f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/" + "sketch.zip"
+            download_with_wget(
+                url,
+                file_path=zip_path,
+                pg_bar=True,
+            )
+        else:
+            try:
+                print("Downloading from official hosting...")
+                url = "https://cislab.hkust-gz.edu.cn/projects/linedrawer/datasets/sketch.zip"
+                download_with_wget(
+                    url,
+                    file_path=zip_path,
+                    pg_bar=True,
+                )
+                print("\nDownload finished!")
+            except Exception as e:
+                traceback.print_exc()
+                print("Download failed.")
+                raise e
+
+        try:
+            extract_files(
+                file_path=zip_path,
+                output_dir=self.root,
+                remove_sourcefile=True,
+            )
+        except Exception as e:
+            raise e
 
     def _load_all(self):
         for _, row in self.items_metadata.iterrows():

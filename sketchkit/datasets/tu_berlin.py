@@ -340,7 +340,7 @@ class TUBerlin(SketchDataset):
     # MD5 Sum of the whole dir, you set a list for zip files
     md5_sum = "aa7d8ae9c8bf5f5cb6d28cee9741737c"
     # Google Drive file id for sketches_svg.zip
-    gdrive_id: str = "1FWUAblnh_UmY-xkwYRjyWfpxQBv_Z7qQ"
+    gdrive_id: str = "1cH6o3me9-M-azJQLc52Ntm4hlvAVIzyR"
     filename: str = "sketches_svg.zip"
 
     # Metadata columns for each items

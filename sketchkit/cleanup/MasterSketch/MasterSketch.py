@@ -45,7 +45,7 @@ class MasterSketch:
         self.model_path = os.path.join(root, filename)
 
         if not os.path.exists(self.model_path):
-            gdrive_id = "1QdDr1AhyqFaX6ZWWxPs2YJVkulanKjYK"
+            gdrive_id = "1Pkjr-BPxwEBpk0Dl97JGWAgrrI4SNo96"
             print("Downloading MasterSketch model from Google Drive...")
             gdown.download(id=gdrive_id, output=self.model_path, quiet=False)
             print("Google Drive download completed successfully!")

@@ -1,0 +1,38 @@
+@import "./base.css";
+
+#app {
+  height: 100vh;
+  font-weight: normal;
+}
+
+a,
+.link {
+  text-decoration: none;
+  color: var(--color-primary);
+  transition: 0.3s;
+}
+
+@media (hover: hover) {
+  a:hover {
+    opacity: 0.7;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}

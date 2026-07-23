@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from svg.path import parse_path, Path as SvgPath, Move, CubicBezier, Line, Arc
 
-from sketchkit.core.sketch import Curve, Vertex, Point, Sketch, Path
+from sketchkit.core.sketch import Curve, Point, Sketch, Path
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
 
@@ -238,10 +238,10 @@ class GMUSketchCleanup(SketchDataset):
             curves = []
             for seg in p:
                 # seg: (4,2) -> p0, c1, c2, p3
-                p0 = Vertex(seg[0][0], seg[0][1])
+                p0 = Point(seg[0][0], seg[0][1])
                 c1 = Point(seg[1][0], seg[1][1])
                 c2 = Point(seg[2][0], seg[2][1])
-                p3 = Vertex(seg[3][0], seg[3][1])
+                p3 = Point(seg[3][0], seg[3][1])
                 curves.append(Curve(p0, p3, c1, c2))
             paths.append(Path(curves=curves))
         return Sketch(paths=paths, width=w, height=h)

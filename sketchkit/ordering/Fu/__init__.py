@@ -1,5 +1,5 @@
-from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
-from typing import List
+from sketchkit.core.sketch import Sketch, Path, Curve, Point
+from typing import List, Dict, Any
 import numpy as np
 from .compute_cost import cost_individual, cost_transition, compute_T_junctions
 from operator import itemgetter
@@ -7,21 +7,24 @@ from .tsp_bnb import Node
 from queue import PriorityQueue
 from .direction import determine_direction
 from sketchkit.renderer.cairo_renderer import CairoRenderer
-from sketchkit.ordering import Orderer
+from sketchkit.ordering.orderer import Orderer
 from tqdm import tqdm
 from PIL import Image
 
+__all__ = ["AnimatedDrawer"]
 
-def get_cost_bi(cost_bi, i, j):
-    if i == j:
-        return 0
-    else:
-        ii = min(i, j)
-        jj = max(i, j)
-        return cost_bi[ii][jj - ii - 1]
+
+
 
 
 class AnimatedDrawer(Orderer):
+    """
+    Implementation of Animated construction of line drawings.
+    
+    This method analyzes stroke relationships, computes transition costs between strokes,
+    and determines the optimal drawing order using a branch-and-bound algorithm.
+    """
+    
     def __init__(
         self,
         max_k: int = 4,
@@ -30,6 +33,16 @@ class AnimatedDrawer(Orderer):
         canvas_color=(1, 1, 1),
         width: int = 4,
     ):
+        """
+        Initialize the AnimatedDrawer with the specified parameters.
+        
+        Args:
+            max_k: Maximum number of closest strokes to consider for each stroke.
+            w: Weight parameter for combining proximity and continuity costs.
+            canvas_size: Size of the canvas for rendering (if used).
+            canvas_color: Color of the canvas for rendering (if used).
+            width: Width of the strokes for rendering (if used).
+        """
         self.max_k = max_k
         self.w = w
         self.canvas_size = canvas_size
@@ -37,6 +50,15 @@ class AnimatedDrawer(Orderer):
         self.width = width
 
     def run(self, sketch: Sketch) -> Sketch:
+        """
+        Run the animated drawing algorithm to determine the optimal stroke order.
+        
+        Args:
+            sketch: Sketch object containing the static sketch to animate.
+        
+        Returns:
+            Sketch: A Sketch object with ordered paths, where the order of paths corresponds to the optimized drawing sequence.
+        """
         result = self._animated_drawing(sketch)
         paths = [sketch.paths[i] for i in result["solution"]]
         ret_sketch = Sketch(height=sketch.height, width=sketch.width, paths=paths)
@@ -52,14 +74,34 @@ class AnimatedDrawer(Orderer):
 
         return ret_sketch
 
-    def _animated_drawing(self, sketch: Sketch) -> List[int]:
+    def _get_cost_bi(self, cost_bi, i, j):
+        """
+        Get the cost between two strokes from a bidirectional cost matrix.
+        
+        Args:
+            cost_bi: Bidirectional cost matrix.
+            i: Index of the first stroke.
+            j: Index of the second stroke.
+        
+        Returns:
+            float: The cost between the two strokes.
+        """
+        if i == j:
+            return 0
+        else:
+            ii = min(i, j)
+            jj = max(i, j)
+            return cost_bi[ii][jj - ii - 1]
+
+    def _animated_drawing(self, sketch: Sketch) -> Dict[str, Any]:
         """
         Create an animated drawing from a static sketch.
 
         Args:
-            sketch (Sketch): The static sketch to animate.
+            sketch: The static sketch to animate.
+        
         Returns:
-            List[int]: A list of path indices for the animated sketch.
+            Dict: A dictionary containing the optimal solution (stroke order) and directions.
         """
         max_k = self.max_k
         w = self.w
@@ -132,7 +174,7 @@ class AnimatedDrawer(Orderer):
             all_pro_for_i = []
             for j in range(n):
                 if j != i:
-                    all_pro_for_i.append(get_cost_bi(cost_bi_pro, i, j))
+                    all_pro_for_i.append(self._get_cost_bi(cost_bi_pro, i, j))
                 else:
                     all_pro_for_i.append(999999999)
             for k in range(max_k):
@@ -142,28 +184,28 @@ class AnimatedDrawer(Orderer):
                     # add j, i
                     vertex_pair.append((j, i))
                     edge_weight.append(
-                        w * get_cost_bi(cost_bi_pro, j, i)
-                        + (1 - w) * get_cost_bi(cost_bi_col, j, i)
+                        w * self._get_cost_bi(cost_bi_pro, j, i)
+                        + (1 - w) * self._get_cost_bi(cost_bi_col, j, i)
                     )
                 elif [j, i] in T_junctions:
                     # add i, j
                     vertex_pair.append((i, j))
                     edge_weight.append(
-                        w * get_cost_bi(cost_bi_pro, i, j)
-                        + (1 - w) * get_cost_bi(cost_bi_col, i, j)
+                        w * self._get_cost_bi(cost_bi_pro, i, j)
+                        + (1 - w) * self._get_cost_bi(cost_bi_col, i, j)
                     )
                 else:
                     # add j, i
                     vertex_pair.append((j, i))
                     edge_weight.append(
-                        w * get_cost_bi(cost_bi_pro, j, i)
-                        + (1 - w) * get_cost_bi(cost_bi_col, j, i)
+                        w * self._get_cost_bi(cost_bi_pro, j, i)
+                        + (1 - w) * self._get_cost_bi(cost_bi_col, j, i)
                     )
                     # add i, j
                     vertex_pair.append((i, j))
                     edge_weight.append(
-                        w * get_cost_bi(cost_bi_pro, i, j)
-                        + (1 - w) * get_cost_bi(cost_bi_col, i, j)
+                        w * self._get_cost_bi(cost_bi_pro, i, j)
+                        + (1 - w) * self._get_cost_bi(cost_bi_col, i, j)
                     )
                 ### NOTE didn't check conflicting directed cycles, could use toposort to check
         weight_binary = {}

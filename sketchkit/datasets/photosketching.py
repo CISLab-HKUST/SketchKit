@@ -8,7 +8,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from sketchkit.core import Sketch
-from sketchkit.core.sketch import Path, Curve, Vertex, Point
+from sketchkit.core.sketch import Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_wget, dir_md5, extract_files, CISLAB_CDN
 
@@ -304,8 +304,8 @@ class PhotoSketching(SketchDataset):
                             f"Invalid segment in SVG: expected 4 points, got {len(seg)}"
                         )
 
-                    p0 = Vertex(seg[0][0], seg[0][1])
-                    p3 = Vertex(seg[3][0], seg[3][1])
+                    p0 = Point(seg[0][0], seg[0][1])
+                    p3 = Point(seg[3][0], seg[3][1])
                     c1 = Point(seg[1][0], seg[1][1])
                     c2 = Point(seg[2][0], seg[2][1])
                     strokes.append(Curve(p0, p3, c1, c2))

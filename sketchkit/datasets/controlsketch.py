@@ -12,7 +12,7 @@ from typing import List, Tuple
 
 from svg.path import parse_path, path
 from sketchkit.utils.dataset import SketchDataset
-from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
+from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.file import extract_files, download_with_wget, dir_md5, CISLAB_CDN
 
 
@@ -122,8 +122,8 @@ def parse_svg(svg_path: str) -> tuple[list[Path], float, float]:
                 p3 = cps[i * 3 + 3]
                 curves.append(
                     Curve(
-                        Vertex(float(p0[0]), float(p0[1])),
-                        Vertex(float(p3[0]), float(p3[1])),
+                        Point(float(p0[0]), float(p0[1])),
+                        Point(float(p3[0]), float(p3[1])),
                         Point(float(c1[0]), float(c1[1])),
                         Point(float(c2[0]), float(c2[1])),
                     )

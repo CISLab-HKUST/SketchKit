@@ -1,16 +1,8 @@
-"""
-Stylizer - Unified Interface for Sketch Stylization
-
-This module provides a unified API for stylizing sketches using various methods.
-"""
-
 from typing import Union, Optional, Dict, Any
 from PIL import Image
 
 from sketchkit.core.sketch import Sketch
-
-# Import method implementations
-from .brushstrokesengine.brushstroke_stylizer import BrushstrokeStylizer as BrushstrokesEngineStylizer
+from .NeuralBrushstroke import NeuralBrushstroke
 
 
 class Stylizer:
@@ -27,7 +19,7 @@ class Stylizer:
     
     def __init__(
         self,
-        method: str = "brushstrokesengine",
+        method: str = "NeuralBrushstroke",
         **kwargs: Any,
     ):
         """
@@ -35,28 +27,20 @@ class Stylizer:
         
         Args:
             method: The stylization method to use.
-                Currently supported: 'brushstrokesengine' (default).
+                Currently supported: 'NeuralBrushstroke' (default).
                 Future methods: 'method2', 'method3', etc.
             **kwargs: Method-specific parameters.
-                For 'brushstrokesengine', see BrushstrokeStylizer.__init__ for available parameters.
-        
-        Example:
-            >>> from sketchkit.stylizer import Stylizer
-            >>> stylizer = Stylizer(
-            ...     method="brushstrokesengine",
-            ...     model_name="style2",
-            ...     style_id="playdoh10"
-            ... )
+                For 'NeuralBrushstroke', see NeuralBrushstroke.__init__ for available parameters.
         """
         self.method = method
         
         # Initialize method-specific stylizer
-        if method == "brushstrokesengine":
-            self._stylizer = BrushstrokesEngineStylizer(**kwargs)
+        if method == "NeuralBrushstroke":
+            self._stylizer = NeuralBrushstroke(**kwargs)
         else:
             raise ValueError(
                 f"Unknown method: {method}. "
-                f"Available methods: 'brushstrokesengine'"
+                f"Available methods: 'NeuralBrushstroke'"
             )
     
     def run(
@@ -75,10 +59,6 @@ class Stylizer:
         
         Returns:
             Stylized image as PIL Image.
-        
-        Example:
-            >>> stylizer = Stylizer(method="brushstrokesengine")
-            >>> stylized_image = stylizer.run(sketch, output_path="output.png")
         """
         return self._stylizer.run(sketch, output_path=output_path, **kwargs)
     
@@ -98,10 +78,6 @@ class Stylizer:
         
         Returns:
             Stylized image as PIL Image.
-        
-        Example:
-            >>> stylizer = Stylizer(method="brushstrokesengine")
-            >>> stylized_image = stylizer.run_from_png("input.png", output_path="output.png")
         """
         return self._stylizer.run_from_png(png_path, output_path=output_path, **kwargs)
     

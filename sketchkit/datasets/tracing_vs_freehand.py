@@ -1,85 +1,44 @@
 import os
+import json
 import shutil
-
-import xml.etree.ElementTree as ET
+import pandas as pd
+import traceback
+from tqdm import tqdm
 from pathlib import Path as PathLibPath
 
-import pandas as pd
-from svg.path import parse_path, path
-from tqdm import tqdm
-
-from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
+from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
 
-DEFAULT_CANVAS_HEIGHT = 800
-DEFAULT_CANVAS_WIDTH = 800
-
-def _parse_svg_to_sketch(svg_path: str) -> Sketch:
-    """Parses an SVG file and converts its content into a Sketch object.
-
-    Args:
-        svg_path (str): The file path to the SVG file to be parsed.
-
-    Returns:
-        Sketch: An object representing the parsed sketch. Returns an empty Sketch
-            if the file cannot be parsed or is not found.
-    """
+def parse_hex_color(hex_str: str) -> tuple[float, float, float]:
+    """Parses a hex color string (e.g., '#000000') into an RGB tuple (0.0-1.0)."""
+    if not hex_str or not isinstance(hex_str, str) or not hex_str.startswith("#"):
+        return (0.0, 0.0, 0.0)  # Default to black
+    hex_str = hex_str.lstrip("#")
     try:
-        tree = ET.parse(svg_path)
-        root = tree.getroot()
-        namespaces = {"svg": "http://www.w3.org/2000/svg"}
-
-        sketch_paths = []
-        for elem in root.findall("svg:path", namespaces):
-            path_d = elem.attrib.get("d", "")
-            if not path_d:
-                continue
-
-            parsed = parse_path(path_d)
-            curves = []
-            for segment in parsed:
-                if isinstance(segment, path.CubicBezier):
-                    p_start = Vertex(segment.start.real, segment.start.imag)
-                    p_end = Vertex(segment.end.real, segment.end.imag)
-                    p_ctrl1 = Point(segment.control1.real, segment.control1.imag)
-                    p_ctrl2 = Point(segment.control2.real, segment.control2.imag)
-                    curves.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))
-                elif isinstance(segment, path.Line):
-                    # Convert line to an equivalent cubic Bézier curve.
-                    start, end = segment.start, segment.end
-                    p_start_v = Vertex(start.real, start.imag)
-                    p_end_v = Vertex(end.real, end.imag)
-                    c1 = start * (2 / 3) + end * (1 / 3)
-                    c2 = start * (1 / 3) + end * (2 / 3)
-                    p_ctrl1 = Point(c1.real, c1.imag)
-                    p_ctrl2 = Point(c2.real, c2.imag)
-                    curves.append(Curve(p_start_v, p_end_v, p_ctrl1, p_ctrl2))
-
-            if curves:
-                sketch_paths.append(Path(curves=curves))
-
-        return Sketch(paths=sketch_paths, height=DEFAULT_CANVAS_HEIGHT, width=DEFAULT_CANVAS_WIDTH)
-    except (ET.ParseError, FileNotFoundError):
-        print(f"Warning: Failed to parse or find SVG file: {svg_path}")
-        return Sketch(paths=[], height=DEFAULT_CANVAS_HEIGHT, width=DEFAULT_CANVAS_WIDTH)
-
+        return tuple(int(hex_str[i : i + 2], 16) / 255.0 for i in (0, 2, 4))
+    except ValueError:
+        return (0.0, 0.0, 0.0)
 
 class TracingVsFreehand(SketchDataset):
-    """Tracing-vs-Freehand dataset loader.
-
-    This dataset contains sketches categorized as freehand drawings, registered
-    drawings, and tracings, stored in SVG format. This loader handles automatic
-    downloading, integrity checking, and parsing of these SVG files.
-
+    """
+    Tracing-vs-Freehand dataset loader.
+    
+    This loader reads from the raw JSON files (tracings.json, drawings.json, etc.)
+    instead of the SVG files to access rich attributes like pressure and opacity.
+    
     Attributes:
-        md5_sum (str): MD5 checksum for the extracted dataset directory.
-        URL (str): Download URL for the dataset zip file.
+        md5_sum (str): MD5 checksum for dataset integrity verification.
     """
 
     md5_sum = "d069ddc535281d50e271ee8bcbcd091e"
-    URL = f"{CISLAB_CDN}/datasets/TracingVsFreehand/sketch.zip"
-    metadata = ["id", "file_path", "sketch_type", "category", "file_id"]
+    
+    # Official canvas size stated in the dataset documentation
+    CANVAS_WIDTH = 800
+    CANVAS_HEIGHT = 800
+
+    # Metadata columns for indexing
+    metadata = ["id", "json_filename", "prompt_key", "participant_id", "sketch_type"]
 
     def __init__(
         self,
@@ -87,227 +46,261 @@ class TracingVsFreehand(SketchDataset):
         load_all: bool = False,
         cislab_source: bool = True,
     ):
-        """Initializes the Tracing-vs-Freehand dataset loader.
-
-        Args:
-            root (Optional[PathLibPath | str]): Root directory for the dataset.
-                If None, a default cache path is used.
-            load_all (bool): If True, loads all data into memory at init.
-            cislab_source (bool): If True, uses the CISLAB CDN. This dataset is
-                only available from this source.
-        """
         super().__init__(root, load_all=load_all, cislab_source=cislab_source)
+        # Cache for holding loaded JSON content to avoid repeated I/O
+        self._json_cache = {}
 
     def _check_integrity(self) -> bool:
-        """Checks if the dataset is present and uncorrupted.
-
-        Returns:
-            bool: True if the dataset's integrity is verified, False otherwise.
-        """
+        """Checks if the dataset is present and uncorrupted."""
         print(f"Checking integrity of cached {self.__class__.__name__} dataset...")
         current_md5 = dir_md5(self.root)
         return current_md5 == self.md5_sum
 
     def _download(self):
-        """Downloads and extracts the dataset from the source URL.
-
-        Raises:
-            RuntimeError: If the download or extraction process fails.
-        """
+        """Downloads and extracts the dataset."""
         if os.path.exists(self.root):
             shutil.rmtree(self.root)
         os.makedirs(self.root, exist_ok=True)
 
         zip_path = os.path.join(self.root, "sketch.zip")
 
-        try:
-            download_with_wget(self.URL, zip_path, desc="Downloading dataset")
-        except Exception as e:
-            raise RuntimeError(f"Download failed: {e}")
+        if self.cislab_source:
+            print("Using CISLAB CDN for download...")
+            url = (
+                f"{CISLAB_CDN}/datasets/{self.__class__.__name__}/" + "sketch.zip"
+            )
+            download_with_wget(
+                url,
+                file_path=zip_path,
+                pg_bar=True,
+            )
+        else:
+            try:
+                print("Downloading from official hosting...")
+                url = "https://cislab.hkust-gz.edu.cn/projects/tracing-vs-freehand/data/sketch.zip"
+                download_with_wget(
+                    url,
+                    file_path=zip_path,
+                    pg_bar=True,
+                )
+                print("\nDownload finished!")
+            except Exception as e:
+                traceback.print_exc()
+                print("Download failed.")
+                raise e
 
-        extract_files(zip_path, self.root, remove_sourcefile=True)
+        try:
+            extract_files(
+                file_path=zip_path,
+                output_dir=self.root,
+                remove_sourcefile=True,
+            )
+        except Exception as e:
+            raise e
+
         print("MD5 Checksum:", dir_md5(self.root))
 
     def _load_items_metadata(self):
-        """Scans the dataset directory to create and cache metadata.
-
-        This method generates a pandas DataFrame with metadata for each sketch
-        and caches it as a .parquet file for fast subsequent loading.
-
-        Raises:
-            FileNotFoundError: If no SVG files are found after scanning.
         """
-        metadata_cache_path = os.path.join(self.root, ".metadata.parquet")
-        dataset_path = os.path.join(self.root, "data", "svg")
-
+        Scans the main JSON files to build a metadata index.
+        
+        The dataset is organized into three large JSON files:
+        - tracings.json
+        - drawings.json
+        - drawings_registered.json
+        """
+        metadata_cache_path = os.path.join(self.root, ".metadata_json.parquet")
+        target_files = ["tracings.json", "drawings.json", "drawings_registered.json"]
+        
+        # Load from cache if available
         if os.path.exists(metadata_cache_path):
-            items_metadata = pd.read_parquet(
-                os.path.join(self.root, ".metadata.parquet")
-            )
-            if not set(items_metadata.columns.tolist()) == set(self.metadata):
-                os.remove(os.path.join(self.root, ".metadata.parquet"))
-                return self._load_items_metadata()
-            self.items_metadata = items_metadata
-        else:
-            print("Metadata cache not found. Scanning files...")
-            metadata_list = []
-            sketch_types = ["drawings", "drawings_registered", "tracings"]
+            self.items_metadata = pd.read_parquet(metadata_cache_path)
+            # Verify columns match
+            if set(self.items_metadata.columns) == set(self.metadata):
+                self.raw_data = [None] * len(self.items_metadata)
+                return
 
-            for sketch_type in sketch_types:
-                type_dir = os.path.join(dataset_path, sketch_type)
-                if not os.path.isdir(type_dir):
-                    print(f"Warning: Directory '{sketch_type}' not found, skipping.")
-                    continue
+        print("Scanning JSON files to build metadata index...")
+        metadata_list = []
+        cnt = 0
+        
+        data_dir = os.path.join(self.root, "data")
+        if not os.path.isdir(data_dir):
+             raise FileNotFoundError(f"Data directory not found at {data_dir}")
 
-                files = sorted(os.listdir(type_dir))
-                cnt = 0
-                for filename in tqdm(files, desc=f"Scanning {sketch_type}"):
-                    if filename.endswith(".svg"):
-                        file_path = os.path.join(type_dir, filename)
-                        parts = os.path.splitext(filename)[0].rsplit("_", 1)
-                        category = parts[0]
-                        file_id = parts[1] if len(parts) > 1 else "unknown"
-
-                        metadata_list.append(
-                            {
-                                "id": cnt,
-                                "file_path": file_path,
-                                "sketch_type": sketch_type,
-                                "category": category,
-                                "file_id": file_id,
-                            }
-                        )
+        for json_file in target_files:
+            full_path = os.path.join(data_dir, json_file)
+            if not os.path.exists(full_path):
+                print(f"Warning: {json_file} not found, skipping.")
+                continue
+            
+            print(f"Indexing {json_file}...")
+            try:
+                with open(full_path, 'r', encoding='utf-8') as f:
+                    # We only read the keys to build the index
+                    data = json.load(f)
+                    
+                # Structure: { "image_filename.png": { "participant_id": [strokes...], ... }, ... }
+                for prompt_key, participants in data.items():
+                    for participant_id in participants.keys():
+                        metadata_list.append({
+                            "id": cnt,
+                            "json_filename": json_file,
+                            "prompt_key": prompt_key,
+                            "participant_id": participant_id,
+                            "sketch_type": json_file.replace(".json", "")
+                        })
                         cnt += 1
+            except json.JSONDecodeError as e:
+                print(f"Error parsing {json_file}: {e}")
 
-            if not metadata_list:
-                raise FileNotFoundError(
-                    f"No SVG files found in {dataset_path}. "
-                    "The dataset might be corrupted."
-                )
+        if not metadata_list:
+            raise RuntimeError("No valid data found in JSON files.")
 
-            self.items_metadata = pd.DataFrame(metadata_list)
-            self.items_metadata["id"] = range(len(self.items_metadata))
-            self.items_metadata.to_parquet(metadata_cache_path, compression="zstd")
-
+        self.items_metadata = pd.DataFrame(metadata_list)
+        self.items_metadata.to_parquet(metadata_cache_path)
         self.raw_data = [None] * len(self.items_metadata)
 
-    def _load_all(self):
-        """Loads all sketch data into memory if `load_all` is True."""
+    def _get_json_content(self, json_filename: str):
+        """
+        Helper to load and cache the content of a large JSON file.
+        This prevents re-reading the file for every single sketch.
+        """
+        if json_filename not in self._json_cache:
+            path = os.path.join(self.root, "data", json_filename)
+            print(f"Loading {json_filename} into memory...")
+            with open(path, 'r', encoding='utf-8') as f:
+                self._json_cache[json_filename] = json.load(f)
+        return self._json_cache[json_filename]
 
-        print("Loading all SVG data into memory...")
-        for idx, row in tqdm(self.items_metadata.iterrows(), total=len(self)):
-            try:
-                # Parsing directly is more memory-efficient than storing text.
-                self.raw_data[idx] = _parse_svg_to_sketch(row["file_path"])
-            except Exception as e:
-                print(f"Warning: Could not load {row['file_path']}. Error: {e}")
-                self.raw_data[idx] = Sketch(paths=[])
+    def _load_all(self):
+        """Loads all sketches into memory."""
+        print("Loading all sketches into memory...")
+        for idx in tqdm(range(len(self.items_metadata)), desc="Loading Data"):
+            self._get_single(idx)
 
     def _get_single(self, idx: int) -> Sketch:
-        """Retrieves a single sketch from the dataset by its index.
-
-        Args:
-            idx (int): The index of the sketch to retrieve.
-
-        Returns:
-            Sketch: The sketch object at the specified index.
-
-        Raises:
-            IndexError: If the index is out of bounds.
+        """
+        Retrieves a single sketch by its index, parsing raw JSON data.
         """
         if not 0 <= idx < len(self):
             raise IndexError("Index out of range")
+        
+        if self.raw_data[idx] is not None:
+            return self.raw_data[idx]
 
-        if self.raw_data[idx] is None:
-            file_path = self.items_metadata.iloc[idx]["file_path"]
-            self.raw_data[idx] = _parse_svg_to_sketch(file_path)
+        # Retrieve metadata
+        row = self.items_metadata.iloc[idx]
+        json_filename = row["json_filename"]
+        prompt_key = row["prompt_key"]
+        p_id = row["participant_id"]
 
-        return self.raw_data[idx]
+        # Get full dataset content (cached)
+        full_data = self._get_json_content(json_filename)
+        
+        # Extract the specific sketch data (list of strokes)
+        if prompt_key not in full_data or p_id not in full_data[prompt_key]:
+            # Fallback for data inconsistency
+            return Sketch(height=self.CANVAS_HEIGHT, width=self.CANVAS_WIDTH, paths=[])
+
+        strokes_data = full_data[prompt_key][p_id]
+        paths = []
+
+        for stroke_entry in strokes_data:
+            # 1. Parse Path String (Format: "t, x, y, t, x, y ...")
+            path_str = stroke_entry.get("path", "")
+            if not path_str:
+                continue
+            
+            try:
+                path_vals = [float(v) for v in path_str.split(",")]
+            except ValueError:
+                continue
+
+            if len(path_vals) % 3 != 0:
+                continue 
+            
+            # Extract x and y, ignore timestamp (t)
+            # data structure: [t0, x0, y0, t1, x1, y1, ...]
+            xs = path_vals[1::3]
+            ys = path_vals[2::3]
+            num_points = len(xs)
+
+            if num_points < 2:
+                continue
+
+            # 2. Parse Pressure String (Format: "p0, p1, ...")
+            pres_str = stroke_entry.get("pressure", "")
+            pressures = []
+            if pres_str:
+                try:
+                    pressures = [float(v) for v in pres_str.split(",")]
+                except ValueError:
+                    pressures = []
+            
+            # Pad pressures if length mismatch (or default to None)
+            if len(pressures) < num_points:
+                pressures.extend([None] * (num_points - len(pressures)))
+
+            # 3. Parse Attributes
+            # Width is defined per stroke in this dataset (integer)
+            stroke_width = float(stroke_entry.get("width", 1.0))
+            
+            # Color is a hex string
+            color_hex = stroke_entry.get("color", "#000000")
+            color_rgb = parse_hex_color(color_hex)
+            
+            # Opacity is a float (0.0 - 1.0)
+            opacity = float(stroke_entry.get("opacity", 1.0))
+
+            # 4. Construct Curves (Linear segments between points)
+            curves = []
+            for i in range(num_points - 1):
+                x0, y0 = xs[i], ys[i]
+                x1, y1 = xs[i+1], ys[i+1]
+                
+                # Pressure for start and end endpoints
+                p0 = pressures[i]
+                p1 = pressures[i+1]
+
+                v_start = Point(
+                    x=x0, y=y0, 
+                    pressure=p0, 
+                    thickness=stroke_width, 
+                    color=color_rgb, 
+                    opacity=opacity
+                )
+                v_end = Point(
+                    x=x1, y=y1, 
+                    pressure=p1, 
+                    thickness=stroke_width, 
+                    color=color_rgb, 
+                    opacity=opacity
+                )
+                
+                # Use linear interpolation for control points (straight lines)
+                # Since the raw data is dense sampling points, straight lines are appropriate.
+                ctrl1 = Point(2/3 * x0 + 1/3 * x1, 2/3 * y0 + 1/3 * y1)
+                ctrl2 = Point(1/3 * x0 + 2/3 * x1, 1/3 * y0 + 2/3 * y1)
+                
+                curves.append(Curve(v_start, v_end, ctrl1, ctrl2))
+
+            if curves:
+                paths.append(Path(curves=curves))
+
+        # Create Sketch object with fixed official dimensions
+        sketch = Sketch(
+            paths=paths, 
+            height=self.CANVAS_HEIGHT, 
+            width=self.CANVAS_WIDTH
+        )
+        
+        self.raw_data[idx] = sketch
+        return sketch
 
     def extra_repr(self) -> str:
-        """Returns a string with extra information about the dataset.
-
-        Returns:
-            str: A string containing dataset statistics by sketch type.
-        """
+        """Returns a string with extra information about the dataset."""
         if not hasattr(self, "items_metadata") or self.items_metadata.empty:
             return "Metadata not loaded."
         counts = self.items_metadata["sketch_type"].value_counts()
-        return (
-            f"Sketch Types:\n"
-            f"    drawings: {counts.get('drawings', 0)}\n"
-            f"    drawings_registered: {counts.get('drawings_registered', 0)}\n"
-            f"    tracings: {counts.get('tracings', 0)}"
-        )
-
-
-if __name__ == "__main__":
-    import psutil
-    from rich.console import Console
-    import time
-
-    console = Console()
-
-    console.print("TracingVsFreehand Dataset Test", style="bold blue")
-    console.print()
-
-    # console.print("1. Default Load", style="green")
-    # dataset = TracingVsFreehand()
-    # # show brief information of the dataset
-    # console.print(dataset)
-    # process = psutil.Process()
-    # memory_mb = process.memory_info().rss / 1024 / 1024
-    # console.print(f"Current memory usage: {memory_mb:.2f} MB")
-
-    # # search data with "category = cat" and "split = train"
-    # cats = dataset.items_metadata[
-    #     (dataset.items_metadata["category"] == "cat")
-    #     & (dataset.items_metadata["split"] == "train")
-    # ]
-    # start_time = time.time()
-    # cats_sketch = [dataset[row.id] for _, row in cats[:100].iterrows()]
-    # console.print(f"Loading 100 sketches in {time.time() - start_time}")
-    # del dataset, cats
-
-    # console.print()
-
-    # console.print("2. Load All", style="green")
-    # dataset = TracingVsFreehand(load_all=True)
-    # # show brief information of the dataset
-    # console.print(dataset)
-    # process = psutil.Process()
-    # memory_mb = process.memory_info().rss / 1024 / 1024
-    # console.print(f"Current memory usage: {memory_mb:.2f} MB")
-    # # search data with "category = cat" and "split = test"
-    # cats = dataset.items_metadata[
-    #     (dataset.items_metadata["category"] == "cat")
-    #     & (dataset.items_metadata["split"] == "test")
-    # ]
-    # start_time = time.time()
-    # cats_sketch = [dataset[row.id] for _, row in cats[:100].iterrows()]
-    # console.print(f"Loading 100 sketches in {time.time() - start_time}")
-    # del dataset, cats
-
-    # console.print()
-
-    console.print("3. Load from CISLAB CDN", style="green")
-
-    # tempfile can create a temporary directory
-    import tempfile
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        dataset = TracingVsFreehand(cislab_source=True)
-        # show brief information of the dataset
-        console.print(dataset)
-        process = psutil.Process()
-        memory_mb = process.memory_info().rss / 1024 / 1024
-        console.print(f"Current memory usage: {memory_mb:.2f} MB")
-        dogs = dataset.items_metadata[
-            (dataset.items_metadata["category"] == "drawings")
-        ]
-        start_time = time.time()
-        dogs_sketch = [dataset[row.id] for _, row in dogs[:100].iterrows()]
-        console.print(f"Loading 100 sketches in {time.time() - start_time}")
-        console.print(dataset.items_metadata[:5])
-        del dataset, dogs
-        console.print()
+        return "\n".join([f"{k}: {v}" for k, v in counts.items()])

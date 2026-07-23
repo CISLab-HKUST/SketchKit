@@ -2,13 +2,14 @@ import os
 import shutil
 import traceback
 import re
+from io import StringIO
 
 import xml.etree.ElementTree as ET
 import pandas as pd
 import gdown
 from svg.path import parse_path, path
 
-from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
+from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import download_with_wget, dir_md5, CISLAB_CDN, extract_files
 
@@ -108,7 +109,18 @@ def parse_svg(svg_file: str):
     Raises:
         AssertionError: If unsupported shapes or transforms are encountered.
     """
-    tree = ET.parse(svg_file)
+    try:
+        tree = ET.parse(svg_file)
+    except ET.ParseError:
+        with open(svg_file, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read()
+        if "</svg>" not in content:
+            content = content.rstrip() + "\n</svg>"
+        content = re.sub(r'&(?!amp;|lt;|gt;|quot;|#)', '&amp;', content)
+        content = re.sub(r'<!--.*?-->', '', content, flags=re.DOTALL)
+        content = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', content)
+
+        tree = ET.parse(StringIO(content))
     root = tree.getroot()
 
     # Robust viewBox / width/height parsing
@@ -196,7 +208,7 @@ class Sketchy(SketchDataset):
     """
 
     md5_sum = "73bb8cb745dd7945ee8c998a58bf9f0a"
-    metadata = ["id", "pruned", "class_name", "filename", "path", "sketch_name"]
+    metadata = ["id", "pruned", "category", "filename", "path", "sketch_name", "split"]
     gdrive_id: str = "1Qr8HhjRuGqgDONHigGszyHG_awCstivo"
     filename: str = "sketches-06-04.7z"
 
@@ -260,11 +272,11 @@ class Sketchy(SketchDataset):
                 # if os.path.isdir(os.path.join(self.root, d))
             ]
             class_names.sort()
-            self.class_names = class_names
+            self.all_categories = class_names
 
             metadata_list = []
             cnt = 0
-            for class_name in self.class_names:
+            for class_name in self.all_categories:
                 class_base = os.path.join(self.src_dir, class_name)
                 files = os.listdir(class_base)
                 svg_files = sorted([f for f in files if f.lower().endswith(".svg")])
@@ -285,13 +297,18 @@ class Sketchy(SketchDataset):
 
                     invalid_files.append(os.path.join(class_name, f"{base}.svg"))
 
-                for svg_file in svg_files:
+                valid_test_num = len(svg_files) // (10 + 1 + 1)
+                train_num = len(svg_files) - valid_test_num - valid_test_num
+                split_map = ["train"] * train_num + ["valid"] * valid_test_num + ["test"] * valid_test_num
+
+                for svg_i, svg_file in enumerate(svg_files):
                     sketch_name = f"{class_name}/{svg_file}"
                     metadata_list.append(
                         {
                             "id": cnt,
                             "pruned": sketch_name in invalid_files,
-                            "class_name": class_name,
+                            "category": class_name,
+                            "split": split_map[svg_i],
                             "filename": svg_file,
                             "path": os.path.join(class_base, svg_file),
                             "sketch_name": sketch_name,
@@ -316,6 +333,9 @@ class Sketchy(SketchDataset):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
                 return self._load_items_metadata()
             self.items_metadata = items_metadata
+            self.all_categories = sorted(
+                self.items_metadata["category"].unique().tolist()
+            )
 
         self.raw_data = [None] * len(self.items_metadata)
 
@@ -337,8 +357,8 @@ class Sketchy(SketchDataset):
         for path_item in path_list:
             curves = []
             for raw_curve in path_item:
-                p_start = Vertex(raw_curve[0][0], raw_curve[0][1])
-                p_end = Vertex(raw_curve[3][0], raw_curve[3][1])
+                p_start = Point(raw_curve[0][0], raw_curve[0][1])
+                p_end = Point(raw_curve[3][0], raw_curve[3][1])
                 p_ctrl1 = Point(raw_curve[1][0], raw_curve[1][1])
                 p_ctrl2 = Point(raw_curve[2][0], raw_curve[2][1])
                 curves.append(Curve(p_start, p_end, p_ctrl1, p_ctrl2))

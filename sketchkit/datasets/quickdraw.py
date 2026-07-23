@@ -5,6 +5,7 @@ import numpy as np
 from tqdm import tqdm
 from pathlib import Path as PathLibPath
 import pandas as pd
+import math
 
 
 from sketchkit.core.sketch import Sketch, Path, Curve
@@ -45,10 +46,12 @@ def parse_stroke3_format(stroke_data):
     ys -= np.min(ys)
     xy = np.stack([xs, ys], axis=1)  # (N_point, 2)
 
+    max_dim = math.ceil(np.max(xy))
+
     path_list = []  # list of (N_strokes, 4, 2)
     stroke_list = []  # list of (4, 2)
     total_segment_num = 0
-    for i in range(len(pen_state) - 1):
+    for i in range(len(pen_state)):
         if pen_state[i] == 0:
             p_start = xy[i]  # (2)
             p_end = xy[i + 1]  # (2)
@@ -59,7 +62,7 @@ def parse_stroke3_format(stroke_data):
         elif stroke_list != []:
             path_list.append(Path(stroke_list))
             stroke_list = []
-    return path_list, total_segment_num
+    return path_list, total_segment_num, max_dim
 
 
 class QuickDraw(SketchDataset):
@@ -189,9 +192,9 @@ class QuickDraw(SketchDataset):
                 for line in f.readlines():
                     line = line.strip("\n")
                     all_categories.append(line)
-            self._all_categories = sorted(all_categories)
+            self.all_categories = sorted(all_categories)
             items_metadata = pd.DataFrame(columns=["category", "split", "id", "sub_id"])
-            for category in tqdm(self._all_categories, desc="Caching metadata"):
+            for category in tqdm(self.all_categories, desc="Caching metadata"):
                 npz_path = os.path.join(self.root, category + ".npz")
                 data = np.load(npz_path, encoding="latin1", allow_pickle=True)
                 for split in ["train", "valid", "test"]:
@@ -220,7 +223,7 @@ class QuickDraw(SketchDataset):
                 os.remove(os.path.join(self.root, ".metadata.parquet"))
                 return self._load_items_metadata()
             self.items_metadata = items_metadata
-            self._all_categories = sorted(
+            self.all_categories = sorted(
                 self.items_metadata["category"].unique().tolist()
             )
         self.raw_data = [None] * len(self.items_metadata)
@@ -232,7 +235,7 @@ class QuickDraw(SketchDataset):
         numpy array for faster access. Only loads if self.load_all is True.
         """
         cnt = 0
-        for category in tqdm(self._all_categories, desc="Loading all data to memory"):
+        for category in tqdm(self.all_categories, desc="Loading all data to memory"):
             npz_path = os.path.join(self.root, category + ".npz")
             data = np.load(npz_path, encoding="latin1", allow_pickle=True)
             for split in ["train", "valid", "test"]:
@@ -270,15 +273,15 @@ class QuickDraw(SketchDataset):
                 cnt += data[split].shape[0]
 
         single_sketch_stroke = self.raw_data[idx]
-        path_list, total_segment_num = parse_stroke3_format(single_sketch_stroke)
-        sketch = Sketch(height=256, width=256, paths=path_list)
+        path_list, total_segment_num, max_dim = parse_stroke3_format(single_sketch_stroke)
+        sketch = Sketch(height=max_dim, width=max_dim, paths=path_list)
         return sketch
 
     def extra_repr(self) -> str:
         num_train = len(self.items_metadata[self.items_metadata["split"] == "train"])
         num_test = len(self.items_metadata[self.items_metadata["split"] == "test"])
         num_val = len(self.items_metadata[self.items_metadata["split"] == "valid"])
-        return f"Categories: {len(self._all_categories)}\nTrain: {num_train} Validation: {num_val} Test samples: {num_test} "
+        return f"Categories: {len(self.all_categories)}\nTrain: {num_train} Validation: {num_val} Test samples: {num_test} "
 
 
 if __name__ == "__main__":

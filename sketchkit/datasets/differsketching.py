@@ -5,7 +5,7 @@ import json
 from pathlib import Path as PathLibPath
 import pandas as pd
 
-from sketchkit.core.sketch import Sketch, Path, Curve, Vertex, Point
+from sketchkit.core.sketch import Sketch, Path, Curve, Point
 from sketchkit.utils.dataset import SketchDataset
 from sketchkit.utils.file import (
     download_with_wget,
@@ -61,8 +61,8 @@ def load_differsketching_json(json_path: str) -> Sketch:
             p0 = pressures[i] if pressures else None
             p1 = pressures[i + 1] if pressures else None
 
-            v_start = Vertex(x0, y0, pressure=p0, thickness=thickness)
-            v_end = Vertex(x1, y1, pressure=p1, thickness=thickness)
+            v_start = Point(x0, y0, pressure=p0, thickness=thickness)
+            v_end = Point(x1, y1, pressure=p1, thickness=thickness)
 
             ctrl1 = Point(2 / 3 * x0 + 1 / 3 * x1, 2 / 3 * y0 + 1 / 3 * y1)
             ctrl2 = Point(1 / 3 * x0 + 2 / 3 * x1, 1 / 3 * y0 + 2 / 3 * y1)

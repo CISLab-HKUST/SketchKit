@@ -1,7 +1,7 @@
 from .tu_berlin import TUBerlin
 from .quickdraw import QuickDraw
 from .sketchy import Sketchy
-from .hzy_sketch import hzySketch
+from .linedrawer import LineDrawer
 from .tracing_vs_freehand import TracingVsFreehand
 from .controlsketch import ControlSketch
 from .opensketch import OpenSketch
@@ -11,11 +11,12 @@ from .gmu_sketch_cleanup import GMUSketchCleanup
 from .fscoco import FSCOCO
 from .differsketching import DifferSketching
 from .creative_sketch import CreativeSketch
+from .sketchime import SketchIME
 
 __all__ = [
     "TUBerlin",
     "QuickDraw", 
-    "hzySketch", 
+    "LineDrawer",
     "TracingVsFreehand", 
     "ControlSketch", 
     "OpenSketch",
@@ -25,5 +26,6 @@ __all__ = [
     "GMUSketchCleanup",
     "FSCOCO",
     "DifferSketching", 
-    "CreativeSketch"
+    "CreativeSketch",
+    "SketchIME"
 ]

@@ -1,7 +1,7 @@
-from sketchkit.core.sketch import Sketch, Vertex, Point
+from sketchkit.core.sketch import Sketch, Point
 import numpy as np
 
-def determine_direction(prev: Vertex, start: Vertex, end: Vertex) -> bool:
+def determine_direction(prev: Point, start: Point, end: Point) -> bool:
     """
     Determine the direction of the line segment from prev to end.
     Args:

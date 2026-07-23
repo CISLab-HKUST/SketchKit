@@ -62,6 +62,9 @@ def lerp(a, b, t):
 
 
 class CairoRenderer(Renderer):
+    """
+    A class for rasterizing vector sketches into images using the Cairo backend.
+    """
     def __init__(self, render_options: CairoRenderOptions | None = None):
         if render_options is None:
             render_options = CairoRenderOptions()
@@ -164,7 +167,11 @@ class CairoRenderer(Renderer):
                     if render_options.stroke_width is not None:
                         self.ctx.set_line_width(render_options.stroke_width)
                     elif curve.p_start.thickness is not None:
-                        self.ctx.set_line_width(curve.p_start.thickness)
+                        thickness = curve.p_start.thickness
+                        # if curve.p_start.pressure is not None:
+                        #     print(curve.p_start.pressure)
+                        #     thickness *= curve.p_start.pressure*20
+                        self.ctx.set_line_width(thickness)
                     else:
                         self.ctx.set_line_width(1.0)
 

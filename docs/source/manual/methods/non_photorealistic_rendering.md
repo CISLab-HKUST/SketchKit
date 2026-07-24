@@ -4,6 +4,9 @@ The non-photorealistic rendering (NPR) module provides functionality to render 3
 
 **Source**: `tests/unit/test_npr_renderer.py`
 
+> [!note] Dependancies
+> Requires `libglfw3-dev`, `libglew-dev`  on Linux. Also requires X11 forwarding if you run on a remote machine.
+
 ## Usage
 
 ### NPRRenderOptions

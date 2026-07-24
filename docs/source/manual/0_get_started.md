@@ -149,7 +149,7 @@ from sketchkit.vectorization import Vectorizer
 
 if __name__ == "__main__":
     # Input raster sketch
-    img_path = "test_files/butterfly.png"
+    img_path = "tests/data/vectorization/butterfly.png"
     img_np = np.array(Image.open(img_path).convert("L"))
 
     # Prepare output folders
@@ -236,7 +236,7 @@ if __name__ == "__main__":
     os.makedirs(output_path, exist_ok=True)
 
     # Initialize the NPR renderer with a 3D mesh
-    renderer = NPRRenderer(obj_path="test_files/head.obj")
+    renderer = NPRRenderer(obj_path="tests/data/rendering/head.obj")
 
     # Create a set of cameras rotating around the object
     cameras = []

@@ -71,3 +71,13 @@ doc = [
     "sphinx>=8.2.3",
     "sphinxcontrib-napoleon>=0.7",
 ]
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]
+testpaths = ["tests/unit", "tests/integration"]
+markers = [
+    "integration: tests that use models, datasets, renderers, or external services",
+    "slow: slow tests",
+    "api: tests requiring an external API",
+    "dataset: dataset download/load tests",
+]

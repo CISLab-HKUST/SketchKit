@@ -1,100 +1,174 @@
 # SketchKit
 
-## Documentation
+SketchKit is a Python toolkit for loading, representing, processing, and rendering digital sketches. It is designed for researchers studying sketch data and developers building sketch-based applications, with unified APIs for datasets, vectorization, stroke ordering, image generation, colorization, animation, and 3D modeling.
 
-The docs can found on [https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/). The api docs will be auto generated after each commit.
+[Documentation](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/) · [Getting Started](docs/source/manual/0_get_started.md) · [API Reference](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/api/sketchkit.html)
 
-If you want to contribute to manual docs, please refer to documents in `docs/source/manual` folder, just like:
+## Why SketchKit?
 
-- [docs/source/manual/0_representation.md](docs/source/manual/0_representation.md)
+- **Unified sketch representation** — work with different datasets through the same `Sketch`, `Path`, `Curve`, and `Point` hierarchy.
+- **14 built-in datasets** — load popular sketch datasets on demand and filter samples through pandas metadata.
+- **Composable sketch workflows** — connect compatible datasets, processing methods, and renderers through a shared representation.
+- **2D and 3D rendering** — rasterize vector strokes, render expressive brush strokes, or project 3D sketches from multiple camera views.
+- **Research methods behind simple interfaces** — use task-level APIs such as `Vectorizer`, `Orderer`, `Colorizer`, and `Modeler`.
 
-### Docstring
+## Installation
 
-A [Python Docstring](https://peps.python.org/pep-0257/) (short for documentation string) is a special kind of string in Python used to describe what your code does. It’s written as a string literal — usually triple quotes """ ... """ or ''' ... ''' — placed immediately after a function, class, or module definition.
+SketchKit requires Python 3.12 or later and uses [uv](https://docs.astral.sh/uv/) for dependency and environment management.
 
-We can auto-generate documentation with these docstrings using some tools.
+Install `uv` on macOS or Linux:
 
-We recommand [Google Style](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) or [reST Style](https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html) docsrtings.
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
-A Google Style docstring is like this:
+On Windows PowerShell:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Clone or download this repository, then install the project environment:
+
+```bash
+git clone https://github.com/CISLab-HKUST/SketchKit.git
+cd SketchKit
+uv sync
+```
+
+Verify the installation:
+
+```bash
+uv run python -c "import sketchkit; print('SketchKit is ready')"
+```
+
+## Quick Start
+
+Load a dataset, retrieve a vector sketch, and render it to a PNG:
 
 ```python
-def add_numbers(a: int, b: int) -> int:
-    """Add two numbers.
+from sketchkit.datasets import OpenSketch
+from sketchkit.renderer import CairoRenderer
 
-    Args:
-        a (int): First number.
-        b (int): Second number.
+dataset = OpenSketch()
+sketch = dataset[0]
 
-    Returns:
-        int: Sum of the two numbers.
-    """
-    return a + b
+renderer = CairoRenderer()
+image = renderer.render(sketch)
+image.save("rendering.png")
 ```
 
-**Tip:** you can just let chatGPT do this for you! 😆
-
-## Development
-
-We adapt the [GitHub flow](https://docs.github.com/en/get-started/using-github/github-flow) for collaboration.
-
-### 1. Fork the Repository
-
-If you don’t have write access to the original repository, fork it to your account.
-
-- Go to the repository page and click **Fork**.
-- This creates your own copy where you can make changes.
-- [Learn more about forking](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
-
-### 2. Create a Branch
-
-- Use a short, descriptive name (e.g., `fix-typo`, `add-feature-x`).
-- Keeps changes isolated from the default branch.
-- [How to create a branch](https://docs.github.com/en/repositories/creating-and-managing-branches)
+Save the example as `quickstart.py`, then run:
 
 ```bash
-git checkout -b {new_branch_name}
+uv run python quickstart.py
 ```
 
-### 3. Make Changes
+The script creates `rendering.png`. On first use, the OpenSketch adapter downloads its dataset automatically. Datasets are cached under `~/.sketchkit/datasets` by default; pass `root=...` to choose another location, or `cislab_source=True` to use the CIS LAB mirror where supported.
 
-- Edit, add, rename, move, or delete files.
-- Commit changes with descriptive messages.
-- Keep each commit focused on a single change for easier review/revert.
+For complete pipelines covering vectorization, animation, NPR rendering, and stylization, see the [Getting Started guide](docs/source/manual/0_get_started.md).
 
-### 4. Push Changes
+## Unified Sketch Representation
 
-- Push commits to your branch on GitHub.
-- Work is backed up remotely and visible to collaborators.
+Built-in dataset adapters convert sketches to the same vector structure:
 
-### 5. Create a Pull Request (PR)
-
-- Go to your branch and click **New pull request**.
-- Summarize changes, link related issues, and add visuals if helpful.
-- Use **draft PR** for early feedback.
-
-### 6. Address Review Comments
-
-- Reviewers may suggest changes or leave questions.
-- Commit and push updates—PR updates automatically.
-
-### 7. Merge the Pull Request
-
-- After approval and passing checks, merge your branch.
-- Branch protection rules may require specific reviews or checks.
-
-### 8. Delete Your Branch
-
-- Removes clutter and signals work completion.
-- You can restore or revert changes later if needed.
-
-```bash
-git branch -d your_local_branch
+```text
+Sketch
+└── Path
+    └── Curve
+        ├── Start Point
+        ├── Control Point 1
+        ├── Control Point 2
+        └── End Point
 ```
 
-### Tips
+A `Sketch` contains paths, each `Path` represents a continuous stroke, and each `Curve` is a cubic Bézier segment. Points store coordinates and can also carry pressure, thickness, color, opacity, and custom attributes.
 
-- Create separate branches for unrelated changes.
-- Link issues with keywords so they close automatically upon merge.
-- Use status checks to catch errors before merging.
+Learn more in the [representation guide](docs/source/manual/1_representation.md).
 
+## Supported Datasets
+
+SketchKit currently includes 14 dataset adapters:
+
+- LineDrawer
+- QuickDraw
+- ControlSketch
+- TU-Berlin
+- Tracing vs. Freehand
+- OpenSketch
+- SketchX-PRIS
+- Sketchy
+- PhotoSketching
+- GMU Sketch Cleanup
+- FS-COCO
+- DifferSketching
+- CreativeSketch
+- SketchIME
+
+Download behavior, source availability, metadata, and original representation vary by dataset. Check the [dataset guide](docs/source/manual/2_datasets.rst) and its dataset-specific pages before starting a large download.
+
+All dataset classes expose `items_metadata`, a pandas `DataFrame` for filtering by fields such as category, split, and identifier:
+
+```python
+from sketchkit.datasets import ControlSketch
+
+dataset = ControlSketch()
+bears = dataset.items_metadata[
+    (dataset.items_metadata["category"] == "bear")
+    & (dataset.items_metadata["split"] == "validation")
+]
+sketches = [dataset[row.id] for _, row in bears.head(100).iterrows()]
+```
+
+See the [dataset guide](docs/source/manual/2_datasets.rst) for storage, lazy loading, metadata, and dataset-specific documentation.
+
+## Methods
+
+SketchKit organizes methods around sketches as the central representation. The table lists implementations documented in this repository; availability and setup requirements vary by implementation.
+
+| Task | Documented implementations |
+| --- | --- |
+| Cleanup | MasterSketch |
+| Vectorization | DeepVecSIG24, LineDrawer |
+| Stroke ordering | Fu, LineDrawer |
+| Animation | RIFE |
+| Stylization | NeuralBrushstroke |
+| Image to sketch | HED, PhotoSketch, SwiftSketch, AniLines |
+| Sketch to image | ControlNet, Pix2Pix, T2I-Adapter, Nano Banana 2 |
+| Colorization | ControlNet Lineart, ControlNet Scribble, MangaNinja |
+| 3D modeling | Teddy, SENS, Seed3D |
+| Non-photorealistic rendering | Suggestive Contours, Ridges and Valleys, Apparent Ridges |
+
+Some methods require pretrained weights, a CUDA-capable GPU, external services or credentials, or additional assets. Check the corresponding page in the [methods guide](docs/source/manual/4_methods.rst) before use.
+
+## Rendering
+
+The rendering modules cover both 2D and 3D sketch visualization:
+
+- **CairoRenderer** rasterizes vector sketches with configurable canvas and stroke options.
+- **CialloRenderer** provides GPU-accelerated, brush-based vector stroke rendering.
+- **DiffVGRenderer** projects `Sketch3D` Bézier curves into one or more camera views.
+
+See the [2D renderer guide](docs/source/manual/renderers/renderer.md) and [3D renderer guide](docs/source/manual/renderers/3Drenderer.md) for examples and render options.
+
+## Documentation
+
+The complete documentation is available at:
+
+<https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/>
+
+Useful entry points:
+
+- [Getting Started](docs/source/manual/0_get_started.md)
+- [Sketch Representation](docs/source/manual/1_representation.md)
+- [Supported Datasets](docs/source/manual/2_datasets.rst)
+- [Methods](docs/source/manual/4_methods.rst)
+- [Rendering](docs/source/manual/6_renderers.rst)
+- [API Reference](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/api/sketchkit.html)
+
+## Contributing
+
+Contributions for new datasets and processing methods are welcome. The manuals describe the expected unified interfaces, metadata conventions, module layout, tests, and GitHub workflow:
+
+- [Dataset Contribution Guide](docs/source/manual/3_dataset_contribution.md)
+- [Method Contribution Guide](docs/source/manual/5_method_contribution.md)

@@ -28,11 +28,9 @@ else()
     find_package(Thrust REQUIRED)
 endif()
 
-# include_directories(${CMAKE_SOURCE_DIR}/pybind11/include)
-include_directories(${PYTHON_INCLUDE_PATH})
-find_package(PythonLibs REQUIRED)
-include_directories(${PYTHON_INCLUDE_PATH})
-include_directories(${PYTHON_INCLUDE_DIRS})
+# Reuse the modern FindPython result above. FindPythonLibs is deprecated and
+# cannot reliably discover uv-managed Python installations.
+include_directories(${Python_INCLUDE_DIRS})
 include_directories(pybind11/include)
 if(DIFFVG_CUDA)
     link_directories(${CUDA_LIBRARIES})

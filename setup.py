@@ -5,8 +5,6 @@ import subprocess
 import shutil
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
-from distutils.sysconfig import get_config_var
-from sysconfig import get_paths
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -96,11 +94,9 @@ class Build(build_ext):
     def build_extension(self, ext):
         if isinstance(ext, CMakeExtension):
             extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
-            info = get_paths()
-            include_path = info['include']
             cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                          '-DPYTHON_LIBRARY=' + get_config_var('LIBDIR'),
-                          '-DPYTHON_INCLUDE_PATH=' + include_path,
+                          '-DPython_EXECUTABLE=' + sys.executable,
+                          '-DPython3_EXECUTABLE=' + sys.executable,
                           '-DCMAKE_POLICY_VERSION_MINIMUM=3.5']
 
             cfg = 'Debug' if self.debug else 'Release'
@@ -117,10 +113,7 @@ class Build(build_ext):
                 build_args += ['--', '-j8']
 
             # Extension-specific CMake arguments
-            if ext.name == 'teddy_sketch2model':
-                # Teddy-specific: pass Python executable
-                cmake_args += ['-DPython3_EXECUTABLE=' + sys.executable]
-            elif ext.name == 'diffvg':
+            if ext.name == 'diffvg':
                 # Diffvg-specific: CUDA support
                 if ext.build_with_cuda:
                     cmake_args += ['-DDIFFVG_CUDA=1']

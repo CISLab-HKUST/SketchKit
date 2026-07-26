@@ -1,9 +1,9 @@
 """SwiftSketch programmatic API.
 
-This module exposes the :class:`SwiftSketchModel` that powers the
-``image2sketch(..., method="swiftsketch")`` workflow.  The implementation wraps the
-original SwiftSketch diffusion pipeline while providing a higher level API
-that handles checkpoint management and preprocessing automatically.
+This module exposes the :class:`SwiftSketchModel` selected by
+``SketchGenerator(method="SwiftSketch")``. The implementation wraps the original
+SwiftSketch diffusion pipeline while providing a higher level API that handles
+checkpoint management and preprocessing automatically.
 """
 
 from __future__ import annotations

@@ -10,8 +10,7 @@ pretrained weights and the exported deployment graph.
 
 - ``assets/deploy.prototxt`` – the network definition mirrored from the upstream
   ``examples/hed`` directory.
-- ``model.py`` – the ``HEDModel`` wrapper implementing the
-  ``Image2SketchModel`` protocol.
+- ``model.py`` – the ``HEDModel`` backend used by ``SketchGenerator``.
 - ``__init__.py`` – exposes ``HEDModel`` for import convenience.
 - ``LICENSE`` – the upstream BSD 2-Clause license.
 
@@ -25,12 +24,13 @@ prepare the directory yourself before calling ``generate``.
 ## Usage
 
 ```python
-from sketchkit.image2sketch import image2sketch
+from sketchkit.image2sketch import SketchGenerator
 
-edge_map = image2sketch(image, method="hed", size=512)
+generator = SketchGenerator(method="HED")
+edge_map = generator.run(image, size=512)
 ```
 
-The ``size`` argument follows the standard ``image2sketch`` contract: pass an
+The ``size`` argument follows the standard ``SketchGenerator.run`` contract: pass an
 integer for a square output or a ``(width, height)`` tuple for explicit control.
 The result is a ``PIL.Image`` instance in ``"L"`` mode containing the edge map.
 

@@ -1,8 +1,8 @@
 """HED (Holistically Nested Edge Detection) integration.
 
 This module wraps the original Caffe implementation using OpenCV's DNN loader.
-It mirrors the public API of other ``image2sketch`` backends so callers can
-request HED outputs via ``image2sketch(..., method="hed")``.
+It mirrors the public API of other image-to-sketch backends and is selected
+with ``SketchGenerator(method="HED")``.
 """
 
 from __future__ import annotations

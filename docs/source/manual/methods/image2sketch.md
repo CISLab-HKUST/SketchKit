@@ -2,7 +2,7 @@
 
 The image-to-sketch generation module provides functionality to convert raster images into sketch-style outputs, including both raster edge maps and vector sketches.
 
-**Source**: `tests/unit/test_image2sketch.py`
+**Source**: `tests/integration/test_image2sketch.py`
 
 
 ## Available Methods
@@ -91,14 +91,7 @@ anilines_result.save("angel_anilines.png")
 **Constructor**
 
 - `SketchGenerator(method=...)`
-  - `method`: backend name. Supported values are `"HED"`, `"PhotoSketch"`, `"SwiftSketch"`, and `"AniLines"`
-
-## Usage Notes
-
-**Constructor**
-
-- `SketchGenerator(method=...)`
-  - `method`: backend name. Supported values are `"HED"`, `"PhotoSketch"`, and `"SwiftSketch"` (lowercase aliases are also accepted).
+  - `method`: backend name. Supported values are `"HED"`, `"PhotoSketch"`, `"SwiftSketch"`, and `"AniLines"` (case-insensitive).
 
 **Run Method**
 

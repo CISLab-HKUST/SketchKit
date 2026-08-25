@@ -4,6 +4,8 @@ SketchKit is a Python toolkit for loading, representing, processing, and renderi
 
 [Documentation](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/) · [Getting Started](docs/source/manual/0_get_started.md) · [API Reference](https://cislab.hkust-gz.edu.cn/projects/sketchkit/docs/api/sketchkit.html)
 
+![SketchKit Examples](assets/examples.png)
+
 ## Why SketchKit?
 
 - **Unified sketch representation** — work with different datasets through the same `Sketch`, `Path`, `Curve`, and `Point` hierarchy.

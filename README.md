@@ -38,12 +38,27 @@ cd SketchKit
 uv sync
 ```
 
-On macOS, the Cairo renderer also needs the system Cairo library. With Homebrew:
+On macOS, install the system **Cairo** library before verifying the installation.
+`uv sync` installs the Python bindings (`cairocffi`), but does not install the
+system library they depend on. SketchKit currently loads Cairo during
+`import sketchkit`, so this step is required even if you do not use `CairoRenderer`.
+
+If `brew` is not available, install [Homebrew](https://brew.sh/) first and follow
+the installer's instructions to add it to your shell environment. Then run:
 
 ```bash
 brew install cairo
 export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
 ```
+
+Run the verification command below in the same terminal. The `export` applies
+only to the current shell and its child processes; to keep the setting for new
+zsh terminals, add that line to `~/.zshrc` and run `source ~/.zshrc`.
+
+If importing SketchKit raises `OSError: no library called "cairo-2" was found`
+or mentions `libcairo.2.dylib`, check both the Cairo installation and the library
+search path above. Re-running `uv sync` alone will not install the system library
+or configure that search path.
 
 Verify the installation:
 

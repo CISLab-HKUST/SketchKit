@@ -60,6 +60,19 @@ or mentions `libcairo.2.dylib`, check both the Cairo installation and the librar
 search path above. Re-running `uv sync` alone will not install the system library
 or configure that search path.
 
+For the RTSC contour renderer on macOS, install its native dependencies and
+rebuild SketchKit:
+
+```bash
+brew install pkgconf glfw glew
+uv sync --reinstall-package sketchkit
+```
+
+The build places the native executable in `sketchkit/renderer/_native/`.
+RTSC uses a hidden OpenGL window and requires a working graphical session.
+Its build is optional, so `uv sync` can succeed if RTSC fails to compile;
+`NPRRenderer` reports missing binaries and native rendering errors when used.
+
 Verify the installation:
 
 ```bash

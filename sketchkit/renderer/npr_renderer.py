@@ -8,6 +8,8 @@ import os
 from copy import deepcopy
 from dataclasses import dataclass
 import tempfile
+import subprocess
+import platform
 
 
 @dataclass
@@ -32,17 +34,46 @@ class NPRRenderer:
         self.obj_path = os.path.join(obj_dir, normalized_obj_name)
         self.normalize_obj(obj_path, self.obj_path)
 
-        # Check if renderer exists in the package directory
-        package_renderer = os.path.join(
-            os.path.dirname(__file__), "nogui_contour_renderer"
-        )
-        if os.path.exists(package_renderer):
-            self.renderer_path = package_renderer
-            # Ensure executable permission
-            st = os.stat(self.renderer_path)
-            os.chmod(self.renderer_path, st.st_mode | 0o111)
-            print(f"Using packaged renderer: {self.renderer_path}")
-            return
+        binary_name = "nogui_contour_renderer" + (".exe" if os.name == "nt" else "")
+        package_dir = os.path.dirname(__file__)
+        candidates = [
+            os.path.join(package_dir, "_native", binary_name),
+            os.path.join(package_dir, binary_name),
+        ]
+        for candidate in candidates:
+            if not os.path.isfile(candidate):
+                continue
+            with open(candidate, "rb") as binary:
+                magic = binary.read(4)
+            # The repository contains a Linux executable for legacy installs.
+            if platform.system() != "Linux" and magic == b"\x7fELF":
+                continue
+            self.renderer_path = candidate
+            break
+        else:
+            raise RuntimeError(
+                "No compatible RTSC renderer is installed. On macOS run "
+                "`brew install pkgconf glfw glew`, then "
+                "`uv sync --reinstall-package sketchkit` to build it."
+            )
+
+    def _run_renderer(self, out_path, transform, size, flags):
+        command = [
+            self.renderer_path, self.obj_path, "-o", str(out_path),
+            "-w", str(size[0]), "-h", str(size[1]), "-t",
+            *map(str, np.asarray(transform).flatten()), "-q", *flags,
+        ]
+        try:
+            subprocess.run(command, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as exc:
+            detail = (exc.stderr or exc.stdout or "").strip()
+            raise RuntimeError(
+                f"RTSC rendering failed (exit {exc.returncode}): {detail}"
+            ) from exc
+        except OSError as exc:
+            raise RuntimeError(f"Cannot execute RTSC renderer: {exc}") from exc
+        if not os.path.isfile(out_path):
+            raise RuntimeError("RTSC exited successfully but produced no image.")
 
     def normalize_obj(self, input_path: str, output_path: str):
         # 归一化OBJ模型到单位立方体内
@@ -153,12 +184,8 @@ class NPRRenderer:
                 Suggestive threshold. Default is 0.005.
 
         """
-        # 将transform转化为字符串
-        transform_str = " ".join(map(str, transform.flatten()))
-        # 调用命令行sketchkit/renderer/nogui_contour_renderer
-        os.system(
-            f"{self.renderer_path} {self.obj_path} -o {out_path} -w {size[0]} -h {size[1]} -t {transform_str} -q --sugcontour --contour --sug-thresh {sug_thresh}"
-        )
+        self._run_renderer(out_path, transform, size,
+                           ["--sugcontour", "--contour", "--sug-thresh", str(sug_thresh)])
 
     def render_ridges_and_valleys(
         self,
@@ -167,12 +194,8 @@ class NPRRenderer:
         size: tuple[int, int] = (512, 512),
         rv_thresh: float = 0.1,
     ):
-        # 将transform转化为字符串
-        transform_str = " ".join(map(str, transform.flatten()))
-        # 调用命令行sketchkit/renderer/nogui_contour_renderer
-        os.system(
-            f"{self.renderer_path} {self.obj_path} -o {out_path} -w {size[0]} -h {size[1]} -t {transform_str} -q --ridges --valleys --contour --rv-thresh {rv_thresh}"
-        )
+        self._run_renderer(out_path, transform, size,
+                           ["--ridges", "--valleys", "--contour", "--rv-thresh", str(rv_thresh)])
 
     def render_appearant_ridges(
         self,
@@ -181,12 +204,8 @@ class NPRRenderer:
         size: tuple[int, int] = (512, 512),
         ar_thresh: float = 0.1,
     ):
-        # 将transform转化为字符串
-        transform_str = " ".join(map(str, transform.flatten()))
-        # 调用命令行sketchkit/renderer/nogui_contour_renderer
-        os.system(
-            f"{self.renderer_path} {self.obj_path} -o {out_path} -w {size[0]} -h {size[1]} -t {transform_str} -q --apparent --contour --ar-thresh {ar_thresh}"
-        )
+        self._run_renderer(out_path, transform, size,
+                           ["--apparent", "--contour", "--ar-thresh", str(ar_thresh)])
 
 
 if __name__ == "__main__":

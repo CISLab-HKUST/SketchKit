@@ -188,6 +188,8 @@ namespace std {
 
 
 // A few type_traits for pre-C++11
+// Standard headers use inline namespaces; do not rewrite their inline keyword.
+#undef inline
 #if _MSC_VER >= 1600 || defined(_LIBCPP_VERSION) || __cplusplus >= 201103L
 # include <type_traits>
 #elif !defined(_LIBCPP_TYPE_TRAITS) && !defined(_TR1_TYPE_TRAITS) && !defined(_GLIBCXX_TYPE_TRAITS)
@@ -220,7 +222,5 @@ template<class T> struct enable_if<true, T> { typedef T type; };
 
 } // namespace std
 #endif // _MSC_VER >= 1600 || __cplusplus >= 201103L
-
-#undef inline
 
 #endif

@@ -38,6 +38,13 @@ cd SketchKit
 uv sync
 ```
 
+On macOS, the Cairo renderer also needs the system Cairo library. With Homebrew:
+
+```bash
+brew install cairo
+export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
+```
+
 Verify the installation:
 
 ```bash

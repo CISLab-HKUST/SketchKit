@@ -1,14 +1,17 @@
-#CC = gcc
-#CXX = g++
-#CC = clang
-#CXX = clang++
-#CXX = clang++ -stdlib=libc++
-CC = clang-omp
-CXX = clang-omp++
+# Use the standard macOS toolchain unless a compiler was explicitly selected.
+ifeq ($(origin CC),default)
+CC = clang
+endif
+ifeq ($(origin CXX),default)
+CXX = clang++
+endif
 AR = ar
 
+# Homebrew Clang may refer to an SDK removed after an Xcode update.
+SDKROOT ?= $(shell xcrun --sdk macosx --show-sdk-path)
 ARCHOPTS = -m32 -march=core2 -mfpmath=sse -mtune=native
 COPTS = -fno-strict-overflow -fno-math-errno -fno-trapping-math
+COPTS += -isysroot "$(SDKROOT)"
 COPTS += -Wall -Wextra -Wshadow
 DEFINES = -U_FORTIFY_SOURCE
 

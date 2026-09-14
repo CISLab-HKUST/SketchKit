@@ -5,6 +5,7 @@ from .compute_cost import cost_individual, cost_transition, compute_T_junctions
 from operator import itemgetter
 from .tsp_bnb import Node
 from queue import PriorityQueue
+from itertools import count
 from .direction import determine_direction
 from sketchkit.renderer.cairo_renderer import CairoRenderer
 from sketchkit.ordering.orderer import Orderer
@@ -61,7 +62,10 @@ class AnimatedDrawer(Orderer):
         """
         result = self._animated_drawing(sketch)
         paths = [sketch.paths[i] for i in result["solution"]]
-        ret_sketch = Sketch(height=sketch.height, width=sketch.width, paths=paths)
+        # Empty paths have no ordering cost, but must not shift stroke indices.
+        paths.extend(path for path in sketch.paths if not path.curves)
+        ret_sketch = Sketch(height=sketch.height, width=sketch.width, paths=paths,
+                            attributes=sketch.attributes)
         # sketch_frames = self._render_animated_drawing(sketch, result)
         # renderer = CairoRenderer(canvas_size=self.canvas_size, canvas_color=self.canvas_color)
         # frames = []
@@ -107,8 +111,9 @@ class AnimatedDrawer(Orderer):
         w = self.w
         strokes_txy = []
         cost_uni = []
+        path_indices = []
 
-        for path in sketch.paths:
+        for path_index, path in enumerate(sketch.paths):
             if path.curves is None or len(path.curves) < 1:
                 continue
             # print([[[curve.p_start.x, curve.p_start.y], [curve.p_end.x, curve.p_end.y]] for curve in path.curves])
@@ -141,6 +146,7 @@ class AnimatedDrawer(Orderer):
                 polyline_path.append(path.curves[-1].p_end.x)
                 polyline_path.append(path.curves[-1].p_end.y)
             strokes_txy.append(polyline_path)
+            path_indices.append(path_index)
             cost = cost_individual(polyline_path)
             cost_uni.append(cost)
 
@@ -168,16 +174,16 @@ class AnimatedDrawer(Orderer):
         vertex_pair = []
         edge_weight = []
         n = len(cost_uni)
+        if n == 0:
+            return {"solution": [], "cost": 0, "directions": []}
         for i in range(n):
-            if n < max_k:
-                continue
             all_pro_for_i = []
             for j in range(n):
                 if j != i:
                     all_pro_for_i.append(self._get_cost_bi(cost_bi_pro, i, j))
                 else:
                     all_pro_for_i.append(999999999)
-            for k in range(max_k):
+            for k in range(min(max_k, n - 1)):
                 # get the index of the k-th closest stroke
                 j = sorted(enumerate(all_pro_for_i), key=itemgetter(1))[k][0]
                 if [i, j] in T_junctions:
@@ -216,21 +222,20 @@ class AnimatedDrawer(Orderer):
         weight_unary = cost_uni
 
         optim_node = None
-        upper_bound = 999999999
-        root = Node(
-            trace=[],
-            curr=0,
-            weight_unary=weight_unary,
-            weight_binary=weight_binary,
-            n=n,
-        )
+        upper_bound = float("inf")
         q = PriorityQueue()
-        q.put((root.cost + root.lower_bound()[1], root))
+        sequence = count()
+        # Directed T-junction constraints may require a start other than stroke 0.
+        for start in range(n):
+            root = Node([], start, weight_unary, weight_binary, n)
+            lower_bound = root.lower_bound()
+            if lower_bound[0]:
+                q.put((root.cost + lower_bound[1], next(sequence), root))
 
         print_count = 0
 
         while not q.empty():
-            this_node = q.get()[1]
+            this_node = q.get()[2]
             if len(this_node.trace) == n - 1:
                 if this_node.cost < upper_bound:
                     upper_bound = this_node.cost
@@ -256,17 +261,20 @@ class AnimatedDrawer(Orderer):
                         next_lower_bound[0]
                         and next_node_q.cost + next_lower_bound[1] <= upper_bound
                     ):
-                        q.put((next_node_q.cost + next_lower_bound[1], next_node_q))
+                        q.put((next_node_q.cost + next_lower_bound[1],
+                               next(sequence), next_node_q))
             if print_count % 10000 == 0:
                 print(this_node.trace + [this_node.curr], upper_bound)
             print_count = print_count + 1
 
         if optim_node is None:
-            print("Solution does not exist!")
-            return None
+            raise ValueError(
+                "No complete stroke order satisfies the Fu neighbour graph and "
+                "T-junction constraints. Try increasing max_k."
+            )
         else:
             result = {
-                "solution": optim_node.trace + [optim_node.curr],
+                "solution": [path_indices[i] for i in optim_node.trace + [optim_node.curr]],
                 "cost": optim_node.cost,
             }
             # print("Optimal solution:", optim_node.trace + [optim_node.curr], "cost:", optim_node.cost)

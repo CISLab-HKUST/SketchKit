@@ -48,17 +48,7 @@ the installer's instructions to add it to your shell environment. Then run:
 
 ```bash
 brew install cairo
-export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
 ```
-
-Run the verification command below in the same terminal. The `export` applies
-only to the current shell and its child processes; to keep the setting for new
-zsh terminals, add that line to `~/.zshrc` and run `source ~/.zshrc`.
-
-If importing SketchKit raises `OSError: no library called "cairo-2" was found`
-or mentions `libcairo.2.dylib`, check both the Cairo installation and the library
-search path above. Re-running `uv sync` alone will not install the system library
-or configure that search path.
 
 For the RTSC contour renderer on macOS, install its native dependencies and
 rebuild SketchKit:
@@ -78,6 +68,36 @@ Verify the installation:
 ```bash
 uv run python -c "import sketchkit; print('SketchKit is ready')"
 ```
+
+### Troubleshooting: Cairo not found on macOS
+
+If importing SketchKit raises `OSError: no library called "cairo-2" was found`
+or reports that `libcairo.2.dylib` cannot be loaded, first ensure that
+`brew install cairo` has completed successfully. Some Python/Homebrew
+configurations do not automatically search Homebrew's library directory.
+Only if the error persists, provide that directory explicitly:
+
+```bash
+export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
+uv run python -c "import sketchkit; print('SketchKit is ready')"
+```
+
+The `export` applies to the current terminal and commands started from it.
+To keep the setting for new zsh terminals, add the `export` line to `~/.zshrc`
+and run `source ~/.zshrc` in the current terminal.
+
+macOS can strip inherited `DYLD_*` variables when launching some uv builds.
+If the `export` does not resolve the error, set the variable after uv starts:
+
+```bash
+uv run --no-sync env \
+  DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}" \
+  python -c "import sketchkit; print('SketchKit is ready')"
+```
+
+This fallback applies only to the command. To run a script with it,
+replace `-c "import sketchkit; print('SketchKit is ready')"` with its filename.
+Re-running `uv sync` alone will not install Cairo or configure its search path.
 
 ## Quick Start
 

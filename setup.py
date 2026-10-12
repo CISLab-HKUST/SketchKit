@@ -63,7 +63,7 @@ class Build(build_ext):
         # Build trimesh2
         print(f"Building trimesh2 ({target})...")
         try:
-            subprocess.check_call(['make', target], cwd=trimesh_dir)
+            subprocess.check_call(['make', '-C', 'libsrc', target], cwd=trimesh_dir)
         except subprocess.CalledProcessError as e:
             print(f"Error building trimesh2: {e}")
             return
@@ -71,13 +71,14 @@ class Build(build_ext):
         # Build rtsc
         print(f"Building rtsc ({target})...")
         try:
-            subprocess.check_call(['make', target], cwd=rtsc_dir)
+            subprocess.check_call(['make', target, 'PROGS=' + binary_name], cwd=rtsc_dir)
         except subprocess.CalledProcessError as e:
             print(f"Error building rtsc: {e}")
             return
         
         src_binary = os.path.join(rtsc_dir, binary_name)
-        dest_dir = os.path.join(cwd, 'sketchkit', 'renderer')
+        dest_dir = os.path.join(cwd, 'sketchkit', 'renderer', '_native')
+        os.makedirs(dest_dir, exist_ok=True)
         dest_binary = os.path.join(dest_dir, binary_name)
         
         if os.path.exists(src_binary):
@@ -88,6 +89,11 @@ class Build(build_ext):
             # Make executable
             st = os.stat(dest_binary)
             os.chmod(dest_binary, st.st_mode | 0o111)
+            # build_py runs before build_ext, so a fresh wheel also needs the
+            # newly generated executable copied into the wheel's build tree.
+            wheel_native_dir = os.path.join(self.build_lib, 'sketchkit', 'renderer', '_native')
+            os.makedirs(wheel_native_dir, exist_ok=True)
+            shutil.copy2(dest_binary, os.path.join(wheel_native_dir, binary_name))
         else:
             print(f"Warning: {src_binary} not found after build.")
 
@@ -174,7 +180,7 @@ setup(
     packages=find_packages(include=['sketchkit*']) + ['pydiffvg'],
     package_dir={'pydiffvg': 'third_party/diffvg/pydiffvg'},
     ext_modules=ext_modules,
-    package_data={'sketchkit': ['renderer/nogui_contour_renderer', 'renderer/nogui_contour_renderer.exe']},
+    package_data={'sketchkit': ['renderer/_native/*']},
     cmdclass=dict(build_ext=Build),
     zip_safe=False,
 )

@@ -7,6 +7,11 @@ LIBDIR = -L$(TRIMESHDIR)/lib.$(UNAME)
 NOGUI_LIBS = $(LIBS) -lglfw -lGL -lGLEW
 
 include $(MAKERULESDIR)/Makerules
+ifneq (,$(filter Darwin Darwin64,$(UNAME)))
+  # Homebrew dependencies are not on Clang's default include/library paths.
+  INCLUDES += $(shell pkg-config --cflags glfw3 glew)
+  NOGUI_LIBS = $(shell pkg-config --libs glfw3 glew) -framework OpenGL
+endif
 ifeq ($(UNAME),Win32)
   COPTS += -mwindows
 endif
@@ -40,7 +45,7 @@ contour_renderer$(EXE) : $(OBJDIR)/contour_renderer.o $(OBJDIR)/apparentridge.o
 
 # nogui_contour_renderer的链接规则
 nogui_contour_renderer$(EXE) : $(OBJDIR)/nogui_contour_renderer.o $(OBJDIR)/apparentridge.o
-	$(LINK) $(GLLIBS) $(NOGUI_LIBS)
+	$(LINK) $(NOGUI_LIBS)
 
 clean :
 	-rm -f $(ofiles_rtsc) $(ofiles_contour) $(ofiles_nogui_contour) $(OBJDIR)/Makedepend $(OBJDIR)/*.d

@@ -8,6 +8,7 @@
 #include <memory>
 #include <limits>
 #include <map>
+#include <vector>
 #include <Eigen/Dense>
 #include <miscutils/macros.h>
 

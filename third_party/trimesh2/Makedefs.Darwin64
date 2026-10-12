@@ -1,4 +1,9 @@
 include $(MAKERULESDIR)/Makedefs.Darwin
 
+# Intel-specific flags are invalid when compiling natively on Apple Silicon.
+ifeq ($(shell uname -m),arm64)
+ARCHOPTS = -arch arm64
+else
 ARCHOPTS = -m64 -march=core2 -mfpmath=sse -mtune=native
+endif
 

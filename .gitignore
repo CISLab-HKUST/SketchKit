@@ -5,6 +5,12 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+sketchkit/renderer/_native/
+third_party/trimesh2/**/OBJ.*/
+third_party/trimesh2/lib.*/
+third_party/trimesh2/bin.*/
+third_party/rtsc-1.6/OBJ.*/
+third_party/rtsc-1.6/nogui_contour_renderer
 .env
 .venv
 venv/

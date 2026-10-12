@@ -180,7 +180,7 @@ setup(
     packages=find_packages(include=['sketchkit*']) + ['pydiffvg'],
     package_dir={'pydiffvg': 'third_party/diffvg/pydiffvg'},
     ext_modules=ext_modules,
-    package_data={'sketchkit': ['renderer/nogui_contour_renderer', 'renderer/nogui_contour_renderer.exe', 'renderer/_native/*']},
+    package_data={'sketchkit': ['renderer/_native/*']},
     cmdclass=dict(build_ext=Build),
     zip_safe=False,
 )
